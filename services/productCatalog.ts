@@ -8,7 +8,7 @@ export interface CatalogProduct {
   id: string;
   brand: string;
   name: string;
-  category: 'Faucet' | 'Toilet' | 'Shower' | 'Vanity' | 'Tile' | 'Lighting';
+  category: 'Faucet' | 'Toilet' | 'Shower' | 'Vanity' | 'Tile' | 'Lighting' | 'Bathtub';
   price: number;
   currency: string;
   imageUrl: string;
@@ -59,8 +59,19 @@ export const PRODUCT_CATALOG: CatalogProduct[] = [
     price: 890,
     currency: "USD",
     imageUrl: "https://vola.com/media/2555/111_01_p-m.png",
-    styleTags: [RenovationStyle.SCANDINAVIAN, RenovationStyle.MODERN],
+    styleTags: [RenovationStyle.SCANDINAVIAN, RenovationStyle.MODERN, RenovationStyle.CLASSIC],
     origin: "Denmark"
+  },
+  {
+    id: "DORNBRACHT-TARA",
+    brand: "Dornbracht",
+    name: "Tara Classic",
+    category: "Faucet",
+    price: 950,
+    currency: "USD",
+    imageUrl: "https://www.dornbracht.com/media/c0/88/47/1660205842/20000710-00_1000.jpg",
+    styleTags: [RenovationStyle.CLASSIC, RenovationStyle.LUXURY],
+    origin: "Germany"
   },
 
   // --- TOILETS ---
@@ -86,6 +97,17 @@ export const PRODUCT_CATALOG: CatalogProduct[] = [
     styleTags: [RenovationStyle.LUXURY, RenovationStyle.MODERN],
     origin: "Switzerland"
   },
+  {
+    id: "CATALANO-SPHERA",
+    brand: "Catalano",
+    name: "Sfera 54 Wall Hung",
+    category: "Toilet",
+    price: 420,
+    currency: "USD",
+    imageUrl: "https://www.catalano.it/wp-content/uploads/2021/03/1VSS54R00.jpg",
+    styleTags: [RenovationStyle.INDUSTRIAL, RenovationStyle.MODERN],
+    origin: "Italy"
+  },
 
   // --- VANITIES ---
   {
@@ -110,6 +132,17 @@ export const PRODUCT_CATALOG: CatalogProduct[] = [
     styleTags: [RenovationStyle.CLASSIC, RenovationStyle.SCANDINAVIAN],
     origin: "Spain"
   },
+  {
+    id: "ANTONIO-LUPI-PIANA",
+    brand: "Antonio Lupi",
+    name: "Piana Vanity Oak",
+    category: "Vanity",
+    price: 3500,
+    currency: "USD",
+    imageUrl: "https://www.antoniolupi.it/files/antoniolupi/prodotti/piana/antoniolupi_Piana_01.jpg",
+    styleTags: [RenovationStyle.LUXURY, RenovationStyle.SCANDINAVIAN],
+    origin: "Italy"
+  },
 
   // --- TILES ---
   {
@@ -131,7 +164,7 @@ export const PRODUCT_CATALOG: CatalogProduct[] = [
     price: 120,
     currency: "USD",
     imageUrl: "https://www.porcelanosa.com/recursos/productos/100236746_1.jpg",
-    styleTags: [RenovationStyle.LUXURY],
+    styleTags: [RenovationStyle.LUXURY, RenovationStyle.MODERN],
     origin: "Spain"
   },
   {
@@ -143,6 +176,17 @@ export const PRODUCT_CATALOG: CatalogProduct[] = [
     currency: "USD",
     imageUrl: "https://www.mutina.it/media/images/collections/tierra/tierra-hero.jpg",
     styleTags: [RenovationStyle.SCANDINAVIAN, RenovationStyle.MODERN],
+    origin: "Italy"
+  },
+  {
+    id: "ATLAS-CONCORDE-BOOST",
+    brand: "Atlas Concorde",
+    name: "Boost Grey Concrete",
+    category: "Tile",
+    price: 60,
+    currency: "USD",
+    imageUrl: "https://www.atlasconcorde.com/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/a/t/atlas-concorde-boost-grey-120x120-matt-00.jpg",
+    styleTags: [RenovationStyle.INDUSTRIAL, RenovationStyle.MODERN],
     origin: "Italy"
   },
 
@@ -167,6 +211,98 @@ export const PRODUCT_CATALOG: CatalogProduct[] = [
     currency: "USD",
     imageUrl: "https://flos.com/sites/default/files/styles/product_detail/public/F3178057_1.jpg",
     styleTags: [RenovationStyle.MODERN, RenovationStyle.LUXURY],
+    origin: "Italy"
+  },
+  {
+    id: "TOM-DIXON-BEAT",
+    brand: "Tom Dixon",
+    name: "Beat Light Fat Black",
+    category: "Lighting",
+    price: 550,
+    currency: "USD",
+    imageUrl: "https://www.tomdixon.net/media/catalog/product/cache/7e007d4b46c1f01655615d860d5ce39c/b/l/bls02-p01_01.jpg",
+    styleTags: [RenovationStyle.INDUSTRIAL],
+    origin: "UK"
+  },
+
+  // --- BATHTUBS (NEW) ---
+  {
+    id: "VICTORIA-ALBERT-CHESHIRE",
+    brand: "Victoria + Albert",
+    name: "Cheshire Freestanding Bath",
+    category: "Bathtub",
+    price: 2200,
+    currency: "USD",
+    imageUrl: "https://vandabaths.com/media/2126/cheshire_main.jpg?anchor=center&mode=crop&width=1200&height=1200",
+    styleTags: [RenovationStyle.CLASSIC, RenovationStyle.LUXURY],
+    origin: "UK"
+  },
+  {
+    id: "DURAVIT-CAPE-COD",
+    brand: "Duravit",
+    name: "Cape Cod Freestanding",
+    category: "Bathtub",
+    price: 3100,
+    currency: "USD",
+    imageUrl: "https://img.duravit.com/celum-assets/1600x1600/100000000000000000000000000000000000000000000000000000000000000000000000000000000_1000005165_700330000000090_100.jpg",
+    styleTags: [RenovationStyle.MODERN, RenovationStyle.SCANDINAVIAN],
+    origin: "Germany"
+  },
+  {
+    id: "BETTE-LUX-OVAL",
+    brand: "Bette",
+    name: "BetteLux Oval Silhouette",
+    category: "Bathtub",
+    price: 4500,
+    currency: "USD",
+    imageUrl: "https://www.my-bette.com/fileadmin/_processed_/6/f/csm_BetteLux-Oval-Silhouette_Side_8f0a00e576.jpg",
+    styleTags: [RenovationStyle.MODERN, RenovationStyle.LUXURY, RenovationStyle.INDUSTRIAL],
+    origin: "Germany"
+  },
+  
+  // --- SHOWERS (NEW) ---
+  {
+    id: "GROHE-EUPHORIA",
+    brand: "Grohe",
+    name: "Euphoria SmartControl",
+    category: "Shower",
+    price: 800,
+    currency: "USD",
+    imageUrl: "https://assets.grohe.com/3d/26507000/26507000_1_1.png",
+    styleTags: [RenovationStyle.MODERN, RenovationStyle.INDUSTRIAL],
+    origin: "Germany"
+  },
+  {
+    id: "HANSGROHE-RAINDANCE",
+    brand: "Hansgrohe",
+    name: "Raindance Select E 300",
+    category: "Shower",
+    price: 1100,
+    currency: "USD",
+    imageUrl: "https://assets.hansgrohe.com/celum/web/27128000_Raindance_Select_E_300_Showerpipe_Chrome_tif.jpg?format=HBW7",
+    styleTags: [RenovationStyle.MODERN, RenovationStyle.SCANDINAVIAN],
+    origin: "Germany"
+  },
+  {
+    id: "AXOR-SHOWERHEAVEN",
+    brand: "AXOR",
+    name: "ShowerHeaven 1200",
+    category: "Shower",
+    price: 5500,
+    currency: "USD",
+    imageUrl: "https://assets.hansgrohe.com/celum/web/10637000_AXOR_ShowerHeaven_1200_Chrome_tif.jpg?format=HBW7",
+    styleTags: [RenovationStyle.LUXURY],
+    origin: "Germany"
+  },
+  {
+    id: "NOBILI-ANTICA",
+    brand: "Nobili",
+    name: "Antica Shower Column",
+    category: "Shower",
+    price: 900,
+    currency: "USD",
+    imageUrl: "https://www.nobili.it/media/prodotti/AD/AD140/30/AD14030CR_01.jpg",
+    styleTags: [RenovationStyle.CLASSIC],
     origin: "Italy"
   }
 ];

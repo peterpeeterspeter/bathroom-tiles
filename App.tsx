@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   Upload, 
@@ -122,21 +123,29 @@ const CategoryProductSelector = ({
     PRODUCT_CATALOG.filter(p => p.category === category && p.styleTags.includes(mood)), 
   [category, mood]);
 
+  if (products.length === 0) {
+    return (
+       <div className="p-4 bg-slate-50 rounded-xl text-center">
+         <p className="text-[10px] uppercase font-bold text-slate-400">Geen specifieke opties voor deze stijl.</p>
+       </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
       {products.map(p => (
         <button 
           key={p.id} 
           onClick={() => onSelect(p)} 
-          className={`relative flex flex-col items-center p-3 border-2 rounded-xl transition-all ${
+          className={`relative flex flex-col items-center p-3 border-2 rounded-xl transition-all h-full ${
             selectedId === p.id ? 'border-accent bg-accent/5 ring-4 ring-accent/10' : 'border-slate-100 hover:border-slate-300 bg-white'
           }`}
         >
           <div className="w-full aspect-square mb-2 overflow-hidden rounded-lg bg-slate-50 flex items-center justify-center">
             <img src={p.imageUrl} alt={p.name} className="w-full h-full object-contain mix-blend-multiply p-2" />
           </div>
-          <p className="text-[10px] font-black uppercase text-slate-400 tracking-tighter mb-1 leading-none">{p.brand}</p>
-          <p className="text-[11px] font-bold text-slate-900 leading-tight h-8 overflow-hidden text-center">{p.name}</p>
+          <p className="text-[10px] font-black uppercase text-slate-400 tracking-tighter mb-1 leading-none w-full text-center">{p.brand}</p>
+          <p className="text-[11px] font-bold text-slate-900 leading-tight h-8 overflow-hidden text-center w-full">{p.name}</p>
           {selectedId === p.id && (
             <div className="absolute top-2 right-2 bg-accent text-white p-1 rounded-full shadow-lg">
               <Check size={12} />
@@ -168,7 +177,7 @@ export default function App() {
   const [selectedStyle, setSelectedStyle] = useState<RenovationStyle | null>(null);
   const [selectedProductIds, setSelectedProductIds] = useState<Record<string, string>>({});
   const [materialConfig, setMaterialConfig] = useState<MaterialConfig>({
-    floorTile: 'AI_MATCH', wallTile: 'AI_MATCH', vanityType: 'AI_MATCH', faucetFinish: 'AI_MATCH', toiletType: 'AI_MATCH', lightingType: 'AI_MATCH'
+    floorTile: 'AI_MATCH', wallTile: 'AI_MATCH', vanityType: 'AI_MATCH', faucetFinish: 'AI_MATCH', toiletType: 'AI_MATCH', lightingType: 'AI_MATCH', bathtubType: 'AI_MATCH', showerType: 'AI_MATCH'
   });
 
   // Physical Data
@@ -206,7 +215,9 @@ export default function App() {
       if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) await window.aistudio.openSelectKey();
       
       setLoadingMessage("Ruimte layout analyseren...");
-      const spec = await analyzeBathroomInput(imagePreview.split(',')[1]);
+      // Extract correct mime type to prevent API errors with PNGs
+      const mimeType = imagePreview.match(/^data:(.*);base64,/)?.[1] || "image/jpeg";
+      const spec = await analyzeBathroomInput(imagePreview.split(',')[1], mimeType);
       setProjectSpec(spec);
 
       setLoadingMessage("Sloopwerkzaamheden simuleren...");
@@ -239,6 +250,9 @@ export default function App() {
     setStep(1); setSelectedStyle(null); setImagePreview(null); setProjectSpec(null);
     setEstimate(null); setRenderUrl(null); setClearedImage(null); setLeadSubmitted(false);
   };
+
+  // Categories to iterate through. Added Bathtub, Shower, and Tile as Finish.
+  const categories = ['Bathtub', 'Shower', 'Vanity', 'Toilet', 'Faucet', 'Lighting', 'Tile'];
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-accent selection:text-white">
@@ -315,7 +329,7 @@ export default function App() {
                 </div>
               </div>
               <div className="md:col-span-8 space-y-12">
-                {['Faucet', 'Toilet', 'Vanity', 'Lighting', 'Tile'].map((cat, i) => (
+                {categories.map((cat, i) => (
                   <div key={cat} className="animate-slide-up" style={{ animationDelay: `${i * 100}ms` }}>
                     <div className="flex items-center gap-4 mb-6">
                       <div className="w-10 h-10 rounded-2xl bg-white border-2 border-slate-100 flex items-center justify-center text-accent shadow-sm"><ShoppingBag size={20} /></div>
@@ -327,12 +341,28 @@ export default function App() {
                       selectedId={selectedProductIds[cat]} 
                       onSelect={(p) => {
                         setSelectedProductIds({...selectedProductIds, [cat]: p.id});
-                        setMaterialConfig({...materialConfig, [cat === 'Tile' ? 'floorTile' : `${cat.toLowerCase()}Type`]: p.name});
+                        setMaterialConfig(prev => ({
+                          ...prev, 
+                          [cat === 'Tile' ? 'floorTile' : `${cat.toLowerCase()}Type`]: p.name
+                        }));
                       }} 
                     />
                   </div>
                 ))}
-                <div className="pt-12">
+                
+                {/* 7.Z.8 Commerciële en juridische afbakening */}
+                <div className="bg-slate-50 border border-slate-200 p-6 rounded-xl mt-8 flex gap-4 items-start">
+                   <Info className="text-slate-400 flex-shrink-0 mt-0.5" size={16} />
+                   <div>
+                     <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1">Disclaimer</p>
+                     <p className="text-xs text-slate-500 leading-relaxed">
+                       De getoonde productselecties dienen als inspiratierichting en vormen geen definitieve bestelling of garantie op levering van exacte modellen. 
+                       Een definitieve technische configuratie volgt steeds na adviesgesprek.
+                     </p>
+                   </div>
+                </div>
+
+                <div className="pt-8">
                   <button onClick={() => setStep(3)} className="w-full py-6 bg-black text-white rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-3 shadow-2xl">
                     Volgende: Ruimte & Afmetingen <ArrowRight size={20}/>
                   </button>
@@ -441,7 +471,8 @@ export default function App() {
         )}
 
         {/* STEP 5: RESULT / LEAD CAPTURE  (NOW STEP 4) */}
-        {step === 4 && !loading && (
+        {/* Strictly check for !error and presence of estimate/renderUrl to avoid stuck empty state */}
+        {step === 4 && !loading && !error && estimate && renderUrl && (
           <div className="animate-fade-in max-w-6xl mx-auto">
             {!leadSubmitted ? (
               <div className="max-w-xl mx-auto">

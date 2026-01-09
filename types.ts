@@ -76,6 +76,8 @@ export interface MaterialConfig {
   faucetFinish: string;
   toiletType: string;
   lightingType: string;
+  bathtubType?: string;
+  showerType?: string;
 }
 
 export interface GenerationResult {
