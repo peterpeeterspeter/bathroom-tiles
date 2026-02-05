@@ -80,22 +80,22 @@ export const LegalModal = ({ isOpen, onClose, title, type }: LegalModalProps) =>
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden flex flex-col"
+        className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-6 border-b border-slate-100">
-          <h2 className="font-black uppercase tracking-widest text-sm">{title}</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors">
+        <div className="flex items-center justify-between p-6 border-b border-neutral-300/30">
+          <h2 className="font-bold text-sm">{title}</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center hover:bg-neutral-300/50 transition-colors">
             <X size={16} />
           </button>
         </div>
         <div className="p-6 overflow-y-auto flex-1">
-          <div className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
+          <div className="text-xs text-neutral-700 leading-relaxed whitespace-pre-line">
             {contentMap[type]}
           </div>
         </div>
-        <div className="p-6 border-t border-slate-100">
-          <button onClick={onClose} className="w-full py-3 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all">
+        <div className="p-6 border-t border-neutral-300/30">
+          <button onClick={onClose} className="w-full py-3 bg-primary text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-primary-dark transition-all">
             Sluiten
           </button>
         </div>

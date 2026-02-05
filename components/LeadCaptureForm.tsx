@@ -37,24 +37,24 @@ export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
 
   return (
     <div className="max-w-xl mx-auto">
-      <div className="bg-white p-8 md:p-12 border-4 border-black shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] rounded-2xl md:rounded-[3rem]">
+      <div className="bg-white p-8 md:p-12 border border-neutral-300/50 shadow-xl rounded-2xl md:rounded-3xl">
         <div className="text-center mb-8 md:mb-10">
-          <div className="w-16 h-16 bg-accent rounded-2xl flex items-center justify-center text-white shadow-xl mx-auto mb-6"><CheckCircle size={32} /></div>
-          <h2 className="text-2xl md:text-4xl font-black tracking-tighter mb-4 leading-tight uppercase">Ontvang uw prijsindicatie</h2>
-          <p className="text-slate-500 font-bold text-sm">Vul uw gegevens in om uw prijsindicatie en PDF-voorstel te ontvangen.</p>
+          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg mx-auto mb-6"><CheckCircle size={32} /></div>
+          <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-4">Ontvang uw prijsindicatie</h2>
+          <p className="text-neutral-500 text-sm">Vul uw gegevens in om uw prijsindicatie en PDF-voorstel te ontvangen.</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
           <div className="space-y-3 md:space-y-4">
             {fields.map(field => (
               <div key={field.id} className="relative">
-                <field.icon className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <field.icon className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />
                 <input
                   required
                   placeholder={field.label}
                   type={field.type}
                   value={leadData[field.id]}
                   onChange={(e) => setLeadData({...leadData, [field.id]: e.target.value})}
-                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl md:rounded-2xl p-4 md:p-5 pl-12 md:pl-14 font-bold outline-none focus:border-accent transition-all"
+                  className="w-full bg-neutral-100 border border-neutral-300/50 rounded-xl md:rounded-2xl p-4 md:p-5 pl-12 md:pl-14 font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
                 />
               </div>
             ))}
@@ -66,10 +66,10 @@ export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
                 type="checkbox"
                 checked={gdprConsent}
                 onChange={(e) => setGdprConsent(e.target.checked)}
-                className="w-5 h-5 rounded border-2 border-slate-300 accent-accent cursor-pointer"
+                className="w-5 h-5 rounded border-2 border-neutral-300 accent-primary cursor-pointer"
               />
             </div>
-            <span className="text-[11px] text-slate-500 leading-relaxed">
+            <span className="text-[11px] text-neutral-500 leading-relaxed">
               Ik ga akkoord met de verwerking van mijn persoonsgegevens conform de privacyverklaring van De Badkamer. Mijn gegevens worden gebruikt om mij een gepersonaliseerd voorstel te bezorgen en contact met mij op te nemen.
             </span>
           </label>
@@ -77,8 +77,8 @@ export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
           <button
             type="submit"
             disabled={!gdprConsent || submitting}
-            className={`w-full py-5 md:py-6 rounded-xl md:rounded-[2rem] font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-3 mt-6 md:mt-8 shadow-2xl ${
-              !gdprConsent ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-black text-white hover:bg-slate-800 shadow-black/20'
+            className={`w-full py-5 md:py-6 rounded-xl md:rounded-2xl font-bold text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-3 mt-6 md:mt-8 ${
+              !gdprConsent ? 'bg-neutral-300/50 text-neutral-500 cursor-not-allowed' : 'bg-accent hover:bg-accent-hover text-white shadow-lg shadow-accent/20'
             }`}
           >
             {submitting ? <Loader2 size={20} className="animate-spin" /> : <>Bekijk Prijsindicatie <ArrowRight size={20}/></>}
