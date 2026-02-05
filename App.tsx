@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 import { analyzeBathroomInput, calculateRenovationCost, generateRenovationRender, generateEmptySpace } from './services/geminiService';
-import { ProjectSpec, Estimate, RenovationStyle, BudgetTier, MaterialConfig } from './types';
-import { CatalogProduct } from './services/productCatalog';
+import { ProjectSpec, Estimate, StyleProfile, BudgetTier, MaterialConfig, DatabaseProduct } from './types';
 import { Logo } from './components/Logo';
 import { StepIndicator } from './components/StepIndicator';
-import { MoodSelection } from './components/MoodSelection';
+import { StyleInspiration } from './components/StyleInspiration';
 import { ProductConfiguration } from './components/ProductConfiguration';
 import { DimensionsPhoto } from './components/DimensionsPhoto';
 import { LoadingOverlay } from './components/LoadingOverlay';
@@ -14,6 +13,7 @@ import { ResultDisplay } from './components/ResultDisplay';
 import { LegalModal } from './components/LegalModal';
 import { submitLead } from './lib/leadService';
 import { trackEvent } from './lib/analytics';
+import { fetchAllActiveProducts } from './lib/productService';
 
 const TIMEOUT_MS = 120_000;
 
@@ -24,7 +24,7 @@ export default function App() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [leadSubmitted, setLeadSubmitted] = useState(false);
   const [leadName, setLeadName] = useState('');
-  const [selectedStyle, setSelectedStyle] = useState<RenovationStyle | null>(null);
+  const [styleProfile, setStyleProfile] = useState<StyleProfile | null>(null);
   const [selectedProductIds, setSelectedProductIds] = useState<Record<string, string>>({});
   const [selectedProductNames, setSelectedProductNames] = useState<Record<string, string>>({});
   const [materialConfig, setMaterialConfig] = useState<MaterialConfig>({
@@ -61,13 +61,13 @@ export default function App() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [loading]);
 
-  const handleMoodSelect = useCallback((style: RenovationStyle) => {
-    setSelectedStyle(style);
+  const handleStyleResolved = useCallback((profile: StyleProfile) => {
+    setStyleProfile(profile);
     setStep(2);
-    trackEvent('style_selected', { style });
+    trackEvent('style_selected', { source: profile.source, tags: profile.tags.length, summary: profile.summary });
   }, []);
 
-  const handleProductSelect = useCallback((category: string, product: CatalogProduct) => {
+  const handleProductSelect = useCallback((category: string, product: DatabaseProduct) => {
     setSelectedProductIds(prev => ({ ...prev, [category]: product.id }));
     setSelectedProductNames(prev => ({ ...prev, [category]: product.name }));
     setMaterialConfig(prev => ({
@@ -82,13 +82,13 @@ export default function App() {
   }, []);
 
   const startProcessing = async () => {
-    if (!imagePreview || !selectedStyle) return;
+    if (!imagePreview || !styleProfile) return;
     setStep(4);
     setLoading(true);
     setError(null);
     abortRef.current = new AbortController();
 
-    trackEvent('generation_started', { style: selectedStyle });
+    trackEvent('generation_started', { source: styleProfile.source });
     const startTime = Date.now();
 
     try {
@@ -107,9 +107,10 @@ export default function App() {
       if (abortRef.current?.signal.aborted) throw new Error('timeout');
 
       setLoadingMessage('Uw nieuwe badkamer renderen...');
+      const products = await fetchAllActiveProducts();
       const [est, url] = await Promise.all([
-        calculateRenovationCost(spec, BudgetTier.STANDARD, selectedStyle, materialConfig),
-        generateRenovationRender(spec, selectedStyle, materialConfig, empty)
+        calculateRenovationCost(spec, BudgetTier.STANDARD, styleProfile, materialConfig, products),
+        generateRenovationRender(spec, styleProfile, materialConfig, empty, products)
       ]);
 
       setEstimate(est);
@@ -143,7 +144,7 @@ export default function App() {
       email: data.email,
       phone: data.phone,
       postcode: data.postcode,
-      selectedStyle: selectedStyle!,
+      styleProfile: styleProfile!,
       materialConfig,
       selectedProducts: selectedProductIds,
       estimatedTotalLow: totalLow,
@@ -154,7 +155,7 @@ export default function App() {
     });
 
     trackEvent('lead_submitted', {
-      style: selectedStyle,
+      source: styleProfile?.source,
       totalLow,
       totalHigh,
       postcode: data.postcode,
@@ -165,7 +166,7 @@ export default function App() {
 
   const reset = () => {
     setStep(1);
-    setSelectedStyle(null);
+    setStyleProfile(null);
     setSelectedProductIds({});
     setSelectedProductNames({});
     setImagePreview(null);
@@ -209,11 +210,11 @@ export default function App() {
           </div>
         )}
 
-        {step === 1 && <MoodSelection onSelect={handleMoodSelect} />}
+        {step === 1 && <StyleInspiration onStyleResolved={handleStyleResolved} />}
 
-        {step === 2 && selectedStyle && (
+        {step === 2 && styleProfile && (
           <ProductConfiguration
-            selectedStyle={selectedStyle}
+            styleProfile={styleProfile}
             selectedProductIds={selectedProductIds}
             onProductSelect={handleProductSelect}
             onNext={() => { setStep(3); trackEvent('products_configured', { products: selectedProductIds }); }}
@@ -238,7 +239,7 @@ export default function App() {
             ) : (
               <ResultDisplay
                 name={leadName}
-                selectedStyle={selectedStyle!}
+                styleProfile={styleProfile!}
                 estimate={estimate}
                 renderUrl={renderUrl}
                 imagePreview={imagePreview!}

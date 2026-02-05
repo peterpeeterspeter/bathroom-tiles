@@ -63,6 +63,44 @@ export enum RenovationStyle {
   CLASSIC = 'Modern Classic'
 }
 
+export interface StyleTag {
+  tag: string;
+  weight: number;
+}
+
+export interface StyleProfile {
+  tags: StyleTag[];
+  summary: string;
+  source: 'preset' | 'ai_vision' | 'combined';
+  presetId?: number;
+  presetName?: string;
+  referenceImageUrls?: string[];
+}
+
+export interface DatabaseProduct {
+  id: string;
+  brand: string;
+  name: string;
+  category: 'Faucet' | 'Toilet' | 'Shower' | 'Vanity' | 'Tile' | 'Lighting' | 'Bathtub';
+  price: number;
+  currency: string;
+  image_url: string;
+  origin: string;
+  is_active: boolean;
+  display_order: number;
+  tags: string[];
+}
+
+export interface StylePreset {
+  id: number;
+  name: string;
+  label_nl: string;
+  description_nl: string;
+  image_url: string;
+  display_order: number;
+  tags: string[];
+}
+
 export enum BudgetTier {
   BUDGET = 'Budget',
   STANDARD = 'Standard',

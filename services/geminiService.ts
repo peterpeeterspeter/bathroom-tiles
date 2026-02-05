@@ -1,7 +1,5 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
-import { ProjectSpec, Estimate, RenovationStyle, BudgetTier, FixtureType, MaterialConfig } from "../types";
-import { PRODUCT_CATALOG } from "./productCatalog";
+import { ProjectSpec, Estimate, BudgetTier, FixtureType, MaterialConfig, StyleProfile, DatabaseProduct } from "../types";
 
 const getApiKey = (): string => {
   if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
@@ -20,7 +18,6 @@ const cleanJson = (text: string) => {
   return text.trim();
 };
 
-// Helper to extract correct MIME type from base64 data URL
 const getMimeType = (dataUrl: string): string => {
   const match = dataUrl.match(/^data:(.*);base64,/);
   return match ? match[1] : "image/jpeg";
@@ -28,11 +25,10 @@ const getMimeType = (dataUrl: string): string => {
 
 export const analyzeBathroomInput = async (base64Image: string, mimeType: string = "image/jpeg"): Promise<ProjectSpec> => {
   const ai = new GoogleGenAI({ apiKey: getApiKey() });
-  const model = "gemini-3-pro-preview"; 
+  const model = "gemini-3-pro-preview";
 
-  // Optimized for Gemini 3 Spatial Reasoning
   const systemInstruction = `
-    You are Renisol's Lead Architectural AI. 
+    You are Renisol's Lead Architectural AI.
     Analyze the input image as a 3D spatial environment, not a 2D picture.
 
     TASK:
@@ -91,8 +87,6 @@ export const analyzeBathroomInput = async (base64Image: string, mimeType: string
 
     if (response.text) {
       const raw = JSON.parse(cleanJson(response.text));
-      
-      // Map new advanced schema to app's ProjectSpec
       return {
         roomType: "Bathroom",
         layoutShape: raw.layout_type === "SLOPED_CEILING" ? "RECTANGLE" : raw.layout_type,
@@ -113,7 +107,6 @@ export const analyzeBathroomInput = async (base64Image: string, mimeType: string
     throw new Error("Analysis failed");
   } catch (error) {
     console.error("Analysis Error:", error);
-    // Fallback
     return {
       roomType: "Standard Bathroom", layoutShape: "RECTANGLE", estimatedWidthMeters: 2.5, estimatedLengthMeters: 3.0, ceilingHeightMeters: 2.4, totalAreaM2: 7.5,
       existingFixtures: [{ type: FixtureType.TOILET, description: "WC", fixed: true, positionX: 20, positionY: 0 }],
@@ -127,14 +120,13 @@ export const generateEmptySpace = async (base64Image: string, spec: ProjectSpec)
   const model = "gemini-3-pro-image-preview";
   const mimeType = getMimeType(base64Image);
 
-  // Optimized for Instruction-based Editing
   const prompt = `
     OPERATION: EDIT_IMAGE
     INPUT: Bathroom photo provided.
     MASK_LOGIC: AUTO_SEGMENT (Furniture, Sanitary Ware, Decor)
 
     INSTRUCTION:
-    "Perform a virtual demolition. 
+    "Perform a virtual demolition.
     1. Erase all identified furniture, toilets, sinks, and mirrors.
     2. Infill the erased areas with 'raw grey concrete screed' on the floor and 'rough white plaster' on the walls.
     3. STRICTLY PRESERVE: The original perspective, window frames, door frames, and ceiling beams.
@@ -155,20 +147,33 @@ export const generateEmptySpace = async (base64Image: string, spec: ProjectSpec)
   }
 };
 
-export const calculateRenovationCost = async (spec: ProjectSpec, tier: BudgetTier, style: RenovationStyle, materials: MaterialConfig): Promise<Estimate> => {
+export const calculateRenovationCost = async (
+  spec: ProjectSpec,
+  tier: BudgetTier,
+  styleProfile: StyleProfile,
+  materials: MaterialConfig,
+  products: DatabaseProduct[]
+): Promise<Estimate> => {
   const ai = new GoogleGenAI({ apiKey: getApiKey() });
   const model = "gemini-3-pro-preview";
 
-  // Optimized for Logic Engine / Reasoning
+  const styleDesc = styleProfile.summary;
+  const styleTags = styleProfile.tags.map(t => `${t.tag} (${t.weight})`).join(', ');
+  const catalogForPrompt = products.map(p => ({
+    id: p.id, brand: p.brand, name: p.name, category: p.category,
+    price: p.price, currency: p.currency, image_url: p.image_url
+  }));
+
   const systemInstruction = `
-    You are the Renisol Pricing Engine. 
+    You are the Renisol Pricing Engine.
     You do not guess prices. You map requirements to specific Catalog IDs and Labor Operations.
 
     CONTEXT:
     - Room Surface: ${spec.totalAreaM2} m2
     - Current State: ${spec.constraints.join(', ') || 'Standard demolition'}
-    - User Style: ${style}
-    - Catalog: ${JSON.stringify(PRODUCT_CATALOG)}
+    - User Style Profile: ${styleDesc}
+    - Style Descriptors: ${styleTags}
+    - Catalog: ${JSON.stringify(catalogForPrompt)}
     - User Material Config: ${JSON.stringify(materials)}
 
     TASK:
@@ -224,8 +229,7 @@ export const calculateRenovationCost = async (spec: ProjectSpec, tier: BudgetTie
 
     if (response.text) {
       const raw = JSON.parse(cleanJson(response.text));
-      
-      // Map Logic Engine output to Estimate
+
       const materialItems = raw.materials.map((m: any) => ({
         description: m.name,
         category: 'Materials',
@@ -233,7 +237,7 @@ export const calculateRenovationCost = async (spec: ProjectSpec, tier: BudgetTie
         unit: 'pcs/m2',
         unitPrice: m.unit_price,
         totalPrice: m.total_price,
-        brand: m.sku.split('-')[0] // Simple extraction from our SKU format
+        brand: m.sku.split('-')[0]
       }));
 
       const laborItems = raw.labor_operations.map((l: any) => ({
@@ -253,7 +257,7 @@ export const calculateRenovationCost = async (spec: ProjectSpec, tier: BudgetTie
         subtotal: subtotal,
         contingency: subtotal * 0.1,
         tax: subtotal * 0.21,
-        grandTotal: subtotal * 1.31, // +10% contingency +21% tax
+        grandTotal: subtotal * 1.31,
         currency: "EUR",
         summary: raw.summary_text || "Based on Renisol Pricing Engine logic."
       };
@@ -269,7 +273,13 @@ export const calculateRenovationCost = async (spec: ProjectSpec, tier: BudgetTie
   }
 };
 
-export const generateRenovationRender = async (spec: ProjectSpec, style: RenovationStyle, materials: MaterialConfig, base64Shell: string): Promise<string> => {
+export const generateRenovationRender = async (
+  spec: ProjectSpec,
+  styleProfile: StyleProfile,
+  materials: MaterialConfig,
+  base64Shell: string,
+  products: DatabaseProduct[]
+): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: getApiKey() });
   const model = "gemini-3-pro-image-preview";
   const mimeType = getMimeType(base64Shell);
@@ -277,17 +287,18 @@ export const generateRenovationRender = async (spec: ProjectSpec, style: Renovat
   const sinkLocation = spec.existingFixtures.find(f => f.type === FixtureType.SINK);
   const sinkCoords = sinkLocation ? `X:${sinkLocation.positionX}%, Y:${sinkLocation.positionY}%` : "standard position";
 
-  // Helper to look up image URLs from catalog based on selected product name
   const getProductImage = (name: string): string => {
-    return PRODUCT_CATALOG.find(p => p.name === name)?.imageUrl || "";
+    return products.find(p => p.name === name)?.image_url || "";
   };
 
-  // Optimized for Multi-modal Reference & Material Injection with Specific Product URLs
+  const styleDesc = styleProfile.summary;
+  const topTags = styleProfile.tags.slice(0, 8).map(t => t.tag).join(', ');
+
   const prompt = `
     TASK: Architectural Visualization (Renovation After-State)
     BASE_IMAGE: The provided empty shell image.
-    
-    REFERENCE_MATERIALS: 
+
+    REFERENCE_MATERIALS:
     - Floor/Wall: ${materials.floorTile} (Reference: ${getProductImage(materials.floorTile)})
     - Faucets: ${materials.faucetFinish} (Reference: ${getProductImage(materials.faucetFinish)})
     - Toilet: ${materials.toiletType} (Reference: ${getProductImage(materials.toiletType)})
@@ -296,13 +307,15 @@ export const generateRenovationRender = async (spec: ProjectSpec, style: Renovat
     ${materials.bathtubType ? `- Bathtub: ${materials.bathtubType} (Reference: ${getProductImage(materials.bathtubType)})` : ''}
     ${materials.showerType ? `- Shower: ${materials.showerType} (Reference: ${getProductImage(materials.showerType)})` : ''}
 
-    STYLE: ${style}
+    STYLE:
+    Description: ${styleDesc}
+    Key characteristics: ${topTags}
 
     PROMPT:
     "Apply the reference materials to the base room shell.
     - Apply ${materials.floorTile} to the floor and wet-area walls (seamless texture).
     - Place ${materials.vanityType} at ${sinkCoords}.
-    - Render in the style of: ${style}.
+    - Render emphasizing these design qualities: ${topTags}.
     - Lighting: Cinematic, soft morning light, volumetric dust.
     - Quality: 8k, Unreal Engine 5, Raytraced Global Illumination.
     - Constraint: Do not hallucinate new windows. Keep geometry of BASE_IMAGE."

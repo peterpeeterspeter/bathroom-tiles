@@ -1,12 +1,12 @@
 import { supabase } from './supabase';
-import { MaterialConfig, RenovationStyle } from '../types';
+import { MaterialConfig, StyleProfile } from '../types';
 
 interface LeadPayload {
   name: string;
   email: string;
   phone: string;
   postcode: string;
-  selectedStyle: RenovationStyle;
+  styleProfile: StyleProfile;
   materialConfig: MaterialConfig;
   selectedProducts: Record<string, string>;
   estimatedTotalLow: number;
@@ -17,12 +17,15 @@ interface LeadPayload {
 }
 
 export async function submitLead(payload: LeadPayload): Promise<{ success: boolean; error?: string }> {
+  const styleName = payload.styleProfile.presetName || payload.styleProfile.summary.slice(0, 50);
+
   const { error } = await supabase.from('leads').insert({
     name: payload.name,
     email: payload.email,
     phone: payload.phone,
     postcode: payload.postcode,
-    selected_style: payload.selectedStyle,
+    selected_style: styleName,
+    style_profile: payload.styleProfile,
     material_config: payload.materialConfig,
     selected_products: payload.selectedProducts,
     estimated_total_low: payload.estimatedTotalLow,
@@ -30,6 +33,7 @@ export async function submitLead(payload: LeadPayload): Promise<{ success: boole
     room_width: payload.roomWidth,
     room_length: payload.roomLength,
     room_area: payload.roomArea,
+    reference_images: payload.styleProfile.referenceImageUrls || [],
   });
 
   if (error) {

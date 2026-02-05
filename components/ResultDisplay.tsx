@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { Download, Image as ImageIcon, Info, Smartphone, Calendar, Euro, Loader2 } from 'lucide-react';
-import { Estimate, RenovationStyle } from '../types';
+import { Estimate, StyleProfile } from '../types';
 import { BeforeAfterSlider } from './BeforeAfterSlider';
 import { generateResultPdf } from '../lib/pdfService';
 
 interface ResultDisplayProps {
   name: string;
-  selectedStyle: RenovationStyle;
+  styleProfile: StyleProfile;
   estimate: Estimate;
   renderUrl: string;
   imagePreview: string;
   choices: { category: string; product: string }[];
 }
 
-export const ResultDisplay = ({ name, selectedStyle, estimate, renderUrl, imagePreview, choices }: ResultDisplayProps) => {
+export const ResultDisplay = ({ name, styleProfile, estimate, renderUrl, imagePreview, choices }: ResultDisplayProps) => {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const totalLow = Math.round((estimate.grandTotal) * 0.85);
   const totalHigh = Math.round((estimate.grandTotal) * 1.15);
@@ -23,7 +23,7 @@ export const ResultDisplay = ({ name, selectedStyle, estimate, renderUrl, imageP
     try {
       await generateResultPdf({
         name,
-        selectedStyle,
+        selectedStyle: styleProfile.presetName || styleProfile.summary.slice(0, 40),
         estimateLow: totalLow,
         estimateHigh: totalHigh,
         beforeImage: imagePreview,
@@ -45,7 +45,7 @@ export const ResultDisplay = ({ name, selectedStyle, estimate, renderUrl, imageP
         <div className="max-w-xl">
           <p className="text-accent font-black uppercase tracking-[0.4em] text-[10px] mb-3 md:mb-4">Uw persoonlijk voorstel</p>
           <h2 className="text-3xl md:text-6xl font-black tracking-tighter leading-none mb-4 md:mb-6">Uw Nieuwe <span className="text-accent">Badkamer</span>.</h2>
-          <p className="text-slate-500 font-bold text-sm md:text-lg leading-relaxed">Op basis van uw keuzes voor de <span className="text-black uppercase">{selectedStyle}</span> mood hebben we dit unieke voorstel samengesteld.</p>
+          <p className="text-slate-500 font-bold text-sm md:text-lg leading-relaxed">Op basis van uw stijlprofiel hebben we dit unieke voorstel samengesteld.</p>
         </div>
         <div className="flex gap-3 md:gap-4 w-full md:w-auto">
            <button
