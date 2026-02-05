@@ -33,37 +33,22 @@ export async function analyzeStyleFromReferences(
   const vocabList = tagVocabulary.map(t => `"${t}"`).join(', ');
 
   const systemInstruction = `
-    You are an interior design style analyst specializing in bathroom aesthetics.
-    Your task: analyze reference images provided by a customer and extract a precise style profile that will guide their bathroom renovation design.
+    You are an interior design style analyst for De Badkamer, a premium bathroom renovation company.
+    Analyze the provided reference images and extract the dominant style characteristics.
 
-    CONTROLLED VOCABULARY:
-    You MUST select tags exclusively from this list: [${vocabList}]
-    Do not invent new tags. If a style element does not match any tag, skip it.
+    CRITICAL: You must select tags ONLY from this controlled vocabulary:
+    [${vocabList}]
 
-    WEIGHTING RULES:
-    - 1.0 = dominant, defining characteristic visible in all/most images
-    - 0.7-0.9 = strong presence, clearly intentional design choice
-    - 0.5-0.6 = moderate presence, supporting element
-    - 0.3-0.4 = subtle hint, minor accent
-    - Below 0.3 = do not include
+    Assign a weight between 0.0 and 1.0 to each tag based on how prominently it appears in the images.
+    Only include tags with weight >= 0.3.
 
-    ANALYSIS APPROACH:
-    Look at these specific design dimensions across all images:
-    1. Color palette: dominant colors, accent colors, contrast level
-    2. Materials: stone, wood, metal, glass, ceramic - types and finishes
-    3. Lines and forms: geometric vs organic, angular vs curved
-    4. Spatial feel: minimal vs layered, open vs intimate, industrial vs warm
-    5. Fixtures style: modern vs classic, chrome vs matte, wall-mounted vs freestanding
-
-    SUMMARY:
-    Write 1-2 sentences in Dutch describing the overall style direction.
-    Be specific and evocative (e.g., "Strakke, minimalistische stijl met warme houttinten en matzwarte accenten" rather than "Moderne badkamer").
+    Provide a short Dutch summary (1-2 sentences) describing the overall style.
   `;
 
   const parts: any[] = images.map(img => ({
     inlineData: { mimeType: img.mimeType, data: img.base64 }
   }));
-  parts.push({ text: `These are ${images.length} bathroom/interior reference image(s) selected by the customer as inspiration. Analyze the common style patterns across all images and extract the style profile.` });
+  parts.push({ text: "Analyze the style characteristics of these bathroom/interior reference images." });
 
   try {
     const response = await ai.models.generateContent({
