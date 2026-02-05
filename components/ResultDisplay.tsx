@@ -36,7 +36,7 @@ export const ResultDisplay = ({ name, styleProfile, estimate, renderUrl, imagePr
   };
 
   const handleAppointment = () => {
-    window.open('mailto:info@renisol.be?subject=Afspraak%20badkamerrenovatie&body=Beste%20Renisol%2C%0A%0AGraag%20zou%20ik%20een%20afspraak%20maken%20voor%20een%20persoonlijk%20adviesgesprek%20over%20mijn%20badkamerrenovatie.%0A%0AMet%20vriendelijke%20groeten%2C%0A' + encodeURIComponent(name), '_blank');
+    window.open('mailto:info@debadkamer.com?subject=Afspraak%20badkamerrenovatie&body=Beste%20De%20Badkamer%2C%0A%0AGraag%20zou%20ik%20een%20afspraak%20maken%20voor%20een%20persoonlijk%20adviesgesprek%20over%20mijn%20badkamerrenovatie.%0A%0AMet%20vriendelijke%20groeten%2C%0A' + encodeURIComponent(name), '_blank');
   };
 
   return (

@@ -33,7 +33,7 @@ export async function analyzeStyleFromReferences(
   const vocabList = tagVocabulary.map(t => `"${t}"`).join(', ');
 
   const systemInstruction = `
-    You are an interior design style analyst for Renisol Bouwgroep, a premium bathroom renovation company.
+    You are an interior design style analyst for De Badkamer, a premium bathroom renovation company.
     Analyze the provided reference images and extract the dominant style characteristics.
 
     CRITICAL: You must select tags ONLY from this controlled vocabulary:

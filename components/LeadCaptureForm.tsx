@@ -40,8 +40,8 @@ export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
       <div className="bg-white p-8 md:p-12 border-4 border-black shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] rounded-2xl md:rounded-[3rem]">
         <div className="text-center mb-8 md:mb-10">
           <div className="w-16 h-16 bg-accent rounded-2xl flex items-center justify-center text-white shadow-xl mx-auto mb-6"><CheckCircle size={32} /></div>
-          <h2 className="text-2xl md:text-4xl font-black tracking-tighter mb-4 leading-tight uppercase">Uw voorstel staat klaar!</h2>
-          <p className="text-slate-500 font-bold text-sm">Vul uw gegevens in om uw gepersonaliseerde visualisatie en prijsindicatie te bekijken.</p>
+          <h2 className="text-2xl md:text-4xl font-black tracking-tighter mb-4 leading-tight uppercase">Ontvang uw prijsindicatie</h2>
+          <p className="text-slate-500 font-bold text-sm">Vul uw gegevens in om uw prijsindicatie en PDF-voorstel te ontvangen.</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
           <div className="space-y-3 md:space-y-4">
@@ -70,7 +70,7 @@ export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
               />
             </div>
             <span className="text-[11px] text-slate-500 leading-relaxed">
-              Ik ga akkoord met de verwerking van mijn persoonsgegevens conform de privacyverklaring van Renisol Bouwgroep. Mijn gegevens worden gebruikt om mij een gepersonaliseerd voorstel te bezorgen en contact met mij op te nemen.
+              Ik ga akkoord met de verwerking van mijn persoonsgegevens conform de privacyverklaring van De Badkamer. Mijn gegevens worden gebruikt om mij een gepersonaliseerd voorstel te bezorgen en contact met mij op te nemen.
             </span>
           </label>
 
@@ -81,7 +81,7 @@ export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
               !gdprConsent ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-black text-white hover:bg-slate-800 shadow-black/20'
             }`}
           >
-            {submitting ? <Loader2 size={20} className="animate-spin" /> : <>Bekijk Resultaat <ArrowRight size={20}/></>}
+            {submitting ? <Loader2 size={20} className="animate-spin" /> : <>Bekijk Prijsindicatie <ArrowRight size={20}/></>}
           </button>
         </form>
       </div>

@@ -9,7 +9,7 @@ interface LegalModalProps {
 }
 
 const privacyContent = `
-Renisol Bouwgroep Systems BV hecht groot belang aan de bescherming van uw persoonsgegevens.
+DeBadkamer.com hecht groot belang aan de bescherming van uw persoonsgegevens.
 
 Welke gegevens verzamelen wij?
 - Naam, e-mailadres, telefoonnummer en postcode (bij invulling van het contactformulier)
@@ -23,7 +23,7 @@ Waarvoor gebruiken wij uw gegevens?
 - Om onze dienstverlening te verbeteren (geanonimiseerde analyses)
 
 Uw rechten
-U heeft recht op inzage, correctie en verwijdering van uw persoonsgegevens. Neem hiervoor contact op via privacy@renisol.be.
+U heeft recht op inzage, correctie en verwijdering van uw persoonsgegevens. Neem hiervoor contact op via privacy@debadkamer.com.
 
 Bewaartermijn
 Uw gegevens worden maximaal 24 maanden bewaard na uw laatste interactie, tenzij u eerder om verwijdering verzoekt.
@@ -32,7 +32,7 @@ Gegevens worden niet gedeeld met derden buiten de noodzakelijke dienstverlening.
 `.trim();
 
 const termsContent = `
-Gebruiksvoorwaarden Renisol Digitale Badkamer Tool
+Gebruiksvoorwaarden De Badkamer Digitale Badkamer Tool
 
 Deze tool is een pre-sales instrument bedoeld ter inspiratie en voorbereiding op een persoonlijk verkoopgesprek.
 
@@ -46,10 +46,10 @@ Geen offerte
 De getoonde prijzen vormen geen offerte en scheppen geen contractuele verbintenis. Definitieve prijsafspraken worden uitsluitend gemaakt na persoonlijk adviesgesprek en technische opname.
 
 Productkeuzes
-De getoonde productselecties dienen als inspiratierichting. Definitieve productkeuze gebeurt steeds samen met een Renisol-verkoper. Exacte merken, types en afmetingen zijn niet gegarandeerd.
+De getoonde productselecties dienen als inspiratierichting. Definitieve productkeuze gebeurt steeds samen met een De Badkamer-adviseur. Exacte merken, types en afmetingen zijn niet gegarandeerd.
 
 Aansprakelijkheid
-Renisol Bouwgroep Systems BV is niet aansprakelijk voor beslissingen genomen op basis van de indicatieve informatie in deze tool.
+DeBadkamer.com is niet aansprakelijk voor beslissingen genomen op basis van de indicatieve informatie in deze tool.
 `.trim();
 
 const cookiesContent = `
@@ -64,7 +64,7 @@ Noodzakelijke cookies
 
 Door gebruik te maken van deze tool gaat u akkoord met het plaatsen van strikt noodzakelijke cookies.
 
-Voor vragen over ons cookiebeleid kunt u contact opnemen via privacy@renisol.be.
+Voor vragen over ons cookiebeleid kunt u contact opnemen via privacy@debadkamer.com.
 `.trim();
 
 const contentMap = {

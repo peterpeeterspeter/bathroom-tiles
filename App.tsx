@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle, Image as ImageIcon, Info } from 'lucide-react';
+import { BeforeAfterSlider } from './components/BeforeAfterSlider';
 import { analyzeBathroomInput, calculateRenovationCost, generateRenovationRender, generateEmptySpace } from './services/geminiService';
 import { ProjectSpec, Estimate, StyleProfile, BudgetTier, MaterialConfig, DatabaseProduct } from './types';
 import { Logo } from './components/Logo';
@@ -235,7 +236,30 @@ export default function App() {
         {step === 4 && !loading && !error && estimate && renderUrl && (
           <div className="animate-fade-in max-w-6xl mx-auto">
             {!leadSubmitted ? (
-              <LeadCaptureForm onSubmit={handleLeadSubmit} />
+              <div className="space-y-12 md:space-y-16">
+                <div className="text-center max-w-2xl mx-auto">
+                  <p className="text-accent font-black uppercase tracking-[0.4em] text-[10px] mb-3 md:mb-4">Uw resultaat</p>
+                  <h2 className="text-3xl md:text-5xl font-black tracking-tighter leading-none mb-4 md:mb-6">Uw Nieuwe <span className="text-accent">Badkamer</span>.</h2>
+                  <p className="text-slate-500 font-bold text-sm md:text-base leading-relaxed">Op basis van uw stijlprofiel hebben we deze visualisatie samengesteld.</p>
+                </div>
+
+                <div className="max-w-3xl mx-auto space-y-6 md:space-y-8">
+                  <div className="flex items-center gap-3 justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center text-accent"><ImageIcon size={18} /></div>
+                    <h3 className="font-black uppercase tracking-widest text-sm text-slate-400">Interactieve Visualisatie</h3>
+                  </div>
+                  <div className="relative">
+                    <BeforeAfterSlider before={imagePreview!} after={renderUrl} />
+                    <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-accent/20 rounded-full blur-[40px] -z-10" />
+                  </div>
+                  <div className="bg-slate-100 p-6 md:p-8 rounded-2xl md:rounded-[2rem] border-2 border-white shadow-lg">
+                    <h4 className="font-black uppercase text-xs tracking-widest mb-3 md:mb-4 flex items-center gap-2 text-slate-400"><Info size={16} /> Juridische Kadering</h4>
+                    <p className="text-[10px] font-bold text-slate-500 leading-relaxed uppercase tracking-widest">Deze visualisatie is een AI-generatie op basis van de ingevoerde data en dient puur ter inspiratie. Afmetingen en productdetails kunnen in de realiteit afwijken. Een definitieve opname ter plaatse is noodzakelijk.</p>
+                  </div>
+                </div>
+
+                <LeadCaptureForm onSubmit={handleLeadSubmit} />
+              </div>
             ) : (
               <ResultDisplay
                 name={leadName}
@@ -256,14 +280,14 @@ export default function App() {
              <Logo />
            </div>
            <p className="text-[10px] md:text-xs font-bold text-slate-400 leading-relaxed max-w-xl mx-auto uppercase tracking-widest mb-8 md:mb-12">
-             Renisol Bouwgroep is uw partner voor hoogwaardige badkamerrenovaties. Onze digitale tool is de eerste stap naar uw droomruimte.
+             De Badkamer is uw partner voor hoogwaardige badkamerrenovaties. Onze digitale tool is de eerste stap naar uw droomruimte.
            </p>
            <div className="flex justify-center gap-6 md:gap-12 text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">
              <button onClick={() => openLegal('privacy', 'Privacyverklaring')} className="hover:text-black transition-colors">Privacy</button>
              <button onClick={() => openLegal('terms', 'Gebruiksvoorwaarden')} className="hover:text-black transition-colors">Voorwaarden</button>
              <button onClick={() => openLegal('cookies', 'Cookiebeleid')} className="hover:text-black transition-colors">Cookies</button>
            </div>
-           <p className="mt-10 md:mt-16 text-[10px] font-black text-slate-200 uppercase tracking-widest">&copy; {new Date().getFullYear()} Renisol Bouwgroep Systems BV.</p>
+           <p className="mt-10 md:mt-16 text-[10px] font-black text-slate-200 uppercase tracking-widest">&copy; {new Date().getFullYear()} DeBadkamer.com. Alle rechten voorbehouden.</p>
         </div>
       </footer>
 

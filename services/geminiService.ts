@@ -33,7 +33,7 @@ export const analyzeBathroomInput = async (base64Image: string, mimeType: string
   const model = "gemini-3-pro-preview";
 
   const systemInstruction = `
-    You are Renisol's Lead Architectural AI.
+    You are De Badkamer's Lead Architectural AI.
     Analyze the input image as a 3D spatial environment, not a 2D picture.
 
     TASK:
@@ -170,7 +170,7 @@ export const calculateRenovationCost = async (
   }));
 
   const systemInstruction = `
-    You are the Renisol Pricing Engine.
+    You are the De Badkamer Pricing Engine.
     You do not guess prices. You map requirements to specific Catalog IDs and Labor Operations.
 
     CONTEXT:
@@ -264,7 +264,7 @@ export const calculateRenovationCost = async (
         tax: subtotal * 0.21,
         grandTotal: subtotal * 1.31,
         currency: "EUR",
-        summary: raw.summary_text || "Based on Renisol Pricing Engine logic."
+        summary: raw.summary_text || "Based on De Badkamer Pricing Engine logic."
       };
     }
     throw new Error("Estimate failed");

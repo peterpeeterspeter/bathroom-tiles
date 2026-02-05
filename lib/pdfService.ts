@@ -38,12 +38,12 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(28);
   doc.setFont('helvetica', 'bold');
-  doc.text('renisol', margin, 30);
+  doc.text('De Badkamer', margin, 30);
   doc.setFontSize(8);
-  doc.text('BOUWGROEP', margin, 38);
+  doc.text('VAKMANSCHAP IN RENOVATIE', margin, 38);
 
   doc.setFontSize(9);
-  doc.setTextColor(244, 116, 59);
+  doc.setTextColor(12, 45, 72);
   doc.text('INDICATIEF VOORSTEL', pageWidth - margin, 30, { align: 'right' });
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(7);
@@ -72,7 +72,7 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
   doc.text(payload.selectedStyle, margin + 6, y + 20);
   y += 36;
 
-  doc.setFillColor(244, 116, 59);
+  doc.setFillColor(12, 45, 72);
   doc.roundedRect(margin, y, contentWidth, 32, 3, 3, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(8);
@@ -118,7 +118,7 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
 
     doc.setFontSize(6);
     doc.setTextColor(200, 200, 200);
-    doc.text('RENISOL BOUWGROEP - INDICATIEF', margin + imgWidth / 2, y + imgHeight - 4, { align: 'center' });
+    doc.text('DE BADKAMER - INDICATIEF', margin + imgWidth / 2, y + imgHeight - 4, { align: 'center' });
     y += imgHeight + 8;
   } catch {
     // skip image if it fails
@@ -138,13 +138,13 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
     'DISCLAIMER: Dit document is een indicatief voorstel en vormt geen bindende offerte.',
     'Alle visualisaties zijn AI-generaties en dienen puur ter inspiratie. Afmetingen en productdetails kunnen in de realiteit afwijken.',
     'Prijzen zijn indicatief en gebaseerd op gemiddelde markttarieven. Een definitieve opname en offerte volgt na persoonlijk adviesgesprek.',
-    'Definitieve productkeuze gebeurt steeds samen met een Renisol-verkoper. Exacte merken, types en afmetingen zijn niet gegarandeerd.',
-    `(C) ${new Date().getFullYear()} Renisol Bouwgroep Systems BV. Alle rechten voorbehouden.`,
+    'Definitieve productkeuze gebeurt steeds samen met een De Badkamer-adviseur. Exacte merken, types en afmetingen zijn niet gegarandeerd.',
+    `(C) ${new Date().getFullYear()} DeBadkamer.com. Alle rechten voorbehouden.`,
   ];
   disclaimerLines.forEach((line) => {
     doc.text(line, margin, y);
     y += 4;
   });
 
-  doc.save(`Renisol_Voorstel_${payload.name.replace(/\s+/g, '_')}.pdf`);
+  doc.save(`DeBadkamer_Voorstel_${payload.name.replace(/\s+/g, '_')}.pdf`);
 }
