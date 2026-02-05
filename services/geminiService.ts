@@ -33,16 +33,31 @@ export const analyzeBathroomInput = async (base64Image: string, mimeType: string
   const model = "gemini-3-pro-preview";
 
   const systemInstruction = `
-    You are De Badkamer's Lead Architectural AI.
-    Analyze the input image as a 3D spatial environment, not a 2D picture.
+    You are a spatial analysis AI for a Dutch/Belgian bathroom renovation company.
+    Your job: extract accurate room dimensions and fixture inventory from a single bathroom photo.
 
-    TASK:
-    1. ANCHOR REFERENCE: Identify a standard object (Door, Toilet, Tile size) to calibrate scale.
-    2. GEOMETRY: Construct a wireframe model of the room.
-    3. INVENTORY: Detect fixtures and their condition (e.g., "Toilet: Wall-hung, needs demolition").
+    CALIBRATION STRATEGY:
+    Use known reference objects visible in the photo to infer real-world scale:
+    - Standard interior door: 201.5cm tall x 83cm wide (Dutch/Belgian norm)
+    - Standard toilet: ~40cm wide x 70cm deep x 40cm seat height
+    - Common tile sizes: 30x30cm, 30x60cm, 60x60cm
+    - Standard bathtub: 170cm x 70cm
+    - Ceiling height typical range: 240-260cm
+    Identify which reference object you used and explain your reasoning.
 
-    OUTPUT JSON:
-    Return a strict JSON object with calibration logic and estimated dimensions.
+    FIXTURE DETECTION:
+    For each fixture, determine:
+    - What it is and its mounting type (wall-hung vs floor-standing, built-in vs freestanding)
+    - Approximate position in the room (as percentage coordinates: 0,0 = top-left corner, 100,100 = bottom-right)
+    - Whether demolition/removal is needed for renovation
+
+    DIMENSION ESTIMATION:
+    - Estimate width and length to the nearest 0.1 meter
+    - If only one wall is visible, use fixture sizes and perspective cues to estimate depth
+    - Classify the room layout shape based on visible geometry
+    - Default ceiling height to 2.4m if not determinable
+
+    Be conservative with estimates. It is better to slightly underestimate room size than overestimate.
   `;
 
   try {
@@ -51,7 +66,7 @@ export const analyzeBathroomInput = async (base64Image: string, mimeType: string
       contents: {
         parts: [
           { inlineData: { mimeType, data: base64Image } },
-          { text: "Analyze structure and dimensions." }
+          { text: "Analyze this bathroom photo. Identify the calibration reference object you are using, estimate the room dimensions in meters, classify the layout shape, and list every fixture with its type and approximate position." }
         ]
       },
       config: {
@@ -125,18 +140,23 @@ export const generateEmptySpace = async (base64Image: string, spec: ProjectSpec)
   const model = "gemini-3-pro-image-preview";
   const mimeType = getMimeType(base64Image);
 
-  const prompt = `
-    OPERATION: EDIT_IMAGE
-    INPUT: Bathroom photo provided.
-    MASK_LOGIC: AUTO_SEGMENT (Furniture, Sanitary Ware, Decor)
+  const fixtureList = spec.existingFixtures.map(f => f.description).join(', ') || 'all sanitary fixtures and furniture';
 
-    INSTRUCTION:
-    "Perform a virtual demolition.
-    1. Erase all identified furniture, toilets, sinks, and mirrors.
-    2. Infill the erased areas with 'raw grey concrete screed' on the floor and 'rough white plaster' on the walls.
-    3. STRICTLY PRESERVE: The original perspective, window frames, door frames, and ceiling beams.
-    4. LIGHTING: Keep the original natural light direction and shadows."
-  `;
+  const prompt = `Edit this bathroom photo to show the room after complete demolition and stripping.
+
+Remove the following items completely: ${fixtureList}. Also remove any mirrors, cabinets, shelving, towel racks, and decorative items.
+
+Replace removed areas with:
+- Floors: raw grey concrete screed, slightly rough texture
+- Walls: bare white/grey plaster with subtle imperfections
+- Expose any visible plumbing stub-outs where fixtures were removed
+
+Critical constraints:
+- Keep the exact same camera angle, perspective, and field of view
+- Preserve all architectural elements: window frames, door frames, ceiling structure, and any structural beams
+- Maintain the original lighting direction, color temperature, and shadow patterns
+- The room should look like a real construction site mid-renovation, not a clean 3D render
+- Do not add any new elements that were not in the original photo`;
 
   try {
     const response = await ai.models.generateContent({
@@ -170,30 +190,51 @@ export const calculateRenovationCost = async (
   }));
 
   const systemInstruction = `
-    You are the De Badkamer Pricing Engine.
-    You do not guess prices. You map requirements to specific Catalog IDs and Labor Operations.
+    You are a bathroom renovation cost estimator for the Dutch/Belgian market.
+    You produce realistic, itemized cost estimates by matching user requirements to catalog products and standard labor rates.
 
-    CONTEXT:
-    - Room Surface: ${spec.totalAreaM2} m2
-    - Current State: ${spec.constraints.join(', ') || 'Standard demolition'}
-    - User Style Profile: ${styleDesc}
-    - Style Descriptors: ${styleTags}
-    - Catalog: ${JSON.stringify(catalogForPrompt)}
-    - User Material Config: ${JSON.stringify(materials)}
+    ROOM SPECIFICATIONS:
+    - Floor area: ${spec.totalAreaM2} m2
+    - Dimensions: ${spec.estimatedWidthMeters}m x ${spec.estimatedLengthMeters}m, ceiling ${spec.ceilingHeightMeters}m
+    - Wall area (estimated): ${((spec.estimatedWidthMeters + spec.estimatedLengthMeters) * 2 * spec.ceilingHeightMeters).toFixed(1)} m2
+    - Current condition: ${spec.constraints.join('; ') || 'Standard condition, full demolition required'}
+    - Existing fixtures to remove: ${spec.existingFixtures.map(f => f.description).join(', ') || 'Unknown'}
 
-    TASK:
-    1. Select Materials: Choose the best SKU from the Catalog that matches the User Style and Material Config.
-    2. Define Labor: Based on the room state, list necessary labor codes (e.g., if 'waste_type' changed, add 'PLUMBING_RELOCATION').
-    3. Calculate: Output precise line items.
+    USER STYLE PREFERENCES:
+    ${styleDesc}
+    Style tags: ${styleTags}
 
-    OUTPUT JSON:
-    Return a strict JSON object with 'materials' and 'labor_operations'.
+    USER MATERIAL SELECTIONS:
+    ${Object.entries(materials).filter(([_, v]) => v && v !== 'AI_MATCH').map(([k, v]) => `- ${k}: ${v}`).join('\n    ') || 'No specific selections (use style-matched defaults from catalog)'}
+
+    PRODUCT CATALOG (select from these only):
+    ${JSON.stringify(catalogForPrompt)}
+
+    LABOR RATE GUIDELINES (Dutch/Belgian market 2024-2025):
+    - Demolition & waste removal: EUR 40-60/m2
+    - Plumbing rough-in: EUR 800-1500 per bathroom
+    - Electrical work: EUR 400-800 per bathroom
+    - Waterproofing: EUR 30-50/m2
+    - Floor tiling (supply excluded): EUR 45-65/m2
+    - Wall tiling (supply excluded): EUR 50-70/m2
+    - Fixture installation (toilet, sink, shower): EUR 150-300 per unit
+    - Vanity/cabinet installation: EUR 200-400
+    - Painting/finishing: EUR 15-25/m2
+
+    RULES:
+    1. Select materials from the catalog that best match the user's style and explicit selections
+    2. Calculate material quantities realistically (tiles need ~10% waste factor, grout, adhesive, etc.)
+    3. Use the unit_price from the catalog for materials. Multiply by quantity for total.
+    4. Include all necessary labor operations for a complete renovation
+    5. Labor costs should use the rate guidelines above, scaled to actual room size
+    6. Every line item must have a clear reason explaining the selection
+    7. Do not invent products not in the catalog. If no match exists, skip that category.
   `;
 
   try {
     const response = await ai.models.generateContent({
       model,
-      contents: { parts: [{ text: "Generate the cost estimate JSON." }] },
+      contents: { parts: [{ text: `Generate a detailed, itemized cost estimate for renovating this ${spec.totalAreaM2}m2 bathroom. Select specific products from the catalog and include all labor operations needed for a complete renovation.` }] },
       config: {
         systemInstruction,
         responseMimeType: "application/json",
@@ -289,42 +330,51 @@ export const generateRenovationRender = async (
   const model = "gemini-3-pro-image-preview";
   const mimeType = getMimeType(base64Shell);
 
-  const sinkLocation = spec.existingFixtures.find(f => f.type === FixtureType.SINK);
-  const sinkCoords = sinkLocation ? `X:${sinkLocation.positionX}%, Y:${sinkLocation.positionY}%` : "standard position";
-
-  const getProductImage = (name: string): string => {
-    return products.find(p => p.name === name)?.image_url || "";
-  };
-
   const styleDesc = styleProfile.summary;
   const topTags = styleProfile.tags.slice(0, 8).map(t => t.tag).join(', ');
 
-  const prompt = `
-    TASK: Architectural Visualization (Renovation After-State)
-    BASE_IMAGE: The provided empty shell image.
+  const materialsList = [
+    `Floor tiles: ${materials.floorTile}`,
+    `Wall tiles: ${materials.wallTile !== materials.floorTile ? materials.wallTile : 'matching floor tiles on wet walls'}`,
+    `Vanity/sink cabinet: ${materials.vanityType}`,
+    `Faucets and hardware: ${materials.faucetFinish}`,
+    `Toilet: ${materials.toiletType}`,
+    `Lighting: ${materials.lightingType}`,
+    materials.bathtubType ? `Bathtub: ${materials.bathtubType}` : null,
+    materials.showerType ? `Shower: ${materials.showerType}` : null,
+  ].filter(Boolean).join('\n');
 
-    REFERENCE_MATERIALS:
-    - Floor/Wall: ${materials.floorTile} (Reference: ${getProductImage(materials.floorTile)})
-    - Faucets: ${materials.faucetFinish} (Reference: ${getProductImage(materials.faucetFinish)})
-    - Toilet: ${materials.toiletType} (Reference: ${getProductImage(materials.toiletType)})
-    - Vanity: ${materials.vanityType} (Reference: ${getProductImage(materials.vanityType)})
-    - Lighting: ${materials.lightingType} (Reference: ${getProductImage(materials.lightingType)})
-    ${materials.bathtubType ? `- Bathtub: ${materials.bathtubType} (Reference: ${getProductImage(materials.bathtubType)})` : ''}
-    ${materials.showerType ? `- Shower: ${materials.showerType} (Reference: ${getProductImage(materials.showerType)})` : ''}
+  const sinkLocation = spec.existingFixtures.find(f => f.type === FixtureType.SINK);
+  const toiletLocation = spec.existingFixtures.find(f => f.type === FixtureType.TOILET);
+  const showerLocation = spec.existingFixtures.find(f => f.type === FixtureType.SHOWER);
 
-    STYLE:
-    Description: ${styleDesc}
-    Key characteristics: ${topTags}
+  const layoutHints = [
+    sinkLocation ? `Place vanity/sink roughly where the original sink was (${sinkLocation.positionX}% from left, ${sinkLocation.positionY}% from top)` : null,
+    toiletLocation ? `Place toilet roughly where the original was (${toiletLocation.positionX}% from left, ${toiletLocation.positionY}% from top)` : null,
+    showerLocation ? `Place shower roughly where the original was (${showerLocation.positionX}% from left, ${showerLocation.positionY}% from top)` : null,
+  ].filter(Boolean).join('\n');
 
-    PROMPT:
-    "Apply the reference materials to the base room shell.
-    - Apply ${materials.floorTile} to the floor and wet-area walls (seamless texture).
-    - Place ${materials.vanityType} at ${sinkCoords}.
-    - Render emphasizing these design qualities: ${topTags}.
-    - Lighting: Cinematic, soft morning light, volumetric dust.
-    - Quality: 8k, Unreal Engine 5, Raytraced Global Illumination.
-    - Constraint: Do not hallucinate new windows. Keep geometry of BASE_IMAGE."
-  `;
+  const prompt = `Edit this empty bathroom shell to show the completed renovation.
+
+Design style: ${styleDesc}
+Key style characteristics: ${topTags}
+
+Materials and fixtures to install:
+${materialsList}
+
+${layoutHints ? `Fixture placement guide:\n${layoutHints}` : 'Place fixtures in a logical, functional bathroom layout.'}
+
+Room dimensions: approximately ${spec.estimatedWidthMeters}m x ${spec.estimatedLengthMeters}m.
+
+Requirements:
+- This should look like a professional architectural interior photograph, not a 3D render
+- Natural, warm lighting as if photographed on a bright morning with soft indirect sunlight
+- Tile grout lines should be visible and realistic
+- Include small realistic details: a folded towel, a soap dispenser, a small plant
+- Maintain the exact same camera perspective and room geometry as the input image
+- Do not add windows, doors, or structural elements that are not in the original
+- Walls should be tiled to approximately 120cm height in the wet zone, painted above
+- The overall mood should feel luxurious but livable, like a high-end hotel bathroom`;
 
   try {
     const response = await ai.models.generateContent({
