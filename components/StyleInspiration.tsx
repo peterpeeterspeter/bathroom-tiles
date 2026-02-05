@@ -115,6 +115,7 @@ export const StyleInspiration = ({ onStyleResolved }: StyleInspirationProps) => 
 
     setAnalyzing(true);
     try {
+      if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) await window.aistudio.openSelectKey();
       const tags = await fetchStyleTags();
       const images = referenceImages.map(img => ({
         base64: img.base64,

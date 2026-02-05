@@ -2,9 +2,14 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { ProjectSpec, Estimate, BudgetTier, FixtureType, MaterialConfig, StyleProfile, DatabaseProduct } from "../types";
 
 const getApiKey = (): string => {
-  if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-    return process.env.API_KEY;
+  if (typeof process !== 'undefined' && process.env) {
+    if (process.env.API_KEY) return process.env.API_KEY;
+    if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
   }
+  try {
+    const viteKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
+    if (viteKey) return viteKey;
+  } catch {}
   return '';
 };
 
