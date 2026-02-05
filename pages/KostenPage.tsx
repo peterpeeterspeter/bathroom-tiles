@@ -1,11 +1,11 @@
 import React from 'react';
-import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle, Info } from 'lucide-react';
 import { InlineLeadForm } from '../components/InlineLeadForm';
+import { useSEO } from '../lib/useSEO';
 
 const mainCosts = [
-  { item: 'Complete badkamer renoveren (gem. 9 m\u00B2)', low: '3.500', high: '15.000', note: '' },
+  { item: 'Complete badkamer renoveren (gem. 9 m²)', low: '3.500', high: '15.000', note: '' },
   { item: 'Ligbad', low: '700', high: '1.500', note: 'Basic of luxe ligbad' },
   { item: 'Douche', low: '500', high: '2.000', note: 'Cabine- of inloopdouche' },
   { item: 'Toilet', low: '450', high: '900', note: '' },
@@ -18,46 +18,43 @@ const mainCosts = [
 const tiers = [
   {
     name: 'Budget',
-    range: '\u20AC 3.500 \u2013 \u20AC 5.500',
+    range: '€ 3.500 – € 5.500',
     desc: 'Functionele, eenvoudige renovatie met standaard materialen.',
     items: ['Standaard tegels', 'Douchecabine', 'Enkele wastafel', 'Hangtoilet', 'Basisverlichting'],
   },
   {
     name: 'Gemiddeld',
-    range: '\u20AC 5.000 \u2013 \u20AC 8.000',
+    range: '€ 5.000 – € 8.000',
     desc: 'Stijlvolle renovatie met goede kwaliteit materialen.',
     items: ['Designtegels', 'Inloopdouche', 'Dubbele wastafel', 'Inbouwkranen', 'Sfeerverlichting'],
     featured: true,
   },
   {
     name: 'Luxe',
-    range: '\u20AC 10.000+',
+    range: '€ 10.000+',
     desc: 'Premium materialen en design op maat.',
     items: ['Natuursteen tegels', 'Regendouche + spabad', 'Designsanitair', 'Vloerverwarming', 'Maatwerk meubels'],
   },
 ];
 
 const extras = [
-  { item: 'Vloerverwarming', price: 'vanaf \u20AC 755', note: 'Tot 10 m\u00B2 als hoofdverwarming' },
-  { item: 'Whirlpool / spabad', price: '\u20AC 2.700 \u2013 \u20AC 6.700', note: 'Wellness badmeubel met bubbels' },
-  { item: 'Stoom/spa douchecabine', price: '\u20AC 1.600 \u2013 \u20AC 4.300', note: 'Met massagestralen en LED' },
+  { item: 'Vloerverwarming', price: 'vanaf € 755', note: 'Tot 10 m² als hoofdverwarming' },
+  { item: 'Whirlpool / spabad', price: '€ 2.700 – € 6.700', note: 'Wellness badmeubel met bubbels' },
+  { item: 'Stoom/spa douchecabine', price: '€ 1.600 – € 4.300', note: 'Met massagestralen en LED' },
 ];
 
 const tips = [
-  'Voer zelf het oude meubilair af en bespaar gemiddeld \u20AC 350.',
+  'Voer zelf het oude meubilair af en bespaar gemiddeld € 350.',
   'Vergelijk A- en B-merken: vaak dezelfde kwaliteit voor een lagere prijs.',
   'Kies een lokale aannemer om voorrijkosten te beperken.',
   'Plan materialen ruim op voorhand om vertragingen te voorkomen.',
 ];
 
 export default function KostenPage() {
+  useSEO({ title: 'Badkamer Renovatie Kosten 2025 | Prijzen per m² - De Badkamer', description: 'Wat kost een badkamer renovatie? Complete kosten per onderdeel: €3.500 - €15.000. Vergelijk prijzen en bespaar met onze tips.' });
+
   return (
     <>
-      <Helmet>
-        <title>Badkamer Renovatie Kosten 2025 | Prijzen per m\u00B2 - De Badkamer</title>
-        <meta name="description" content="Wat kost een badkamer renovatie? Complete kosten per onderdeel: \u20AC3.500 - \u20AC15.000. Vergelijk prijzen en bespaar met onze tips." />
-      </Helmet>
-
       {/* Hero */}
       <section className="bg-white py-16 md:py-24">
         <div className="max-w-4xl mx-auto px-4 md:px-8">

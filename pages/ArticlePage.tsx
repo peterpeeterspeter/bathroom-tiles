@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import { ArrowRight, Calendar, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { InlineLeadForm } from '../components/InlineLeadForm';
+import { useSEO } from '../lib/useSEO';
 
 interface Article {
   id: string;
@@ -35,6 +35,12 @@ export default function ArticlePage() {
     })();
   }, [slug]);
 
+  // Call useSEO with article data when available, or fallback title when loading/not found
+  useSEO(article
+    ? { title: `${article.title} - De Badkamer`, description: article.meta_description || article.title }
+    : { title: 'Artikel - De Badkamer' }
+  );
+
   if (loading) {
     return (
       <div className="flex justify-center py-32">
@@ -54,27 +60,8 @@ export default function ArticlePage() {
     );
   }
 
-  const articleSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: article.title,
-    datePublished: article.published_at,
-    image: article.image_url,
-    publisher: {
-      '@type': 'Organization',
-      name: 'De Badkamer',
-      url: 'https://debadkamer.com',
-    },
-  };
-
   return (
     <>
-      <Helmet>
-        <title>{article.title} - De Badkamer</title>
-        <meta name="description" content={article.meta_description || article.title} />
-        <script type="application/ld+json">{JSON.stringify(articleSchema)}</script>
-      </Helmet>
-
       <article className="bg-white">
         <div className="max-w-3xl mx-auto px-4 md:px-8 py-12 md:py-20">
           <nav className="text-sm text-neutral-500 mb-8">

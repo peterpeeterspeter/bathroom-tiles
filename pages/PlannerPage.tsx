@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { RefreshCw, AlertCircle, Image as ImageIcon, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import { BeforeAfterSlider } from '../components/BeforeAfterSlider';
 import { analyzeBathroomInput, calculateRenovationCost, generateRenovationRender, generateEmptySpace } from '../services/geminiService';
 import { ProjectSpec, Estimate, StyleProfile, BudgetTier, MaterialConfig, DatabaseProduct } from '../types';
@@ -17,10 +16,13 @@ import { LegalModal } from '../components/LegalModal';
 import { submitLead } from '../lib/leadService';
 import { trackEvent } from '../lib/analytics';
 import { fetchAllActiveProducts } from '../lib/productService';
+import { useSEO } from '../lib/useSEO';
 
 const TIMEOUT_MS = 120_000;
 
 export default function PlannerPage() {
+  useSEO({ title: 'AI Badkamer Planner - De Badkamer', description: 'Ontwerp uw droomkamer met onze AI-planner. Upload een foto, kies uw stijl, en ontvang direct een visualisatie met prijsindicatie.' });
+
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
@@ -191,11 +193,6 @@ export default function PlannerPage() {
 
   return (
     <>
-      <Helmet>
-        <title>AI Badkamer Planner - De Badkamer</title>
-        <meta name="description" content="Ontwerp uw droomkamer met onze AI-planner. Upload een foto, kies uw stijl, en ontvang direct een visualisatie met prijsindicatie." />
-      </Helmet>
-
       <div className="min-h-screen bg-neutral-100 font-sans text-neutral-900">
         <header className="bg-white border-b border-neutral-300/30 sticky top-0 z-50 h-16 md:h-20 flex items-center justify-between px-4 md:px-8 shadow-sm">
           <Logo />

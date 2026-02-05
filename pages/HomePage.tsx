@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import { ArrowRight, CheckCircle, ClipboardList, Users, Star, ChevronDown, ShieldCheck, Clock, MapPin, Sparkles } from 'lucide-react';
 import { InlineLeadForm } from '../components/InlineLeadForm';
+import { useSEO } from '../lib/useSEO';
 
 const stats = [
   { value: '500+', label: 'Projecten Gematcht' },
@@ -24,22 +24,22 @@ const trustBadges = [
 ];
 
 const costOverview = [
-  { item: 'Complete badkamer (9 m\u00B2)', range: '\u20AC 3.500 \u2013 \u20AC 15.000' },
-  { item: 'Douche', range: '\u20AC 500 \u2013 \u20AC 2.000' },
-  { item: 'Toilet', range: '\u20AC 450 \u2013 \u20AC 900' },
-  { item: 'Wastafel', range: '\u20AC 200 \u2013 \u20AC 1.000' },
-  { item: 'Vloertegels', range: '\u20AC 700 \u2013 \u20AC 1.800' },
-  { item: 'Ligbad', range: '\u20AC 700 \u2013 \u20AC 1.500' },
+  { item: 'Complete badkamer (9 m²)', range: '€ 3.500 – € 15.000' },
+  { item: 'Douche', range: '€ 500 – € 2.000' },
+  { item: 'Toilet', range: '€ 450 – € 900' },
+  { item: 'Wastafel', range: '€ 200 – € 1.000' },
+  { item: 'Vloertegels', range: '€ 700 – € 1.800' },
+  { item: 'Ligbad', range: '€ 700 – € 1.500' },
 ];
 
 const faqs = [
   {
     q: 'Wat kost een badkamer renovatie?',
-    a: 'Gemiddeld kost een complete badkamerrenovatie tussen de \u20AC 3.500 en \u20AC 15.000, afhankelijk van de grootte van uw badkamer, de gekozen materialen en de gewenste afwerking. Voor een standaard badkamer van 9 m\u00B2 met basis sanitair begint u rond \u20AC 3.500. Een luxe renovatie met premium materialen kan oplopen tot \u20AC 15.000 of meer.',
+    a: 'Gemiddeld kost een complete badkamerrenovatie tussen de € 3.500 en € 15.000, afhankelijk van de grootte van uw badkamer, de gekozen materialen en de gewenste afwerking. Voor een standaard badkamer van 9 m² met basis sanitair begint u rond € 3.500. Een luxe renovatie met premium materialen kan oplopen tot € 15.000 of meer.',
   },
   {
-    q: 'Hoeveel kost een badkamer renovatie per m\u00B2?',
-    a: 'De kosten voor een badkamerrenovatie liggen gemiddeld tussen \u20AC 390 en \u20AC 1.700 per vierkante meter. Dit is inclusief materialen, arbeid en afvoer. De exacte prijs hangt af van uw materiaalwensen en de complexiteit van de renovatie.',
+    q: 'Hoeveel kost een badkamer renovatie per m²?',
+    a: 'De kosten voor een badkamerrenovatie liggen gemiddeld tussen € 390 en € 1.700 per vierkante meter. Dit is inclusief materialen, arbeid en afvoer. De exacte prijs hangt af van uw materiaalwensen en de complexiteit van de renovatie.',
   },
   {
     q: 'Hoe lang duurt een badkamer renovatie?',
@@ -56,26 +56,12 @@ const faqs = [
 ];
 
 export default function HomePage() {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  useSEO({ title: 'Badkamer Renovatie | Gratis Offertes NL & BE - De Badkamer', description: 'Vergelijk gratis offertes voor uw badkamer renovatie. Kosten vanaf €3.500. Lokale vakmensen in Nederland en België. Binnen 24 uur reactie.' });
 
-  const faqSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: faqs.map((f) => ({
-      '@type': 'Question',
-      name: f.q,
-      acceptedAnswer: { '@type': 'Answer', text: f.a },
-    })),
-  };
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
     <>
-      <Helmet>
-        <title>Badkamer Renovatie | Gratis Offertes NL & BE - De Badkamer</title>
-        <meta name="description" content="Vergelijk gratis offertes voor uw badkamer renovatie. Kosten vanaf \u20AC3.500. Lokale vakmensen in Nederland en Belgi\u00EB. Binnen 24 uur reactie." />
-        <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
-      </Helmet>
-
       {/* Hero */}
       <section className="relative bg-white overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-light/50 via-white to-white" />

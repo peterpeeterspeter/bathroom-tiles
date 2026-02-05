@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import { ArrowRight, Calendar } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useSEO } from '../lib/useSEO';
 
 interface Article {
   id: string;
@@ -15,6 +15,8 @@ interface Article {
 }
 
 export default function AdviesPage() {
+  useSEO({ title: 'Advies & Inspiratie voor Badkamer Renovatie - De Badkamer', description: 'Tips, inspiratie en advies voor uw badkamer renovatie. Van kosten tot trends: alles wat u moet weten.' });
+
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,11 +34,6 @@ export default function AdviesPage() {
 
   return (
     <>
-      <Helmet>
-        <title>Advies & Inspiratie voor Badkamer Renovatie - De Badkamer</title>
-        <meta name="description" content="Tips, inspiratie en advies voor uw badkamer renovatie. Van kosten tot trends: alles wat u moet weten." />
-      </Helmet>
-
       <section className="bg-white py-16 md:py-24">
         <div className="max-w-4xl mx-auto px-4 md:px-8">
           <nav className="text-sm text-neutral-500 mb-8">

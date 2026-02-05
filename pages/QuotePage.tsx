@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { ArrowRight, ArrowLeft, CheckCircle, Loader2, Bath, Paintbrush, Home, Ruler, Clock, Sparkles, User, Mail, Phone, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { submitLead } from '../lib/leadService';
 import { trackEvent } from '../lib/analytics';
+import { useSEO } from '../lib/useSEO';
 
 const renovationTypes = [
   { id: 'full', label: 'Volledige renovatie', desc: 'Alles eruit, alles nieuw', icon: Bath },
@@ -12,15 +12,15 @@ const renovationTypes = [
 ];
 
 const bathroomSizes = [
-  { id: 'small', label: 'Klein', desc: 'Tot 6 m\u00B2', icon: Ruler },
-  { id: 'medium', label: 'Gemiddeld', desc: '6 \u2013 9 m\u00B2', icon: Ruler },
-  { id: 'large', label: 'Groot', desc: 'Meer dan 9 m\u00B2', icon: Ruler },
+  { id: 'small', label: 'Klein', desc: 'Tot 6 m²', icon: Ruler },
+  { id: 'medium', label: 'Gemiddeld', desc: '6 – 9 m²', icon: Ruler },
+  { id: 'large', label: 'Groot', desc: 'Meer dan 9 m²', icon: Ruler },
 ];
 
 const timelines = [
   { id: '1_month', label: 'Binnen 1 maand' },
-  { id: '1_3_months', label: '1 \u2013 3 maanden' },
-  { id: '3_6_months', label: '3 \u2013 6 maanden' },
+  { id: '1_3_months', label: '1 – 3 maanden' },
+  { id: '3_6_months', label: '3 – 6 maanden' },
   { id: 'exploring', label: 'Ik orienteer me nog' },
 ];
 
@@ -64,35 +64,37 @@ export default function QuotePage() {
     }
   };
 
+  // Call useSEO with different values based on submitted state
+  // This is safe because `submitted` only changes from false->true once per mount
+  useSEO(submitted
+    ? { title: 'Bedankt - De Badkamer' }
+    : { title: 'Gratis Offerte Aanvragen - Badkamer Renovatie | De Badkamer', description: 'Vraag gratis en vrijblijvend offertes aan voor uw badkamer renovatie. Ontvang binnen 24 uur offertes van lokale vakmensen in NL en BE.' }
+  );
+
   if (submitted) {
     return (
-      <>
-        <Helmet>
-          <title>Bedankt - De Badkamer</title>
-        </Helmet>
-        <div className="max-w-2xl mx-auto px-4 py-20 md:py-32 text-center">
-          <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-8">
-            <CheckCircle size={40} className="text-success" />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900 mb-4">Bedankt voor uw aanvraag!</h1>
-          <p className="text-neutral-500 text-lg mb-3">We nemen binnen 24 uur contact met u op met passende offertes van lokale vakmensen.</p>
-          <p className="text-neutral-500 mb-10">U ontvangt maximaal 3 vrijblijvende offertes om te vergelijken.</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/planner"
-              className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-bold px-8 py-4 rounded-full transition-all"
-            >
-              <Sparkles size={18} /> Probeer de AI Planner
-            </Link>
-            <Link
-              to="/"
-              className="inline-flex items-center justify-center gap-2 bg-white border border-neutral-300/50 text-neutral-700 font-semibold px-8 py-4 rounded-full transition-all hover:border-primary"
-            >
-              Terug naar Home
-            </Link>
-          </div>
+      <div className="max-w-2xl mx-auto px-4 py-20 md:py-32 text-center">
+        <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-8">
+          <CheckCircle size={40} className="text-success" />
         </div>
-      </>
+        <h1 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900 mb-4">Bedankt voor uw aanvraag!</h1>
+        <p className="text-neutral-500 text-lg mb-3">We nemen binnen 24 uur contact met u op met passende offertes van lokale vakmensen.</p>
+        <p className="text-neutral-500 mb-10">U ontvangt maximaal 3 vrijblijvende offertes om te vergelijken.</p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link
+            to="/planner"
+            className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-bold px-8 py-4 rounded-full transition-all"
+          >
+            <Sparkles size={18} /> Probeer de AI Planner
+          </Link>
+          <Link
+            to="/"
+            className="inline-flex items-center justify-center gap-2 bg-white border border-neutral-300/50 text-neutral-700 font-semibold px-8 py-4 rounded-full transition-all hover:border-primary"
+          >
+            Terug naar Home
+          </Link>
+        </div>
+      </div>
     );
   }
 
@@ -100,11 +102,6 @@ export default function QuotePage() {
 
   return (
     <>
-      <Helmet>
-        <title>Gratis Offerte Aanvragen - Badkamer Renovatie | De Badkamer</title>
-        <meta name="description" content="Vraag gratis en vrijblijvend offertes aan voor uw badkamer renovatie. Ontvang binnen 24 uur offertes van lokale vakmensen in NL en BE." />
-      </Helmet>
-
       <div className="max-w-2xl mx-auto px-4 py-12 md:py-20">
         <div className="text-center mb-10">
           <h1 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900 mb-3">Gratis offerte aanvragen</h1>
