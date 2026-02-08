@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, Loader2, CheckCircle, User, Phone, MapPin } from 'lucide-react';
+import { ArrowRight, Loader2, CheckCircle, User, Phone, MapPin, AlertCircle } from 'lucide-react';
 import { submitLead } from '../lib/leadService';
 import { trackEvent } from '../lib/analytics';
 
@@ -9,13 +9,15 @@ export const InlineLeadForm = () => {
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!consent) return;
     setSubmitting(true);
+    setError(null);
     try {
-      await submitLead({
+      const result = await submitLead({
         name: form.name,
         email: form.email,
         phone: form.phone,
@@ -23,8 +25,17 @@ export const InlineLeadForm = () => {
         source: 'inline_form',
         country,
       });
-      trackEvent('lead_submitted', { source: 'inline_form', country });
-      setSubmitted(true);
+      if (result.success) {
+        trackEvent('lead_submitted', { source: 'inline_form', country });
+        setSubmitted(true);
+      } else {
+        setError(result.error || 'Er is iets misgegaan bij het verzenden. Probeer het later opnieuw.');
+        trackEvent('lead_submit_error', { source: 'inline_form', error: result.error });
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Er is iets misgegaan bij het verzenden. Probeer het later opnieuw.';
+      setError(errorMessage);
+      trackEvent('lead_submit_error', { source: 'inline_form', error: errorMessage });
     } finally {
       setSubmitting(false);
     }
@@ -46,6 +57,12 @@ export const InlineLeadForm = () => {
     <div className="bg-surface rounded-2xl p-8 md:p-10 border border-neutral-300/30">
       <h3 className="text-2xl font-bold text-neutral-900 mb-2">Ontvang gratis offertes</h3>
       <p className="text-neutral-500 text-sm mb-6">Vul uw gegevens in en ontvang binnen 24 uur vrijblijvende offertes.</p>
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+          <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={18} />
+          <p className="text-sm text-red-700 font-medium">{error}</p>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="relative">
           <User className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />

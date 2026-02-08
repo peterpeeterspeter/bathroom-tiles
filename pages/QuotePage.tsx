@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, ArrowLeft, CheckCircle, Loader2, Bath, Paintbrush, Home, Ruler, Clock, Sparkles, User, Mail, Phone, MapPin } from 'lucide-react';
+import { ArrowRight, ArrowLeft, CheckCircle, Loader2, Bath, Paintbrush, Home, Ruler, Clock, Sparkles, User, Mail, Phone, MapPin, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { submitLead } from '../lib/leadService';
 import { trackEvent } from '../lib/analytics';
@@ -34,6 +34,7 @@ export default function QuotePage() {
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const goNext = () => {
     trackEvent('quote_step_completed', { step });
@@ -45,8 +46,9 @@ export default function QuotePage() {
     e.preventDefault();
     if (!consent) return;
     setSubmitting(true);
+    setError(null);
     try {
-      await submitLead({
+      const result = await submitLead({
         name: form.name,
         email: form.email,
         phone: form.phone,
@@ -57,8 +59,17 @@ export default function QuotePage() {
         bathroomSize,
         preferredTimeline: timeline,
       });
-      trackEvent('lead_submitted', { source: 'quote_form', renovationType, bathroomSize, timeline, country });
-      setSubmitted(true);
+      if (result.success) {
+        trackEvent('lead_submitted', { source: 'quote_form', renovationType, bathroomSize, timeline, country });
+        setSubmitted(true);
+      } else {
+        setError(result.error || 'Er is iets misgegaan bij het verzenden. Probeer het later opnieuw.');
+        trackEvent('lead_submit_error', { source: 'quote_form', error: result.error });
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Er is iets misgegaan bij het verzenden. Probeer het later opnieuw.';
+      setError(errorMessage);
+      trackEvent('lead_submit_error', { source: 'quote_form', error: errorMessage });
     } finally {
       setSubmitting(false);
     }
@@ -201,6 +212,12 @@ export default function QuotePage() {
         {step === 4 && (
           <form onSubmit={handleSubmit} className="space-y-4 animate-fade-in">
             <h2 className="text-xl font-bold text-neutral-900 mb-6">Uw contactgegevens</h2>
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+                <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={18} />
+                <p className="text-sm text-red-700 font-medium">{error}</p>
+              </div>
+            )}
             <div className="relative">
               <User className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
               <input required placeholder="Uw naam" type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full bg-white border border-neutral-300/50 rounded-xl py-3.5 pl-11 pr-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" />
