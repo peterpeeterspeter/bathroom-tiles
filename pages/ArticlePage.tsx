@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowRight, Calendar, ArrowLeft } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { supabase } from '../lib/supabase';
 import { InlineLeadForm } from '../components/InlineLeadForm';
 import { useSEO } from '../lib/useSEO';
@@ -91,7 +92,7 @@ export default function ArticlePage() {
 
           <div
             className="prose prose-neutral max-w-none [&>h2]:text-2xl [&>h2]:font-bold [&>h2]:mt-10 [&>h2]:mb-4 [&>h3]:text-lg [&>h3]:font-bold [&>h3]:mt-8 [&>h3]:mb-3 [&>p]:text-neutral-700 [&>p]:leading-relaxed [&>p]:mb-4 [&>ul]:space-y-2 [&>ul>li]:text-neutral-700 [&>ol]:space-y-2 [&>ol>li]:text-neutral-700 [&>table]:w-full [&>table]:border-collapse [&>table_th]:bg-primary-dark [&>table_th]:text-white [&>table_th]:px-4 [&>table_th]:py-3 [&>table_th]:text-left [&>table_th]:text-sm [&>table_td]:px-4 [&>table_td]:py-3 [&>table_td]:text-sm [&>table_td]:border-b [&>table_td]:border-neutral-300/30"
-            dangerouslySetInnerHTML={{ __html: article.content }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
           />
         </div>
       </article>

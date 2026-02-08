@@ -1,4 +1,4 @@
-import React, { lazy } from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
 
@@ -12,10 +12,23 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const VoorwaardenPage = lazy(() => import('./pages/VoorwaardenPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
+const SuspenseFallback = () => (
+  <div className="flex items-center justify-center min-h-[50vh]">
+    <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
+
 export default function App() {
   return (
     <Routes>
-      <Route path="/planner" element={<PlannerPage />} />
+      <Route 
+        path="/planner" 
+        element={
+          <Suspense fallback={<SuspenseFallback />}>
+            <PlannerPage />
+          </Suspense>
+        } 
+      />
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="badkamer-renovatie-kosten" element={<KostenPage />} />

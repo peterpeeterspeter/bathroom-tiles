@@ -40,11 +40,11 @@ export async function submitLead(payload: LeadPayload): Promise<{ success: boole
   if (payload.styleProfile) row.style_profile = payload.styleProfile;
   if (payload.materialConfig) row.material_config = payload.materialConfig;
   if (payload.selectedProducts) row.selected_products = payload.selectedProducts;
-  if (payload.estimatedTotalLow) row.estimated_total_low = payload.estimatedTotalLow;
-  if (payload.estimatedTotalHigh) row.estimated_total_high = payload.estimatedTotalHigh;
-  if (payload.roomWidth) row.room_width = payload.roomWidth;
-  if (payload.roomLength) row.room_length = payload.roomLength;
-  if (payload.roomArea) row.room_area = payload.roomArea;
+  if (payload.estimatedTotalLow !== undefined) row.estimated_total_low = payload.estimatedTotalLow;
+  if (payload.estimatedTotalHigh !== undefined) row.estimated_total_high = payload.estimatedTotalHigh;
+  if (payload.roomWidth !== undefined) row.room_width = payload.roomWidth;
+  if (payload.roomLength !== undefined) row.room_length = payload.roomLength;
+  if (payload.roomArea !== undefined) row.room_area = payload.roomArea;
   if (payload.styleProfile?.referenceImageUrls) row.reference_images = payload.styleProfile.referenceImageUrls;
   if (payload.renovationType) row.renovation_type = payload.renovationType;
   if (payload.bathroomSize) row.bathroom_size = payload.bathroomSize;

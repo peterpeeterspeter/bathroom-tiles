@@ -43,7 +43,7 @@ export const Footer = () => (
             </div>
             <div className="flex items-center gap-3 text-sm text-white/60">
               <Phone size={16} className="flex-shrink-0" />
-              <span>NL: 085-1234567 | BE: 03-1234567</span>
+              <span>Neem contact op via e-mail</span>
             </div>
             <div className="flex items-center gap-3 text-sm text-white/60">
               <MapPin size={16} className="flex-shrink-0" />
