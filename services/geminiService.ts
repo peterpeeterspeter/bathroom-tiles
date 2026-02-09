@@ -13,6 +13,25 @@ const getApiKey = (): string => {
   return '';
 };
 
+const getBaseUrl = (): string | undefined => {
+  if (typeof process !== 'undefined' && process.env) {
+    if (process.env.GEMINI_BASE_URL) return process.env.GEMINI_BASE_URL;
+  }
+  try {
+    const viteUrl = (import.meta as any).env?.VITE_GEMINI_BASE_URL;
+    if (viteUrl) return viteUrl;
+  } catch {}
+  return undefined;
+};
+
+const createClient = () => {
+  const baseUrl = getBaseUrl();
+  return new GoogleGenAI({
+    apiKey: getApiKey(),
+    ...(baseUrl ? { httpOptions: { baseUrl } } : {}),
+  });
+};
+
 const cleanJson = (text: string) => {
   if (!text) return "";
   const match = text.match(/```(?:json|JSON)?\s*([\s\S]*?)\s*```/);
@@ -29,7 +48,7 @@ const getMimeType = (dataUrl: string): string => {
 };
 
 export const analyzeBathroomInput = async (base64Image: string, mimeType: string = "image/jpeg"): Promise<ProjectSpec> => {
-  const ai = new GoogleGenAI({ apiKey: getApiKey() });
+  const ai = createClient();
   const model = "gemini-3-pro-preview";
 
   const systemInstruction = `
@@ -121,7 +140,7 @@ export const analyzeBathroomInput = async (base64Image: string, mimeType: string
 };
 
 export const generateEmptySpace = async (base64Image: string, spec: ProjectSpec): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: getApiKey() });
+  const ai = createClient();
   const model = "gemini-3-pro-image-preview";
   const mimeType = getMimeType(base64Image);
 
@@ -159,7 +178,7 @@ export const calculateRenovationCost = async (
   materials: MaterialConfig,
   products: DatabaseProduct[]
 ): Promise<Estimate> => {
-  const ai = new GoogleGenAI({ apiKey: getApiKey() });
+  const ai = createClient();
   const model = "gemini-3-pro-preview";
 
   const styleDesc = styleProfile.summary;
@@ -285,7 +304,7 @@ export const generateRenovationRender = async (
   base64Shell: string,
   products: DatabaseProduct[]
 ): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: getApiKey() });
+  const ai = createClient();
   const model = "gemini-3-pro-image-preview";
   const mimeType = getMimeType(base64Shell);
 
