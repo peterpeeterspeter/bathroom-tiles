@@ -105,6 +105,8 @@ export const StyleInspiration = ({ onStyleResolved }: StyleInspirationProps) => 
     setReferenceImages(prev => prev.filter(img => img.id !== id));
   };
 
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+
   const handleAnalyzeAndProceed = async () => {
     if (referenceImages.length === 0 && !selectedPreset) return;
 
@@ -114,8 +116,8 @@ export const StyleInspiration = ({ onStyleResolved }: StyleInspirationProps) => 
     }
 
     setAnalyzing(true);
+    setAnalysisError(null);
     try {
-      if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) await window.aistudio.openSelectKey();
       const tags = await fetchStyleTags();
       const images = referenceImages.map(img => ({
         base64: img.base64,
@@ -124,6 +126,10 @@ export const StyleInspiration = ({ onStyleResolved }: StyleInspirationProps) => 
 
       const visionProfile = await analyzeStyleFromReferences(images, tags);
       visionProfile.referenceImageUrls = referenceImages.map(img => img.thumbnail);
+
+      if (visionProfile.summary?.includes('niet beschikbaar')) {
+        throw new Error('Analysis returned fallback profile');
+      }
 
       if (selectedPreset) {
         const presetProfile = presetToProfile(selectedPreset);
@@ -134,6 +140,7 @@ export const StyleInspiration = ({ onStyleResolved }: StyleInspirationProps) => 
       }
     } catch (err) {
       console.error('Style analysis failed:', err);
+      setAnalysisError('Stijlanalyse is tijdelijk niet beschikbaar. Selecteer een basisstijl of probeer het opnieuw.');
       if (selectedPreset) {
         onStyleResolved(presetToProfile(selectedPreset));
       }
@@ -299,7 +306,12 @@ export const StyleInspiration = ({ onStyleResolved }: StyleInspirationProps) => 
                   <><Sparkles size={18} /> Analyseer & ga verder</>
                 )}
               </button>
-              {selectedPreset && (
+              {analysisError && (
+                <p className="text-[11px] font-bold text-red-500 text-center mt-3">
+                  {analysisError}
+                </p>
+              )}
+              {selectedPreset && !analysisError && (
                 <p className="text-[10px] font-bold text-neutral-500 text-center mt-3">
                   Combineert met {selectedPreset.label_nl} stijl
                 </p>

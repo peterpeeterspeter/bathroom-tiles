@@ -1,31 +1,21 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { StyleProfile, StyleTag } from "../types";
 
-const getApiKey = (): string => {
-  const key = process.env.API_KEY || process.env.GEMINI_API_KEY || '';
-  if (key) return key;
-  try {
-    const viteKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-    if (viteKey) return viteKey;
-  } catch {}
-  return '';
-};
-
-const getBaseUrl = (): string | undefined => {
-  const url = process.env.GEMINI_BASE_URL || '';
-  if (url) return url;
-  try {
-    const viteUrl = (import.meta as any).env?.VITE_GEMINI_BASE_URL;
-    if (viteUrl) return viteUrl;
-  } catch {}
-  return undefined;
-};
-
 const createClient = () => {
-  const baseUrl = getBaseUrl();
+  const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY || '';
+  const baseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || '';
+
+  if (!apiKey || !baseUrl) {
+    console.error('[StyleAnalysis] Missing AI integration config — AI_INTEGRATIONS_GEMINI_API_KEY or AI_INTEGRATIONS_GEMINI_BASE_URL not set.');
+    throw new Error('Style analysis is not configured. AI integration environment variables are missing.');
+  }
+
   return new GoogleGenAI({
-    apiKey: getApiKey(),
-    ...(baseUrl ? { httpOptions: { baseUrl } } : {}),
+    apiKey,
+    httpOptions: {
+      apiVersion: "",
+      baseUrl,
+    },
   });
 };
 
@@ -44,7 +34,7 @@ export async function analyzeStyleFromReferences(
   tagVocabulary: string[]
 ): Promise<StyleProfile> {
   const ai = createClient();
-  const model = "gemini-3-pro-preview";
+  const model = "gemini-3-flash-preview";
 
   const vocabList = tagVocabulary.map(t => `"${t}"`).join(', ');
 
