@@ -13,9 +13,9 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
 - **Routing**: react-router-dom v7
 
 ## AI Pipeline (PlannerPage)
-1. **Style Selection** — User picks preset or uploads references → `analyzeStyleFromReferences()` (optional)
+1. **Style Selection** — User picks preset or uploads reference images (no AI call yet)
 2. **Dimensions & Photo** — User enters dimensions + uploads bathroom photo
-3. **Product Configuration** — Products scored by style profile from Supabase
+3. **Expert Analysis + Product Configuration** — `analyzeProjectContext()` runs with all inputs (style preset, reference images, bathroom photo, dimensions) → produces enriched StyleProfile with expert renovation advice → products scored by style profile
 4. **Processing** (parallel):
    - `analyzeBathroomInput()` + `generateEmptySpace()` run in parallel
    - Then `calculateRenovationCost()` + `generateRenovationRender()` run in parallel

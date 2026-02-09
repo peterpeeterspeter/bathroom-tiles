@@ -68,6 +68,13 @@ export interface StyleTag {
   weight: number;
 }
 
+export interface ExpertAnalysis {
+  currentState: string;
+  opportunities: string[];
+  recommendations: string[];
+  layoutAdvice: string;
+}
+
 export interface StyleProfile {
   tags: StyleTag[];
   summary: string;
@@ -75,6 +82,7 @@ export interface StyleProfile {
   presetId?: number;
   presetName?: string;
   referenceImageUrls?: string[];
+  expertAnalysis?: ExpertAnalysis;
 }
 
 export interface DatabaseProduct {

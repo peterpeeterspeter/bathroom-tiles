@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowRight, ShoppingBag, Info, Loader2 } from 'lucide-react';
+import { ArrowRight, ShoppingBag, Info, Loader2, Eye, Lightbulb, Layout, CheckCircle2 } from 'lucide-react';
 import { StyleProfile, DatabaseProduct } from '../types';
 import { ScoredProduct, fetchProductsForProfile, getProductsByCategory } from '../lib/productService';
 import { CategoryProductSelector } from './CategoryProductSelector';
@@ -36,6 +36,7 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, onProdu
 
   const styleName = styleProfile.presetName || styleProfile.summary.slice(0, 40);
   const topTags = styleProfile.tags.slice(0, 6);
+  const expert = styleProfile.expertAnalysis;
 
   return (
     <div className="max-w-5xl mx-auto animate-fade-in">
@@ -44,7 +45,7 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, onProdu
           <div className="md:sticky md:top-32 space-y-6 md:space-y-8">
             <div className="bg-neutral-900 text-white p-6 md:p-8 rounded-2xl md:rounded-[2rem] shadow-2xl overflow-hidden relative">
               <div className="relative z-10">
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-3 md:mb-4">Stijlprofiel</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-3 md:mb-4">Expert Advies</p>
                 <h3 className="text-xl md:text-2xl font-black tracking-tighter leading-none mb-3 md:mb-4">{styleName}</h3>
                 <p className="text-white/60 text-[11px] font-bold leading-relaxed mb-4">{styleProfile.summary}</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -57,12 +58,63 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, onProdu
               </div>
               <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-primary rounded-full blur-[60px] opacity-20" />
             </div>
-            <div className="bg-surface p-5 md:p-6 rounded-2xl border-2 border-neutral-300/50 hidden md:block">
-              <h4 className="font-black uppercase text-[10px] tracking-widest mb-4 flex items-center gap-2"><Info size={14} className="text-primary" /> Waarom deze keuzes?</h4>
-              <p className="text-[11px] font-bold text-neutral-700 leading-relaxed">
-                Producten worden gerangschikt op basis van uw stijlprofiel. De best passende producten staan bovenaan.
-              </p>
-            </div>
+
+            {expert && (
+              <>
+                <div className="bg-white p-5 md:p-6 rounded-2xl border-2 border-neutral-300/30 shadow-sm">
+                  <h4 className="font-black uppercase text-[10px] tracking-widest mb-3 flex items-center gap-2 text-neutral-500">
+                    <Eye size={14} className="text-primary" /> Huidige Staat
+                  </h4>
+                  <p className="text-[11px] font-bold text-neutral-700 leading-relaxed">{expert.currentState}</p>
+                </div>
+
+                <div className="bg-white p-5 md:p-6 rounded-2xl border-2 border-neutral-300/30 shadow-sm">
+                  <h4 className="font-black uppercase text-[10px] tracking-widest mb-3 flex items-center gap-2 text-neutral-500">
+                    <Lightbulb size={14} className="text-primary" /> Kansen
+                  </h4>
+                  <ul className="space-y-2">
+                    {expert.opportunities.map((opp, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <CheckCircle2 size={12} className="text-primary flex-shrink-0 mt-0.5" />
+                        <span className="text-[11px] font-bold text-neutral-700 leading-relaxed">{opp}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="bg-white p-5 md:p-6 rounded-2xl border-2 border-neutral-300/30 shadow-sm">
+                  <h4 className="font-black uppercase text-[10px] tracking-widest mb-3 flex items-center gap-2 text-neutral-500">
+                    <Layout size={14} className="text-primary" /> Aanbevelingen
+                  </h4>
+                  <ul className="space-y-2">
+                    {expert.recommendations.map((rec, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <CheckCircle2 size={12} className="text-primary flex-shrink-0 mt-0.5" />
+                        <span className="text-[11px] font-bold text-neutral-700 leading-relaxed">{rec}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {expert.layoutAdvice && (
+                  <div className="bg-primary/5 p-5 md:p-6 rounded-2xl border-2 border-primary/20">
+                    <h4 className="font-black uppercase text-[10px] tracking-widest mb-3 flex items-center gap-2 text-primary">
+                      <Layout size={14} /> Indeling Advies
+                    </h4>
+                    <p className="text-[11px] font-bold text-neutral-700 leading-relaxed">{expert.layoutAdvice}</p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {!expert && (
+              <div className="bg-surface p-5 md:p-6 rounded-2xl border-2 border-neutral-300/50 hidden md:block">
+                <h4 className="font-black uppercase text-[10px] tracking-widest mb-4 flex items-center gap-2"><Info size={14} className="text-primary" /> Waarom deze keuzes?</h4>
+                <p className="text-[11px] font-bold text-neutral-700 leading-relaxed">
+                  Producten worden gerangschikt op basis van uw stijlprofiel. De best passende producten staan bovenaan.
+                </p>
+              </div>
+            )}
           </div>
         </div>
         <div className="md:col-span-8 space-y-8 md:space-y-12">

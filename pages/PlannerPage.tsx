@@ -3,10 +3,10 @@ import { RefreshCw, AlertCircle, Image as ImageIcon, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BeforeAfterSlider } from '../components/BeforeAfterSlider';
 import { analyzeBathroomInput, calculateRenovationCost, generateRenovationRender, generateEmptySpace } from '../services/geminiService';
-import { ProjectSpec, Estimate, StyleProfile, BudgetTier, MaterialConfig, DatabaseProduct } from '../types';
+import { ProjectSpec, Estimate, StyleProfile, StylePreset, BudgetTier, MaterialConfig, DatabaseProduct } from '../types';
 import { Logo } from '../components/Logo';
 import { StepIndicator } from '../components/StepIndicator';
-import { StyleInspiration } from '../components/StyleInspiration';
+import { StyleInspiration, ReferenceImage, StyleSelectionResult } from '../components/StyleInspiration';
 import { ProductConfiguration } from '../components/ProductConfiguration';
 import { DimensionsPhoto } from '../components/DimensionsPhoto';
 import { LoadingOverlay } from '../components/LoadingOverlay';
@@ -15,7 +15,8 @@ import { ResultDisplay } from '../components/ResultDisplay';
 import { LegalModal } from '../components/LegalModal';
 import { submitLead } from '../lib/leadService';
 import { trackEvent } from '../lib/analytics';
-import { fetchAllActiveProducts } from '../lib/productService';
+import { fetchAllActiveProducts, fetchStyleTags } from '../lib/productService';
+import { analyzeProjectContext, presetToProfile } from '../services/styleAnalysis';
 import { useSEO } from '../lib/useSEO';
 
 const TIMEOUT_MS = 120_000;
@@ -52,6 +53,9 @@ export default function PlannerPage() {
   const [leadSubmitted, setLeadSubmitted] = useState(false);
   const [leadName, setLeadName] = useState('');
   const [styleProfile, setStyleProfile] = useState<StyleProfile | null>(null);
+  const [selectedPreset, setSelectedPreset] = useState<StylePreset | null>(null);
+  const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
+  const [analyzingStyle, setAnalyzingStyle] = useState(false);
   const [selectedProductIds, setSelectedProductIds] = useState<Record<string, string>>({});
   const [selectedProductNames, setSelectedProductNames] = useState<Record<string, string>>({});
   const [materialConfig, setMaterialConfig] = useState<MaterialConfig>({
@@ -88,11 +92,77 @@ export default function PlannerPage() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [loading]);
 
-  const handleStyleResolved = useCallback((profile: StyleProfile) => {
-    setStyleProfile(profile);
+  const handleStyleSelected = useCallback((result: StyleSelectionResult) => {
+    setSelectedPreset(result.preset);
+    setReferenceImages(result.referenceImages);
+    if (result.preset && result.referenceImages.length === 0) {
+      setStyleProfile(presetToProfile(result.preset));
+    }
     setStep(2);
-    trackEvent('style_selected', { source: profile.source, tags: profile.tags.length, summary: profile.summary });
+    trackEvent('style_selected', { preset: result.preset?.label_nl, refImages: result.referenceImages.length });
   }, []);
+
+  const runExpertAnalysis = async () => {
+    if (!imagePreview) return;
+    setAnalyzingStyle(true);
+    setError(null);
+
+    try {
+      const compressed = await compressImage(imagePreview, 1500);
+      const mimeType = compressed.match(/^data:(.*);base64,/)?.[1] || 'image/jpeg';
+      const base64 = compressed.split(',')[1];
+
+      const tagVocabulary = await fetchStyleTags();
+
+      const refImgs = referenceImages.map(img => ({
+        base64: img.base64,
+        mimeType: img.mimeType,
+      }));
+
+      const dims = {
+        widthM: projectSpec?.estimatedWidthMeters || 2.5,
+        lengthM: projectSpec?.estimatedLengthMeters || 2.5,
+        heightM: projectSpec?.ceilingHeightMeters || 2.4,
+      };
+
+      const profile = await analyzeProjectContext({
+        stylePreset: selectedPreset ? {
+          name: selectedPreset.label_nl,
+          tags: selectedPreset.tags,
+          description: selectedPreset.description_nl,
+        } : undefined,
+        referenceImages: refImgs.length > 0 ? refImgs : undefined,
+        bathroomPhoto: { base64, mimeType },
+        dimensions: dims,
+        tagVocabulary,
+      });
+
+      if (selectedPreset) {
+        profile.presetId = selectedPreset.id;
+        profile.presetName = selectedPreset.label_nl;
+      }
+      if (referenceImages.length > 0) {
+        profile.referenceImageUrls = referenceImages.map(img => img.thumbnail);
+      }
+
+      setStyleProfile(profile);
+      setStep(3);
+      trackEvent('expert_analysis_completed', { tags: profile.tags.length, hasExpertAdvice: !!profile.expertAnalysis });
+    } catch (err: any) {
+      console.error('Expert analysis failed:', err);
+      if (selectedPreset) {
+        const fallback = presetToProfile(selectedPreset);
+        setStyleProfile(fallback);
+        setStep(3);
+        trackEvent('expert_analysis_fallback', { preset: selectedPreset.label_nl });
+      } else {
+        setError('De analyse kon niet worden uitgevoerd. Probeer het opnieuw.');
+        trackEvent('expert_analysis_error', { error: String(err) });
+      }
+    } finally {
+      setAnalyzingStyle(false);
+    }
+  };
 
   const categoryToMaterialKey: Record<string, keyof MaterialConfig> = {
     Tile: 'floorTile',
@@ -214,6 +284,9 @@ export default function PlannerPage() {
   const reset = () => {
     setStep(1);
     setStyleProfile(null);
+    setSelectedPreset(null);
+    setReferenceImages([]);
+    setAnalyzingStyle(false);
     setSelectedProductIds({});
     setSelectedProductNames({});
     setImagePreview(null);
@@ -266,15 +339,29 @@ export default function PlannerPage() {
             </div>
           )}
 
-          {step === 1 && <StyleInspiration onStyleResolved={handleStyleResolved} />}
+          {step === 1 && <StyleInspiration onStyleSelected={handleStyleSelected} />}
 
           {step === 2 && (
             <DimensionsPhoto
               imagePreview={imagePreview}
               onImageChange={(url) => { setImagePreview(url); trackEvent('photo_uploaded'); }}
               onDimensionChange={handleDimensionChange}
-              onSubmit={() => { setStep(3); trackEvent('dimensions_submitted'); }}
+              onSubmit={() => { runExpertAnalysis(); trackEvent('dimensions_submitted'); }}
             />
+          )}
+
+          {analyzingStyle && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+              <div className="bg-white rounded-3xl p-8 md:p-12 max-w-md mx-4 text-center shadow-2xl animate-fade-in">
+                <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+                  <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+                <h3 className="text-xl font-black tracking-tight mb-3">Expert Analyse</h3>
+                <p className="text-sm text-neutral-500 font-bold leading-relaxed">
+                  Onze AI-architect analyseert uw badkamer en stelt een persoonlijk renovatie-advies samen...
+                </p>
+              </div>
+            </div>
           )}
 
           {step === 3 && styleProfile && (

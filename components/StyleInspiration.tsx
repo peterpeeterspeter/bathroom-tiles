@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Upload, Link2, X, Loader2, Sparkles, Image as ImageIcon } from 'lucide-react';
-import { StyleProfile, StylePreset } from '../types';
-import { fetchStylePresets, fetchStyleTags } from '../lib/productService';
-import { analyzeStyleFromReferences, presetToProfile, combineProfiles } from '../services/styleAnalysis';
+import { StylePreset } from '../types';
+import { fetchStylePresets } from '../lib/productService';
+import { presetToProfile } from '../services/styleAnalysis';
 import { fetchPinterestImage, isPinterestUrl } from '../lib/pinterestFetcher';
 
-interface StyleInspirationProps {
-  onStyleResolved: (profile: StyleProfile) => void;
-}
-
-interface ReferenceImage {
+export interface ReferenceImage {
   id: string;
   thumbnail: string;
   base64: string;
@@ -17,13 +13,21 @@ interface ReferenceImage {
   source: 'upload' | 'pinterest';
 }
 
-export const StyleInspiration = ({ onStyleResolved }: StyleInspirationProps) => {
+export interface StyleSelectionResult {
+  preset: StylePreset | null;
+  referenceImages: ReferenceImage[];
+}
+
+interface StyleInspirationProps {
+  onStyleSelected: (result: StyleSelectionResult) => void;
+}
+
+export const StyleInspiration = ({ onStyleSelected }: StyleInspirationProps) => {
   const [presets, setPresets] = useState<StylePreset[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<StylePreset | null>(null);
   const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
   const [pinterestUrl, setPinterestUrl] = useState('');
   const [fetchingPin, setFetchingPin] = useState(false);
-  const [analyzing, setAnalyzing] = useState(false);
   const [pinError, setPinError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -38,7 +42,7 @@ export const StyleInspiration = ({ onStyleResolved }: StyleInspirationProps) => 
   const handlePresetSelect = (preset: StylePreset) => {
     setSelectedPreset(preset);
     if (referenceImages.length === 0) {
-      onStyleResolved(presetToProfile(preset));
+      onStyleSelected({ preset, referenceImages: [] });
     }
   };
 
@@ -105,48 +109,8 @@ export const StyleInspiration = ({ onStyleResolved }: StyleInspirationProps) => 
     setReferenceImages(prev => prev.filter(img => img.id !== id));
   };
 
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
-
-  const handleAnalyzeAndProceed = async () => {
-    if (referenceImages.length === 0 && !selectedPreset) return;
-
-    if (referenceImages.length === 0 && selectedPreset) {
-      onStyleResolved(presetToProfile(selectedPreset));
-      return;
-    }
-
-    setAnalyzing(true);
-    setAnalysisError(null);
-    try {
-      const tags = await fetchStyleTags();
-      const images = referenceImages.map(img => ({
-        base64: img.base64,
-        mimeType: img.mimeType,
-      }));
-
-      const visionProfile = await analyzeStyleFromReferences(images, tags);
-      visionProfile.referenceImageUrls = referenceImages.map(img => img.thumbnail);
-
-      if (visionProfile.summary?.includes('niet beschikbaar')) {
-        throw new Error('Analysis returned fallback profile');
-      }
-
-      if (selectedPreset) {
-        const presetProfile = presetToProfile(selectedPreset);
-        const combined = combineProfiles(presetProfile, visionProfile);
-        onStyleResolved(combined);
-      } else {
-        onStyleResolved(visionProfile);
-      }
-    } catch (err) {
-      console.error('Style analysis failed:', err);
-      setAnalysisError('Stijlanalyse is tijdelijk niet beschikbaar. Selecteer een basisstijl of probeer het opnieuw.');
-      if (selectedPreset) {
-        onStyleResolved(presetToProfile(selectedPreset));
-      }
-    } finally {
-      setAnalyzing(false);
-    }
+  const handleProceedWithImages = () => {
+    onStyleSelected({ preset: selectedPreset, referenceImages });
   };
 
   if (loading) {
@@ -296,22 +260,12 @@ export const StyleInspiration = ({ onStyleResolved }: StyleInspirationProps) => 
           {referenceImages.length > 0 && (
             <div className="mt-6">
               <button
-                onClick={handleAnalyzeAndProceed}
-                disabled={analyzing}
-                className="w-full py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary-dark transition-all flex items-center justify-center gap-3 shadow-xl disabled:opacity-60"
+                onClick={handleProceedWithImages}
+                className="w-full py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary-dark transition-all flex items-center justify-center gap-3 shadow-xl"
               >
-                {analyzing ? (
-                  <><Loader2 size={18} className="animate-spin" /> Stijl analyseren...</>
-                ) : (
-                  <><Sparkles size={18} /> Analyseer & ga verder</>
-                )}
+                <Sparkles size={18} /> Ga verder
               </button>
-              {analysisError && (
-                <p className="text-[11px] font-bold text-red-500 text-center mt-3">
-                  {analysisError}
-                </p>
-              )}
-              {selectedPreset && !analysisError && (
+              {selectedPreset && (
                 <p className="text-[10px] font-bold text-neutral-500 text-center mt-3">
                   Combineert met {selectedPreset.label_nl} stijl
                 </p>
