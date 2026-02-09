@@ -29,8 +29,11 @@ const getMimeType = (dataUrl: string): string => {
 };
 
 export const analyzeBathroomInput = async (base64Image: string, mimeType: string = "image/jpeg"): Promise<ProjectSpec> => {
-  const ai = new GoogleGenAI({ apiKey: getApiKey() });
-  const model = "gemini-3-pro-preview";
+  const apiKey = getApiKey();
+  console.log("Analysis - API Key configured:", apiKey ? "Yes" : "No");
+
+  const ai = new GoogleGenAI({ apiKey });
+  const model = "gemini-2.5-flash";
 
   const systemInstruction = `
     You are De Badkamer's Lead Architectural AI.
@@ -121,33 +124,51 @@ export const analyzeBathroomInput = async (base64Image: string, mimeType: string
 };
 
 export const generateEmptySpace = async (base64Image: string, spec: ProjectSpec): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: getApiKey() });
-  const model = "gemini-3-pro-image-preview";
+  const apiKey = getApiKey();
+  console.log("Empty space generation - API Key configured:", apiKey ? "Yes" : "No");
+
+  const ai = new GoogleGenAI({ apiKey });
+  const model = "gemini-2.5-flash-image";
   const mimeType = getMimeType(base64Image);
 
-  const prompt = `
-    OPERATION: EDIT_IMAGE
-    INPUT: Bathroom photo provided.
-    MASK_LOGIC: AUTO_SEGMENT (Furniture, Sanitary Ware, Decor)
+  const prompt = `Edit this bathroom image to create an empty shell:
 
-    INSTRUCTION:
-    "Perform a virtual demolition.
-    1. Erase all identified furniture, toilets, sinks, and mirrors.
-    2. Infill the erased areas with 'raw grey concrete screed' on the floor and 'rough white plaster' on the walls.
-    3. STRICTLY PRESERVE: The original perspective, window frames, door frames, and ceiling beams.
-    4. LIGHTING: Keep the original natural light direction and shadows."
-  `;
+Remove all fixtures, furniture, and decorations (toilets, sinks, bathtubs, mirrors, cabinets, etc.)
+Replace floor with raw grey concrete screed
+Replace walls with rough white plaster
+Keep the exact room geometry, windows, door frames, and ceiling structure unchanged
+Maintain the original lighting and perspective`;
+
+  console.log("Generating empty space with model:", model);
 
   try {
+    const imageData = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
+
+    console.log("Sending empty space request to Gemini API...");
     const response = await ai.models.generateContent({
       model,
-      contents: { parts: [{ inlineData: { mimeType, data: base64Image.split(',')[1] } }, { text: prompt }] },
+      contents: {
+        parts: [
+          { inlineData: { mimeType, data: imageData } },
+          { text: prompt }
+        ]
+      }
     });
+
+    console.log("Empty space response received");
+
     for (const part of response.candidates?.[0]?.content?.parts || []) {
-      if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      if (part.inlineData) {
+        console.log("Empty space generated successfully");
+        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      }
     }
-    throw new Error("Empty shell failed");
-  } catch (error) {
+
+    console.warn("No empty space image in response, using original");
+    return base64Image;
+  } catch (error: any) {
+    console.error("Empty space generation error:", error);
+    console.warn("Falling back to original image");
     return base64Image;
   }
 };
@@ -159,8 +180,11 @@ export const calculateRenovationCost = async (
   materials: MaterialConfig,
   products: DatabaseProduct[]
 ): Promise<Estimate> => {
-  const ai = new GoogleGenAI({ apiKey: getApiKey() });
-  const model = "gemini-3-pro-preview";
+  const apiKey = getApiKey();
+  console.log("Cost calculation - API Key configured:", apiKey ? "Yes" : "No");
+
+  const ai = new GoogleGenAI({ apiKey });
+  const model = "gemini-2.5-flash";
 
   const styleDesc = styleProfile.summary;
   const styleTags = styleProfile.tags.map(t => `${t.tag} (${t.weight})`).join(', ');
@@ -285,8 +309,11 @@ export const generateRenovationRender = async (
   base64Shell: string,
   products: DatabaseProduct[]
 ): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: getApiKey() });
-  const model = "gemini-3-pro-image-preview";
+  const apiKey = getApiKey();
+  console.log("API Key configured:", apiKey ? "Yes" : "No");
+
+  const ai = new GoogleGenAI({ apiKey });
+  const model = "gemini-2.5-flash-image";
   const mimeType = getMimeType(base64Shell);
 
   const sinkLocation = spec.existingFixtures.find(f => f.type === FixtureType.SINK);
@@ -299,43 +326,64 @@ export const generateRenovationRender = async (
   const styleDesc = styleProfile.summary;
   const topTags = styleProfile.tags.slice(0, 8).map(t => t.tag).join(', ');
 
-  const prompt = `
-    TASK: Architectural Visualization (Renovation After-State)
-    BASE_IMAGE: The provided empty shell image.
+  const prompt = `Transform this bathroom shell image into a fully renovated bathroom with these specifications:
 
-    REFERENCE_MATERIALS:
-    - Floor/Wall: ${materials.floorTile} (Reference: ${getProductImage(materials.floorTile)})
-    - Faucets: ${materials.faucetFinish} (Reference: ${getProductImage(materials.faucetFinish)})
-    - Toilet: ${materials.toiletType} (Reference: ${getProductImage(materials.toiletType)})
-    - Vanity: ${materials.vanityType} (Reference: ${getProductImage(materials.vanityType)})
-    - Lighting: ${materials.lightingType} (Reference: ${getProductImage(materials.lightingType)})
-    ${materials.bathtubType ? `- Bathtub: ${materials.bathtubType} (Reference: ${getProductImage(materials.bathtubType)})` : ''}
-    ${materials.showerType ? `- Shower: ${materials.showerType} (Reference: ${getProductImage(materials.showerType)})` : ''}
+MATERIALS:
+- Floor/Wall tiles: ${materials.floorTile}
+- Faucets: ${materials.faucetFinish}
+- Toilet: ${materials.toiletType}
+- Vanity: ${materials.vanityType}
+- Lighting: ${materials.lightingType}
+${materials.bathtubType ? `- Bathtub: ${materials.bathtubType}` : ''}
+${materials.showerType ? `- Shower: ${materials.showerType}` : ''}
 
-    STYLE:
-    Description: ${styleDesc}
-    Key characteristics: ${topTags}
+STYLE: ${styleDesc}
+Key design elements: ${topTags}
 
-    PROMPT:
-    "Apply the reference materials to the base room shell.
-    - Apply ${materials.floorTile} to the floor and wet-area walls (seamless texture).
-    - Place ${materials.vanityType} at ${sinkCoords}.
-    - Render emphasizing these design qualities: ${topTags}.
-    - Lighting: Cinematic, soft morning light, volumetric dust.
-    - Quality: 8k, Unreal Engine 5, Raytraced Global Illumination.
-    - Constraint: Do not hallucinate new windows. Keep geometry of BASE_IMAGE."
-  `;
+Instructions:
+- Keep the exact room geometry, windows, and ceiling structure
+- Apply the specified materials and fixtures realistically
+- Create photorealistic rendering with natural lighting
+- Emphasize the ${topTags} aesthetic
+- Place vanity at ${sinkCoords}`;
+
+  console.log("Starting image generation with model:", model);
+  console.log("Prompt length:", prompt.length);
+  console.log("Image size:", base64Shell.length, "bytes");
 
   try {
+    const imageData = base64Shell.includes(',') ? base64Shell.split(',')[1] : base64Shell;
+
+    console.log("Sending request to Gemini API...");
     const response = await ai.models.generateContent({
       model,
-      contents: { parts: [{ inlineData: { mimeType, data: base64Shell.split(',')[1] } }, { text: prompt }] },
+      contents: {
+        parts: [
+          { inlineData: { mimeType, data: imageData } },
+          { text: prompt }
+        ]
+      }
     });
+
+    console.log("Response received from Gemini API");
+    console.log("Candidates:", response.candidates?.length || 0);
+
     for (const part of response.candidates?.[0]?.content?.parts || []) {
-      if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      if (part.inlineData) {
+        console.log("Image generated successfully");
+        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      }
     }
-    throw new Error("Render failed");
-  } catch (error) {
-    throw error;
+
+    console.error("No image data in response");
+    throw new Error("No image generated in response");
+  } catch (error: any) {
+    console.error("Image generation error:", error);
+    console.error("Error details:", {
+      message: error?.message,
+      status: error?.status,
+      statusText: error?.statusText
+    });
+    throw new Error(`Image generation failed: ${error?.message || 'Unknown error'}`);
   }
 };
