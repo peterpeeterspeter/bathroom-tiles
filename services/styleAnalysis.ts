@@ -13,6 +13,25 @@ const getApiKey = (): string => {
   return '';
 };
 
+const getBaseUrl = (): string | undefined => {
+  if (typeof process !== 'undefined' && process.env) {
+    if (process.env.GEMINI_BASE_URL) return process.env.GEMINI_BASE_URL;
+  }
+  try {
+    const viteUrl = (import.meta as any).env?.VITE_GEMINI_BASE_URL;
+    if (viteUrl) return viteUrl;
+  } catch {}
+  return undefined;
+};
+
+const createClient = () => {
+  const baseUrl = getBaseUrl();
+  return new GoogleGenAI({
+    apiKey: getApiKey(),
+    ...(baseUrl ? { httpOptions: { baseUrl } } : {}),
+  });
+};
+
 const cleanJson = (text: string) => {
   if (!text) return "";
   const match = text.match(/```(?:json|JSON)?\s*([\s\S]*?)\s*```/);
@@ -27,7 +46,7 @@ export async function analyzeStyleFromReferences(
   images: { base64: string; mimeType: string }[],
   tagVocabulary: string[]
 ): Promise<StyleProfile> {
-  const ai = new GoogleGenAI({ apiKey: getApiKey() });
+  const ai = createClient();
   const model = "gemini-3-pro-preview";
 
   const vocabList = tagVocabulary.map(t => `"${t}"`).join(', ');
