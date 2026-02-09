@@ -2,10 +2,8 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { ProjectSpec, Estimate, BudgetTier, FixtureType, MaterialConfig, StyleProfile, DatabaseProduct } from "../types";
 
 const getApiKey = (): string => {
-  if (typeof process !== 'undefined' && process.env) {
-    if (process.env.API_KEY) return process.env.API_KEY;
-    if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
-  }
+  const key = process.env.API_KEY || process.env.GEMINI_API_KEY || '';
+  if (key) return key;
   try {
     const viteKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
     if (viteKey) return viteKey;
@@ -14,9 +12,8 @@ const getApiKey = (): string => {
 };
 
 const getBaseUrl = (): string | undefined => {
-  if (typeof process !== 'undefined' && process.env) {
-    if (process.env.GEMINI_BASE_URL) return process.env.GEMINI_BASE_URL;
-  }
+  const url = process.env.GEMINI_BASE_URL || '';
+  if (url) return url;
   try {
     const viteUrl = (import.meta as any).env?.VITE_GEMINI_BASE_URL;
     if (viteUrl) return viteUrl;
