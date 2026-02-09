@@ -42,3 +42,5 @@ publicDir = "dist"
 
 [userenv.shared]
 GEMINI_BASE_URL = "https://api.laozhang.ai"
+VITE_SUPABASE_URL = "https://mtbotszcgeuwxpmkjuyf.supabase.co"
+VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10Ym90c3pjZ2V1d3hwbWtqdXlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NzM4MjMsImV4cCI6MjA4NjE0OTgyM30.h-upajrNHa_0RPS0hsdQNjRkf_pKc42qvQ8RfGhWerY"
