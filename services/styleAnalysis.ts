@@ -2,22 +2,14 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { StyleProfile, StyleTag } from "../types";
 
 const createClient = () => {
-  const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY || '';
+  const apiKey = process.env.GOOGLE_AI_API_KEY || '';
 
   if (!apiKey) {
-    console.error('[StyleAnalysis] Missing AI_INTEGRATIONS_GEMINI_API_KEY.');
+    console.error('[StyleAnalysis] Missing GOOGLE_AI_API_KEY.');
     throw new Error('Style analysis is not configured.');
   }
 
-  const baseUrl = `${window.location.origin}/modelfarm/gemini`;
-
-  return new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      apiVersion: "",
-      baseUrl,
-    },
-  });
+  return new GoogleGenAI({ apiKey });
 };
 
 const cleanJson = (text: string) => {

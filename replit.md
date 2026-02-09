@@ -7,7 +7,7 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
 - **Framework**: React 19 + TypeScript + Vite 6
 - **Styling**: Tailwind CSS v4
 - **AI (generation)**: Google Gemini API (`@google/genai`) via LaoZhang proxy (gemini-3-pro-image-preview for renders)
-- **AI (style analysis)**: Google Gemini via Replit AI Integrations (gemini-3-flash-preview for style tag extraction)
+- **AI (style analysis)**: Google Gemini API direct (gemini-3-flash-preview for style tag extraction, via GOOGLE_AI_API_KEY)
 - **Backend**: Supabase (external, not local DB)
 - **PDF Generation**: jspdf + html2canvas
 - **Routing**: react-router-dom v7
@@ -34,8 +34,7 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
 ## Environment Variables
 - `GEMINI_API_KEY` - Google Gemini / LaoZhang API key (secret, for image generation)
 - `GEMINI_BASE_URL` - Custom API endpoint (set to https://api.laozhang.ai)
-- `AI_INTEGRATIONS_GEMINI_API_KEY` - Replit AI Integrations key (auto-managed, for style analysis)
-- `AI_INTEGRATIONS_GEMINI_BASE_URL` - Replit AI Integrations endpoint (auto-managed)
+- `GOOGLE_AI_API_KEY` - Google AI API key (secret, for style analysis via ai.google.dev)
 - `VITE_SUPABASE_URL` - Supabase project URL
 - `VITE_SUPABASE_ANON_KEY` - Supabase anonymous key
 

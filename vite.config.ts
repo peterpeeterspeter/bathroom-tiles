@@ -10,20 +10,13 @@ export default defineConfig(({ mode }) => {
         port: 5000,
         host: '0.0.0.0',
         allowedHosts: true,
-        proxy: {
-          '/modelfarm': {
-            target: 'http://localhost:1106',
-            changeOrigin: true,
-          },
-        },
       },
       plugins: [react(), tailwindcss()],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || ''),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || ''),
         'process.env.GEMINI_BASE_URL': JSON.stringify(env.GEMINI_BASE_URL || env.VITE_GEMINI_BASE_URL || ''),
-        'process.env.AI_INTEGRATIONS_GEMINI_API_KEY': JSON.stringify(env.AI_INTEGRATIONS_GEMINI_API_KEY || ''),
-        'process.env.AI_INTEGRATIONS_GEMINI_BASE_URL': JSON.stringify(env.AI_INTEGRATIONS_GEMINI_BASE_URL || ''),
+        'process.env.GOOGLE_AI_API_KEY': JSON.stringify(env.GOOGLE_AI_API_KEY || ''),
       },
       resolve: {
         alias: {
