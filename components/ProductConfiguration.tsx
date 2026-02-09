@@ -99,7 +99,7 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, onProdu
 
           <div className="pt-4 md:pt-8">
             <button onClick={onNext} className="w-full py-5 md:py-6 bg-neutral-900 text-white rounded-2xl md:rounded-[2rem] font-black text-xs md:text-sm uppercase tracking-widest hover:bg-neutral-800 transition-all flex items-center justify-center gap-3 shadow-2xl">
-              Volgende: Ruimte & Afmetingen <ArrowRight size={20}/>
+              Genereer Mijn Resultaat <ArrowRight size={20}/>
             </button>
           </div>
         </div>

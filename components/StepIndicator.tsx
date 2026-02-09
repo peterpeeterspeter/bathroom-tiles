@@ -2,7 +2,7 @@ import React from 'react';
 import { CheckCircle } from 'lucide-react';
 
 export const StepIndicator = ({ currentStep }: { currentStep: number }) => {
-  const steps = ['Mood', 'Keuzes', 'Ruimte', 'Resultaat'];
+  const steps = ['Mood', 'Ruimte', 'Keuzes', 'Resultaat'];
   return (
     <div className="w-full max-w-2xl mx-auto mb-8 md:mb-12">
       <div className="flex justify-between relative">

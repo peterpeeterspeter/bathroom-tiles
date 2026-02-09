@@ -268,21 +268,21 @@ export default function PlannerPage() {
 
           {step === 1 && <StyleInspiration onStyleResolved={handleStyleResolved} />}
 
-          {step === 2 && styleProfile && (
-            <ProductConfiguration
-              styleProfile={styleProfile}
-              selectedProductIds={selectedProductIds}
-              onProductSelect={handleProductSelect}
-              onNext={() => { setStep(3); trackEvent('products_configured', { products: selectedProductIds }); }}
-            />
-          )}
-
-          {step === 3 && (
+          {step === 2 && (
             <DimensionsPhoto
               imagePreview={imagePreview}
               onImageChange={(url) => { setImagePreview(url); trackEvent('photo_uploaded'); }}
               onDimensionChange={handleDimensionChange}
-              onSubmit={() => { startProcessing(); trackEvent('dimensions_submitted'); }}
+              onSubmit={() => { setStep(3); trackEvent('dimensions_submitted'); }}
+            />
+          )}
+
+          {step === 3 && styleProfile && (
+            <ProductConfiguration
+              styleProfile={styleProfile}
+              selectedProductIds={selectedProductIds}
+              onProductSelect={handleProductSelect}
+              onNext={() => { startProcessing(); trackEvent('products_configured', { products: selectedProductIds }); }}
             />
           )}
 

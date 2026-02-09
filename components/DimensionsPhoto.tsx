@@ -113,7 +113,7 @@ export const DimensionsPhoto = ({ imagePreview, onImageChange, onDimensionChange
             !imagePreview ? 'bg-neutral-300/50 text-neutral-500 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary-dark hover:scale-105 active:scale-95'
           }`}
         >
-          Genereer Mijn Resultaat <ArrowRight size={24}/>
+          Ga Verder <ArrowRight size={24}/>
         </button>
       </div>
     </div>
