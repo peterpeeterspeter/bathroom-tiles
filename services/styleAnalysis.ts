@@ -3,18 +3,17 @@ import { StyleProfile, StyleTag } from "../types";
 
 const createClient = () => {
   const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY || '';
-  const baseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || '';
 
-  if (!apiKey || !baseUrl) {
-    console.error('[StyleAnalysis] Missing AI integration config — AI_INTEGRATIONS_GEMINI_API_KEY or AI_INTEGRATIONS_GEMINI_BASE_URL not set.');
-    throw new Error('Style analysis is not configured. AI integration environment variables are missing.');
+  if (!apiKey) {
+    console.error('[StyleAnalysis] Missing AI_INTEGRATIONS_GEMINI_API_KEY.');
+    throw new Error('Style analysis is not configured.');
   }
 
   return new GoogleGenAI({
     apiKey,
     httpOptions: {
       apiVersion: "",
-      baseUrl,
+      baseUrl: '/modelfarm/gemini',
     },
   });
 };

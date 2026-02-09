@@ -10,6 +10,12 @@ export default defineConfig(({ mode }) => {
         port: 5000,
         host: '0.0.0.0',
         allowedHosts: true,
+        proxy: {
+          '/modelfarm': {
+            target: 'http://localhost:1106',
+            changeOrigin: true,
+          },
+        },
       },
       plugins: [react(), tailwindcss()],
       define: {
