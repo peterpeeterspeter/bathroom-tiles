@@ -1,39 +1,39 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle, Info } from 'lucide-react';
+import { ArrowRight, CheckCircle, Info, Sparkles } from 'lucide-react';
 import { InlineLeadForm } from '../components/InlineLeadForm';
 import { useSEO } from '../lib/useSEO';
 
 const mainCosts = [
-  { item: 'Complete badkamer renoveren (gem. 9 m²)', low: '3.500', high: '15.000', note: '' },
+  { item: 'Complete badkamer renoveren (gem. 9 m²)', low: '8.000', high: '25.000', note: 'Incl. arbeid en BTW' },
   { item: 'Ligbad', low: '700', high: '1.500', note: 'Basic of luxe ligbad' },
   { item: 'Douche', low: '500', high: '2.000', note: 'Cabine- of inloopdouche' },
   { item: 'Toilet', low: '450', high: '900', note: '' },
-  { item: 'Wastafel', low: '200', high: '1.000', note: 'Enkele of dubbele wastafel' },
+  { item: 'Wastafel + meubel', low: '200', high: '1.000', note: 'Enkele of dubbele wastafel' },
   { item: 'Kraan', low: '150', high: '450', note: '' },
   { item: 'Vloertegels', low: '700', high: '1.800', note: 'Keramisch of natuursteen' },
-  { item: 'Overige materialen', low: '150', high: '350', note: 'Leidingen, elektra, sifons' },
+  { item: 'Arbeid (per uur)', low: '40', high: '70', note: 'Loodgieter, tegelzetter, elektricien' },
 ];
 
 const tiers = [
   {
     name: 'Budget',
-    range: '€ 3.500 – € 5.500',
-    desc: 'Functionele, eenvoudige renovatie met standaard materialen.',
-    items: ['Standaard tegels', 'Douchecabine', 'Enkele wastafel', 'Hangtoilet', 'Basisverlichting'],
+    range: '€ 8.000 – € 12.000',
+    desc: 'Functionele renovatie met standaard sanitair en tegels. Ideaal voor wie de badkamer wil vernieuwen zonder luxe toevoegingen.',
+    items: ['Standaard tegels', 'Douchecabine', 'Enkele wastafel met meubel', 'Hangtoilet', 'Basisverlichting', 'Inclusief arbeid en afvoer'],
   },
   {
     name: 'Gemiddeld',
-    range: '€ 5.000 – € 8.000',
-    desc: 'Stijlvolle renovatie met goede kwaliteit materialen.',
-    items: ['Designtegels', 'Inloopdouche', 'Dubbele wastafel', 'Inbouwkranen', 'Sfeerverlichting'],
+    range: '€ 12.000 – € 18.000',
+    desc: 'Stijlvolle renovatie met kwaliteitsmaterialen en modern comfort. De meest gekozen optie.',
+    items: ['Designtegels of wandpanelen', 'Inloopdouche met regendouchekop', 'Wastafelmeubel met lades', 'Rimfree toilet met softclose', 'Thermostatische kranen', 'Sfeerverlichting'],
     featured: true,
   },
   {
     name: 'Luxe',
-    range: '€ 10.000+',
-    desc: 'Premium materialen en design op maat.',
-    items: ['Natuursteen tegels', 'Regendouche + spabad', 'Designsanitair', 'Vloerverwarming', 'Maatwerk meubels'],
+    range: '€ 18.000 – € 25.000+',
+    desc: 'Premium materialen, maatwerk en luxe comfort op het hoogste niveau.',
+    items: ['Natuursteen of grootformaat tegels', 'Regendouche met thermostaatsysteem', 'Designsanitair', 'Vloerverwarming', 'Maatwerk meubels', 'Optioneel: whirlpool of stoominrichting'],
   },
 ];
 
@@ -44,14 +44,16 @@ const extras = [
 ];
 
 const tips = [
-  'Voer zelf het oude meubilair af en bespaar gemiddeld € 350.',
-  'Vergelijk A- en B-merken: vaak dezelfde kwaliteit voor een lagere prijs.',
-  'Kies een lokale aannemer om voorrijkosten te beperken.',
-  'Plan materialen ruim op voorhand om vertragingen te voorkomen.',
+  'Voer zelf het oude sanitair en meubilair af — bespaar gemiddeld €350 op sloopkosten.',
+  'Vergelijk A- en B-merken: vaak dezelfde kwaliteit voor 20-40% minder.',
+  'Kies een vakman bij u in de buurt — dit bespaart op voorrijkosten en maakt opvolging eenvoudiger.',
+  'Overweeg wandpanelen in plaats van tegels: snellere installatie (minder arbeidsuren) en geen voegonderhoud.',
+  'Plan materialen minstens 4-6 weken vooruit — levertijden zijn in 2026 langer door hoge vraag.',
+  'Laat bestaand tegelwerk zitten als het nog goed is — nieuwe tegels óver oude tegels besparen sloop- en afvoerkosten.',
 ];
 
 export default function KostenPage() {
-  useSEO({ title: 'Badkamer Renovatie Kosten 2025 | Prijzen per m² - De Badkamer', description: 'Wat kost een badkamer renovatie? Complete kosten per onderdeel: €3.500 - €15.000. Vergelijk prijzen en bespaar met onze tips.' });
+  useSEO({ title: 'Badkamer Renovatie Kosten 2026 | Actuele Prijzen per m² - De Badkamer', description: 'Wat kost een badkamerrenovatie in 2026? Actuele prijzen: €8.000 - €25.000 (incl. arbeid en BTW). Kosten per m², per onderdeel, en bespaartips.' });
 
   return (
     <>
@@ -63,10 +65,9 @@ export default function KostenPage() {
             <span className="mx-2">/</span>
             <span className="text-neutral-900">Kosten Badkamer Renovatie</span>
           </nav>
-          <h1 className="text-3xl md:text-5xl font-black tracking-tight text-neutral-900 mb-4">Wat kost een badkamer renovatie?</h1>
+          <h1 className="text-3xl md:text-5xl font-black tracking-tight text-neutral-900 mb-4">Wat kost een badkamerrenovatie in 2026?</h1>
           <p className="text-lg text-neutral-500 leading-relaxed max-w-2xl">
-            Gemiddeld kost een complete badkamerrenovatie tussen de <strong className="text-neutral-900">&euro;3.500</strong> en <strong className="text-neutral-900">&euro;15.000</strong>.
-            Hieronder vindt u een compleet overzicht van alle kosten per onderdeel.
+            Een complete badkamerrenovatie kost gemiddeld <strong className="text-neutral-900">&euro;8.000</strong> tot <strong className="text-neutral-900">&euro;25.000</strong>, afhankelijk van grootte, materialen en afwerkingsniveau. Het marktgemiddelde voor een standaard badkamer van 9 m² ligt op &euro;14.000 tot &euro;18.500. Hieronder vindt u een actueel overzicht van alle kosten &mdash; per onderdeel, per m² en per kwaliteitsniveau.
           </p>
         </div>
       </section>
@@ -75,7 +76,7 @@ export default function KostenPage() {
       <section className="py-16 md:py-20">
         <div className="max-w-4xl mx-auto px-4 md:px-8">
           <h2 className="text-2xl font-bold text-neutral-900 mb-6">Kosten per onderdeel</h2>
-          <p className="text-neutral-500 text-sm mb-8">Inclusief materiaal, montage en BTW. Gebaseerd op een gemiddelde badkamer van 9 m&sup2;.</p>
+          <p className="text-neutral-500 text-sm mb-8">Inclusief materiaal, arbeid en BTW. Gebaseerd op een gemiddelde badkamer van 9 m&sup2;.</p>
           <div className="border border-neutral-300/50 rounded-2xl overflow-hidden">
             <div className="grid grid-cols-12 bg-primary-dark text-white px-6 py-4">
               <div className="col-span-5 text-sm font-bold">Onderdeel</div>
@@ -97,7 +98,7 @@ export default function KostenPage() {
       <section className="bg-white py-16 md:py-20">
         <div className="max-w-4xl mx-auto px-4 md:px-8">
           <h2 className="text-2xl font-bold text-neutral-900 mb-3">Prijsvoorbeelden</h2>
-          <p className="text-neutral-500 text-sm mb-10">Drie scenario's voor een badkamer van 9 m&sup2;, inclusief montage, materiaal en BTW.</p>
+          <p className="text-neutral-500 text-sm mb-10">Drie scenario's voor een badkamer van 9 m&sup2;, inclusief materiaal, arbeid en BTW.</p>
           <div className="grid md:grid-cols-3 gap-6">
             {tiers.map((tier) => (
               <div key={tier.name} className={`rounded-2xl p-6 border-2 ${tier.featured ? 'border-primary bg-primary-light/30' : 'border-neutral-300/50 bg-white'}`}>
@@ -129,10 +130,25 @@ export default function KostenPage() {
       <section className="bg-white py-16 md:py-20">
         <div className="max-w-4xl mx-auto px-4 md:px-8">
           <h2 className="text-2xl font-bold text-neutral-900 mb-4">Kosten per vierkante meter</h2>
+          <p className="text-neutral-500 leading-relaxed mb-4">
+            De gemiddelde kosten per m&sup2; liggen tussen <strong className="text-neutral-900">&euro;390</strong> en <strong className="text-neutral-900">&euro;1.700</strong> &mdash; inclusief materialen, arbeid en afvoer. Concreet:
+          </p>
+          <div className="border border-neutral-300/50 rounded-xl overflow-hidden mb-6">
+            <div className="flex justify-between items-center px-6 py-3 bg-neutral-100/50">
+              <span className="text-sm font-medium text-neutral-700">Klein (2-4 m²)</span>
+              <span className="text-sm font-bold text-neutral-900">&euro;8.000 &ndash; &euro;15.000</span>
+            </div>
+            <div className="flex justify-between items-center px-6 py-3 bg-white">
+              <span className="text-sm font-medium text-neutral-700">Gemiddeld (4-6 m²)</span>
+              <span className="text-sm font-bold text-neutral-900">&euro;12.000 &ndash; &euro;20.000</span>
+            </div>
+            <div className="flex justify-between items-center px-6 py-3 bg-neutral-100/50">
+              <span className="text-sm font-medium text-neutral-700">Groot (6+ m²)</span>
+              <span className="text-sm font-bold text-neutral-900">&euro;18.000 &ndash; &euro;30.000</span>
+            </div>
+          </div>
           <p className="text-neutral-500 leading-relaxed mb-6">
-            De gemiddelde kosten per m&sup2; liggen tussen <strong className="text-neutral-900">&euro;390</strong> en <strong className="text-neutral-900">&euro;1.700</strong>.
-            In de Randstad en grote steden als Amsterdam of Utrecht liggen de prijzen doorgaans hoger.
-            In Belgi&euml; zijn vergelijkbare prijzen te verwachten, met regionale variaties tussen Vlaanderen en Walloni&euml;.
+            In de Randstad en grote steden liggen prijzen doorgaans 10-15% hoger. In Belgi&euml; zijn vergelijkbare prijzen te verwachten, met regionale variaties tussen Vlaanderen en Walloni&euml;.
           </p>
           <div className="bg-primary-light/50 rounded-xl p-6 flex items-start gap-4">
             <Info size={20} className="text-primary flex-shrink-0 mt-0.5" />
@@ -179,14 +195,22 @@ export default function KostenPage() {
       {/* CTA */}
       <section className="py-16 md:py-20">
         <div className="max-w-3xl mx-auto px-4 md:px-8 text-center">
-          <h2 className="text-3xl font-black tracking-tight text-neutral-900 mb-4">Benieuwd naar de exacte kosten?</h2>
-          <p className="text-neutral-500 mb-8">Ontvang gratis en vrijblijvend offertes op maat van lokale vakmensen.</p>
-          <Link
-            to="/offerte-aanvragen"
-            className="inline-flex items-center gap-2 bg-accent hover:bg-accent-hover text-white font-bold text-lg px-10 py-5 rounded-full transition-all hover:shadow-xl hover:shadow-accent/25"
-          >
-            Ontvang Gratis Offertes <ArrowRight size={20} />
-          </Link>
+          <h2 className="text-3xl font-black tracking-tight text-neutral-900 mb-4">Wilt u weten wat úw badkamer gaat kosten?</h2>
+          <p className="text-neutral-500 mb-8">Gebruik de gratis AI Planner voor een gepersonaliseerde prijsindicatie, of ontvang direct vrijblijvende offertes van vakmensen in uw regio.</p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              to="/planner"
+              className="inline-flex items-center gap-2 bg-accent hover:bg-accent-hover text-white font-bold text-lg px-10 py-5 rounded-full transition-all hover:shadow-xl hover:shadow-accent/25"
+            >
+              <Sparkles size={18} /> Start AI Planner &mdash; Gratis <ArrowRight size={20} />
+            </Link>
+            <Link
+              to="/offerte-aanvragen"
+              className="inline-flex items-center gap-2 bg-white border-2 border-neutral-300/50 text-neutral-700 font-semibold text-lg px-10 py-5 rounded-full transition-all hover:border-primary hover:text-primary"
+            >
+              Ontvang Offertes <ArrowRight size={20} />
+            </Link>
+          </div>
         </div>
       </section>
     </>

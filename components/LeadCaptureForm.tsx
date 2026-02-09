@@ -41,7 +41,7 @@ export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
         <div className="text-center mb-8 md:mb-10">
           <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg mx-auto mb-6"><CheckCircle size={32} /></div>
           <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-4">Ontvang uw prijsindicatie</h2>
-          <p className="text-neutral-500 text-sm">Vul uw gegevens in om uw prijsindicatie en PDF-voorstel te ontvangen.</p>
+          <p className="text-neutral-500 text-sm">Vul uw gegevens in om uw persoonlijke prijsindicatie en visueel voorstel als PDF te ontvangen &mdash; gratis en vrijblijvend.</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
           <div className="space-y-3 md:space-y-4">

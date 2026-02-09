@@ -19,7 +19,7 @@ export const Footer = () => (
             <span className="text-lg font-black tracking-tight uppercase">De Badkamer</span>
           </div>
           <p className="text-white/60 text-sm leading-relaxed max-w-xs">
-            Uw partner voor hoogwaardige badkamerrenovaties in Nederland en Belgie. Wij verbinden u met de beste lokale vakmensen.
+            De slimme manier om uw badkamerrenovatie te plannen. Visualiseer het eindresultaat met AI en vergelijk vrijblijvende offertes van vakspecialisten bij u in de buurt.
           </p>
         </div>
 
@@ -47,7 +47,7 @@ export const Footer = () => (
             </div>
             <div className="flex items-center gap-3 text-sm text-white/60">
               <MapPin size={16} className="flex-shrink-0" />
-              <span>Actief in Nederland & Belgie</span>
+              <span>Actief in Nederland & België</span>
             </div>
           </div>
         </div>

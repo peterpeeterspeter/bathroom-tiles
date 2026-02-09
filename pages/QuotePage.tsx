@@ -88,9 +88,9 @@ export default function QuotePage() {
         <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-8">
           <CheckCircle size={40} className="text-success" />
         </div>
-        <h1 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900 mb-4">Bedankt voor uw aanvraag!</h1>
-        <p className="text-neutral-500 text-lg mb-3">We nemen binnen 24 uur contact met u op met passende offertes van lokale vakmensen.</p>
-        <p className="text-neutral-500 mb-10">U ontvangt maximaal 3 vrijblijvende offertes om te vergelijken.</p>
+        <h1 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900 mb-4">Bedankt &mdash; uw aanvraag is ontvangen!</h1>
+        <p className="text-neutral-500 text-lg mb-3">Binnen 24 uur ontvangt u tot 3 vrijblijvende offertes van geselecteerde vakmensen in uw regio. U beslist zelf of en met wie u verder gaat.</p>
+        <p className="text-neutral-500 mb-10">In de tussentijd: probeer onze AI Planner en visualiseer alvast uw nieuwe badkamer.</p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             to="/planner"

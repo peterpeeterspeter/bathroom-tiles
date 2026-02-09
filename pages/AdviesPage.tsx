@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Calendar } from 'lucide-react';
+import { ArrowRight, Calendar, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useSEO } from '../lib/useSEO';
 
@@ -54,10 +54,16 @@ export default function AdviesPage() {
             </div>
           ) : articles.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-neutral-500 mb-4">Binnenkort verschijnen hier onze eerste artikelen.</p>
-              <Link to="/offerte-aanvragen" className="inline-flex items-center gap-2 text-primary font-semibold hover:underline">
-                Vraag in de tussentijd een gratis offerte aan <ArrowRight size={14} />
-              </Link>
+              <p className="text-neutral-500 mb-2">We werken aan praktische gidsen en inspiratie voor uw badkamerrenovatie. Binnenkort beschikbaar.</p>
+              <p className="text-neutral-500 mb-6">In de tussentijd kunt u de AI Planner gebruiken om uw droomkamer te visualiseren, of direct een gratis offerte aanvragen.</p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link to="/planner" className="inline-flex items-center gap-2 text-primary font-semibold hover:underline">
+                  <Sparkles size={14} /> Probeer de AI Planner
+                </Link>
+                <Link to="/offerte-aanvragen" className="inline-flex items-center gap-2 text-primary font-semibold hover:underline">
+                  Gratis offerte aanvragen <ArrowRight size={14} />
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 gap-8">

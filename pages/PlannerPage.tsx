@@ -43,7 +43,7 @@ const compressImage = (dataUrl: string, maxDimension: number): Promise<string> =
 };
 
 export default function PlannerPage() {
-  useSEO({ title: 'AI Badkamer Planner - De Badkamer', description: 'Ontwerp uw droomkamer met onze AI-planner. Upload een foto, kies uw stijl, en ontvang direct een visualisatie met prijsindicatie.' });
+  useSEO({ title: 'AI Badkamer Planner - De Badkamer', description: 'Zie uw nieuwe badkamer vóórdat u begint. Upload een foto, kies uw stijl, en ontvang direct een AI-visualisatie met gepersonaliseerde prijsindicatie. Gratis en vrijblijvend.' });
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
