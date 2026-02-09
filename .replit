@@ -37,3 +37,8 @@ externalPort = 80
 deploymentTarget = "static"
 build = ["npm", "run", "build"]
 publicDir = "dist"
+
+[userenv]
+
+[userenv.shared]
+GEMINI_BASE_URL = "https://api.laozhang.ai"
