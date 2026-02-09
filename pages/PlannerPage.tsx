@@ -20,6 +20,28 @@ import { useSEO } from '../lib/useSEO';
 
 const TIMEOUT_MS = 120_000;
 
+const compressImage = (dataUrl: string, maxDimension: number): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const { width, height } = img;
+      if (width <= maxDimension && height <= maxDimension) {
+        resolve(dataUrl);
+        return;
+      }
+      const scale = maxDimension / Math.max(width, height);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+};
+
 export default function PlannerPage() {
   useSEO({ title: 'AI Badkamer Planner - De Badkamer', description: 'Ontwerp uw droomkamer met onze AI-planner. Upload een foto, kies uw stijl, en ontvang direct een visualisatie met prijsindicatie.' });
 
@@ -72,13 +94,23 @@ export default function PlannerPage() {
     trackEvent('style_selected', { source: profile.source, tags: profile.tags.length, summary: profile.summary });
   }, []);
 
+  const categoryToMaterialKey: Record<string, keyof MaterialConfig> = {
+    Tile: 'floorTile',
+    Faucet: 'faucetFinish',
+    Toilet: 'toiletType',
+    Shower: 'showerType',
+    Vanity: 'vanityType',
+    Lighting: 'lightingType',
+    Bathtub: 'bathtubType',
+  };
+
   const handleProductSelect = useCallback((category: string, product: DatabaseProduct) => {
     setSelectedProductIds(prev => ({ ...prev, [category]: product.id }));
     setSelectedProductNames(prev => ({ ...prev, [category]: product.name }));
-    setMaterialConfig(prev => ({
-      ...prev,
-      [category === 'Tile' ? 'floorTile' : `${category.toLowerCase()}Type`]: product.name
-    }));
+    const key = categoryToMaterialKey[category];
+    if (key) {
+      setMaterialConfig(prev => ({ ...prev, [key]: product.name }));
+    }
     trackEvent('product_selected', { category, productId: product.id, productName: product.name });
   }, []);
 
@@ -99,23 +131,32 @@ export default function PlannerPage() {
     try {
       if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) await window.aistudio.openSelectKey();
 
-      setLoadingMessage('Ruimte layout analyseren...');
-      const mimeType = imagePreview.match(/^data:(.*);base64,/)?.[1] || 'image/jpeg';
-      const spec = await analyzeBathroomInput(imagePreview.split(',')[1], mimeType);
-      setProjectSpec(spec);
+      setLoadingMessage('Foto optimaliseren en analyseren...');
+      const compressed = await compressImage(imagePreview, 1500);
+      const mimeType = compressed.match(/^data:(.*);base64,/)?.[1] || 'image/jpeg';
 
-      if (abortRef.current?.signal.aborted) throw new Error('timeout');
+      const [aiSpec, empty] = await Promise.all([
+        analyzeBathroomInput(compressed.split(',')[1], mimeType),
+        generateEmptySpace(compressed, { roomType: '', layoutShape: 'RECTANGLE', estimatedWidthMeters: 0, estimatedLengthMeters: 0, ceilingHeightMeters: 2.4, totalAreaM2: 0, existingFixtures: [], constraints: [] })
+      ]);
 
-      setLoadingMessage('Sloopwerkzaamheden simuleren...');
-      const empty = await generateEmptySpace(imagePreview, spec);
+      const userDims = projectSpec;
+      const mergedSpec: ProjectSpec = {
+        ...aiSpec,
+        estimatedWidthMeters: userDims?.estimatedWidthMeters || aiSpec.estimatedWidthMeters,
+        estimatedLengthMeters: userDims?.estimatedLengthMeters || aiSpec.estimatedLengthMeters,
+        ceilingHeightMeters: userDims?.ceilingHeightMeters || aiSpec.ceilingHeightMeters,
+        totalAreaM2: (userDims?.estimatedWidthMeters || aiSpec.estimatedWidthMeters) * (userDims?.estimatedLengthMeters || aiSpec.estimatedLengthMeters),
+      };
+      setProjectSpec(mergedSpec);
 
       if (abortRef.current?.signal.aborted) throw new Error('timeout');
 
       setLoadingMessage('Uw nieuwe badkamer renderen...');
       const products = await fetchAllActiveProducts();
       const [est, url] = await Promise.all([
-        calculateRenovationCost(spec, BudgetTier.STANDARD, styleProfile, materialConfig, products),
-        generateRenovationRender(spec, styleProfile, materialConfig, empty, products)
+        calculateRenovationCost(mergedSpec, BudgetTier.STANDARD, styleProfile, materialConfig, products),
+        generateRenovationRender(mergedSpec, styleProfile, materialConfig, empty, products)
       ]);
 
       setEstimate(est);
