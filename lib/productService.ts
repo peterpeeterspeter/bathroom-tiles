@@ -24,6 +24,24 @@ export async function fetchStyleTags(): Promise<string[]> {
   return cachedStyleTags;
 }
 
+const LOCAL_STYLE_IMAGES: Record<string, string> = {
+  hotel: '/styles/hotel.jpg',
+  hygge: '/styles/hygge.jpg',
+  industrial: '/styles/industrial.jpg',
+  minimalistic: '/styles/minimalistic.webp',
+  'modern-classic': '/styles/modern-classic.jpg',
+  modern_classic: '/styles/modern-classic.jpg',
+  modernclassic: '/styles/modern-classic.jpg',
+};
+
+function resolveStyleImage(name: string, fallbackUrl: string): string {
+  const key = name.toLowerCase().replace(/[\s_-]+/g, '');
+  for (const [k, v] of Object.entries(LOCAL_STYLE_IMAGES)) {
+    if (key === k.replace(/[\s_-]+/g, '')) return v;
+  }
+  return fallbackUrl;
+}
+
 export async function fetchStylePresets(): Promise<StylePreset[]> {
   if (cachedPresets && isCacheValid()) return cachedPresets;
 
@@ -51,6 +69,7 @@ export async function fetchStylePresets(): Promise<StylePreset[]> {
 
   cachedPresets = presets.map(p => ({
     ...p,
+    image_url: resolveStyleImage(p.name, p.image_url),
     tags: tagsByPreset[p.id] || [],
   }));
   cacheTimestamp = Date.now();
