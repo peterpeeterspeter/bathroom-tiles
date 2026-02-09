@@ -1,0 +1,137 @@
+Here's my full analysis of the workflow, prompts, and improvement opportunities.
+
+---
+
+## Current Pipeline (5 API calls)
+
+```
+Step 1: Style         → analyzeStyleFromReferences()    [gemini-3-pro-preview]       (optional)
+Step 2: Products      → (no API call, Supabase only)
+Step 3: Photo+Dims    → (no API call, user input)
+Step 4: Processing    → analyzeBathroomInput()          [gemini-3-pro-preview]       (sequential)
+                      → generateEmptySpace()            [gemini-3-pro-image-preview] (sequential)
+                      → calculateRenovationCost()       [gemini-3-pro-preview]       (parallel ↓)
+                      → generateRenovationRender()      [gemini-3-pro-image-preview] (parallel ↑)
+```
+
+---
+
+## Critical Bugs
+
+### 1. User-entered dimensions are silently overwritten
+`DimensionsPhoto.tsx` lets the user enter width/length, stored via `handleDimensionChange`. But in `startProcessing()` (line 104-105), `analyzeBathroomInput()` returns its own AI-estimated dimensions, and `setProjectSpec(spec)` **replaces everything** — the user's manual input is thrown away. The AI guess (which can be wildly wrong from a single photo) becomes the ground truth for cost calculation.
+
+### 2. Product reference images are never actually seen by the model
+In `generateRenovationRender` (lines 326-332), product image URLs are injected as **text strings** like:
+```
+- Floor/Wall: Marble Tile (Reference: https://supabase.co/.../tile.jpg)
+```
+But URLs aren't images — the model only receives one actual image (the shell). It literally cannot see the products it's supposed to render. The references are decorative text.
+
+### 3. `generateEmptySpace` fails silently
+Line 170: on any error, it returns the original bathroom photo. The pipeline continues — `generateRenovationRender` receives a **furnished** room thinking it's an empty shell, and tries to overlay new fixtures on top of existing ones. No error is shown to the user.
+
+### 4. `BudgetTier` is passed but never used
+`calculateRenovationCost` accepts a `tier` parameter (line 157) but the prompt never mentions it. Budget/Standard/Premium makes no difference to the output.
+
+---
+
+## Prompt Issues
+
+### `analyzeBathroomInput` — Overengineered for what's consumed
+The prompt asks for wireframe models and 3D spatial environments, but downstream code only uses:
+- `width_m`, `length_m` (overwritten anyway, see bug #1)
+- `layout_type`
+- `fixtures[]` array (type + position)
+- `demolition_notes`
+
+The `calibration_object` field is returned but **never read** by any code. The wireframe/3D framing adds prompt tokens without benefit.
+
+### `generateEmptySpace` — Fake syntax that confuses the model
+```
+OPERATION: EDIT_IMAGE
+MASK_LOGIC: AUTO_SEGMENT (Furniture, Sanitary Ware, Decor)
+```
+These look like API parameters but they're just prompt text. Gemini doesn't have an `OPERATION` or `MASK_LOGIC` instruction set. This pseudo-syntax can confuse the model into thinking it should do something programmatic rather than image editing. A natural-language instruction would be more reliable.
+
+### `generateRenovationRender` — Gaming engine jargon
+```
+Quality: 8k, Unreal Engine 5, Raytraced Global Illumination
+```
+These are game engine terms meaningless to an image generation model. They can actually hurt output by pushing the model toward "video game screenshot" aesthetics rather than photorealistic interior photography. Better references would be architectural photography terms.
+
+### `calculateRenovationCost` — Labor costs are hallucinated
+The prompt says "You do not guess prices" but provides **no labor rate table**. The model has no choice but to invent labor costs. It also mentions `waste_type` which doesn't exist in the data model. Additionally, `unit` is hardcoded to `'pcs/m2'` for all materials (line 261) — toilets aren't measured in m2.
+
+---
+
+## Workflow Inefficiencies
+
+### 1. Sequential calls that could be parallel
+`analyzeBathroomInput()` and `generateEmptySpace()` run sequentially, but `generateEmptySpace` doesn't use the analysis output — it only needs the original image. These could run in parallel, saving 10-20 seconds.
+
+### 2. Products fetched twice
+`ProductConfiguration` already fetches products from Supabase in Step 2. Then `startProcessing()` calls `fetchAllActiveProducts()` again on line 115. This is a redundant database call.
+
+### 3. No image compression before API calls
+Raw phone photos (10-15MB, 4000x3000px) are sent as base64. This wastes tokens and increases latency. Resizing to ~1500px max dimension would reduce payload by 80%+ with negligible quality loss for analysis.
+
+### 4. Timeout doesn't actually cancel API calls
+The `AbortController` on line 94 is never passed to any of the Gemini API calls. When the 120s timeout fires, it sets `aborted = true`, but the in-flight API calls keep running (and burning tokens) until they complete or fail on their own.
+
+---
+
+## Suggested Improvements (Ranked by Impact)
+
+### High Impact
+
+| # | Change | Benefit |
+|---|--------|---------|
+| 1 | **Merge user dimensions with AI analysis** instead of overwriting. Use AI-estimated dims as defaults, let user corrections take priority | Fixes critical bug; accurate cost estimates |
+| 2 | **Send product images as inline image parts** to the render call, not as URL text strings | Dramatically better render accuracy — model can actually see the products |
+| 3 | **Run `analyzeBathroomInput` + `generateEmptySpace` in parallel** | Saves 10-20s of wall-clock time |
+| 4 | **Make `generateEmptySpace` failure non-silent** — retry once, then show error | Prevents garbage renders from reaching the user |
+| 5 | **Compress/resize uploaded photos** to ~1500px before processing | Faster uploads, lower API cost, same quality |
+
+### Medium Impact
+
+| # | Change | Benefit |
+|---|--------|---------|
+| 6 | **Simplify `generateEmptySpace` prompt** to natural language, remove fake API syntax | More reliable empty shell generation |
+| 7 | **Replace gaming jargon** in render prompt with architectural photography terms ("professional interior photography, natural daylight, magazine-quality composition") | More photorealistic renders |
+| 8 | **Actually use `BudgetTier`** in the cost prompt, or remove the parameter | Correct pricing by tier, or cleaner code |
+| 9 | **Add a labor rate table** to the cost prompt (demolition: EUR X/m2, plumbing: EUR Y/point, etc.) | Stops the model from hallucinating prices |
+| 10 | **Pass already-fetched products** through state instead of re-fetching in Step 4 | Eliminates redundant Supabase call |
+
+### Lower Impact / Architecture
+
+| # | Change | Benefit |
+|---|--------|---------|
+| 11 | **Consider merging analysis + empty shell** into a single `gemini-3-pro-image-preview` call (it can do both text analysis and image generation) | Saves one API call entirely |
+| 12 | **Add per-call timeouts** instead of one 120s blanket | Better error messages ("analysis timed out" vs "something went wrong") |
+| 13 | **Move API calls server-side** (API route / edge function) | Protects API key from client-side extraction |
+| 14 | **Remove unused `calibration_object`** from the analysis schema | Fewer output tokens, cleaner code |
+
+---
+
+## Potential Optimized Pipeline
+
+If you implemented all high-impact changes:
+
+```
+Step 4 (optimized):
+  ┌─ analyzeBathroomInput()     ─┐
+  │  (merge with user dims)      │  PARALLEL
+  └─ generateEmptySpace()       ─┘
+         ↓ both complete
+  ┌─ calculateRenovationCost()  ─┐
+  │  (with labor rate table,     │  PARALLEL
+  │   budget tier, fixed units)  │
+  └─ generateRenovationRender() ─┘
+     (with actual product images
+      sent as inline parts)
+```
+
+This would cut total processing time by ~30% and significantly improve render + cost accuracy.
+
+Want me to implement any of these?
