@@ -9,11 +9,13 @@ const createClient = () => {
     throw new Error('Style analysis is not configured.');
   }
 
+  const baseUrl = `${window.location.origin}/modelfarm/gemini`;
+
   return new GoogleGenAI({
     apiKey,
     httpOptions: {
       apiVersion: "",
-      baseUrl: '/modelfarm/gemini',
+      baseUrl,
     },
   });
 };
