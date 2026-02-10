@@ -5,22 +5,22 @@ import { InlineLeadForm } from '../components/InlineLeadForm';
 import { useSEO } from '../lib/useSEO';
 
 const stats = [
-  { value: '500+', label: 'Huiseigenaren Geholpen' },
-  { value: '150+', label: 'Vakspecialisten in ons Netwerk' },
-  { value: '4.8/5', label: 'Gemiddelde Beoordeling' },
+  { value: '500+', label: 'Tevreden Huiseigenaren' },
+  { value: '150+', label: 'Gecertificeerde Vakmensen' },
+  { value: '4.8/5', label: 'Klantbeoordeling' },
 ];
 
 const steps = [
-  { icon: ClipboardList, title: 'Upload & Visualiseer', description: 'Upload een foto van uw badkamer en ontvang direct een AI-visualisatie van het eindresultaat, inclusief prijsindicatie.' },
-  { icon: Users, title: 'Wij selecteren vakmensen', description: 'Op basis van uw wensen, locatie en budget matchen wij de beste lokale specialisten uit ons netwerk.' },
-  { icon: Star, title: 'Vergelijk & Kies', description: 'Ontvang tot 3 vrijblijvende offertes en kies de vakman die bij u past. Geen verplichtingen.' },
+  { icon: ClipboardList, title: 'Foto uploaden, resultaat zien', description: 'Maak een foto van uw huidige badkamer. Onze AI analyseert de ruimte en toont binnen 2 minuten hoe uw renovatie eruitziet — met directe prijsindicatie.' },
+  { icon: Users, title: 'Wij vinden uw vakman', description: 'Geen eindeloos zoeken. Wij matchen u automatisch met de beste gecertificeerde specialisten bij u in de buurt, afgestemd op uw wensen en budget.' },
+  { icon: Star, title: 'Vergelijk en bespaar', description: 'Ontvang tot 3 vrijblijvende offertes naast elkaar. Vergelijk op prijs, ervaring en reviews — en kies met vertrouwen. Geen verplichtingen, nooit.' },
 ];
 
 const trustBadges = [
-  { icon: ShieldCheck, text: 'Gratis & Vrijblijvend' },
-  { icon: Users, text: '150+ Gecertificeerde Vakmensen' },
-  { icon: Clock, text: 'Reactie binnen 24 uur' },
-  { icon: MapPin, text: 'Actief in heel Nederland & België' },
+  { icon: ShieldCheck, text: '100% Gratis & Vrijblijvend' },
+  { icon: Users, text: '150+ Geverifieerde Vakmensen' },
+  { icon: Clock, text: 'Offertes binnen 24 uur' },
+  { icon: MapPin, text: 'Heel Nederland & België' },
 ];
 
 const costOverview = [
@@ -36,36 +36,36 @@ const costOverview = [
 const faqs = [
   {
     q: 'Wat kost een badkamer renovatie?',
-    a: 'De kosten voor een complete badkamerrenovatie in 2026 liggen gemiddeld tussen €8.000 en €25.000, afhankelijk van de grootte, gekozen materialen en de gewenste afwerking. Voor een standaard badkamer van 9 m² betaalt u gemiddeld €14.000 tot €18.500 (inclusief materialen, arbeid en BTW). Een budgetrenovatie begint rond €8.000, terwijl een luxe renovatie met premium materialen kan oplopen tot €25.000 of meer. Wilt u een nauwkeurige schatting? Gebruik onze gratis AI Planner.',
+    a: 'Een complete renovatie kost gemiddeld €8.000 tot €25.000 in 2026 — afhankelijk van grootte, materialen en afwerking. Een standaard badkamer van 9 m² valt meestal tussen €14.000 en €18.500 (materiaal + arbeid + BTW). Budget beperkt? Onze AI Planner berekent exact wat uw specifieke wensen kosten.',
   },
   {
     q: 'Hoeveel kost een badkamer renovatie per m²?',
-    a: 'De kosten voor een badkamerrenovatie liggen in 2026 gemiddeld tussen €390 en €1.700 per m², inclusief materialen, arbeid en afvoer. Concreet betekent dit: een kleine badkamer (2-4 m²) kost €8.000 tot €15.000, een gemiddelde badkamer (4-6 m²) €12.000 tot €20.000, en een grote badkamer (6+ m²) €18.000 tot €30.000. De exacte prijs hangt af van uw materiaalwensen, de complexiteit van de renovatie, en of er leidingwerk verplaatst moet worden.',
+    a: 'Reken op €390 tot €1.700 per m² in 2026. Concreet: een kleine badkamer (2–4 m²) kost €8.000–€15.000, middelgroot (4–6 m²) €12.000–€20.000, en groot (6+ m²) €18.000–€30.000. De prijs hangt af van materiaalwensen en of leidingwerk verplaatst moet worden.',
   },
   {
     q: 'Hoe lang duurt een badkamer renovatie?',
-    a: 'Een opfrisbeurt (bestaande indeling behouden) duurt gemiddeld 2 tot 6 werkdagen. Een volledige renovatie met nieuw sanitair en tegelwerk duurt 1 tot 3 weken. Bij een verbouwing met structurele wijzigingen — zoals het samenvoegen van badkamer en toilet — moet u rekenen op 1 tot 3 weken. Tip: plan materialen minstens 4 weken van tevoren om vertragingen te voorkomen.',
+    a: 'Een opfrisbeurt: 2–6 werkdagen. Volledige renovatie met nieuw sanitair en tegelwerk: 1–3 weken. Verbouwing met structurele wijzigingen: 2–4 weken. Pro tip: bestel materialen minstens 4 weken vooruit om vertragingen te voorkomen.',
   },
   {
     q: 'Wat is het verschil tussen een renovatie en een verbouwing?',
-    a: 'Bij een renovatie vernieuwt u de badkamer binnen de bestaande ruimte en indeling — denk aan nieuw sanitair, tegels en afwerking. Kosten: €8.000 tot €25.000. Bij een verbouwing worden muren verplaatst, leidingen verlegd of ruimtes samengevoegd. Dit is complexer en kost doorgaans €15.000 tot €35.000+. Twijfelt u wat bij uw situatie past? Onze AI Planner helpt u de mogelijkheden te verkennen.',
+    a: 'Renovatie = vernieuwen binnen de bestaande ruimte (nieuw sanitair, tegels, afwerking). Kosten: €8.000–€25.000. Verbouwing = muren verplaatsen, leidingen verleggen of ruimtes samenvoegen. Kosten: €15.000–€35.000+. Twijfelt u? Onze AI Planner analyseert uw situatie en laat zien wat mogelijk is.',
   },
   {
     q: 'Kan ik mijn badkamer zelf renoveren?',
-    a: 'Sommige werkzaamheden zoals schilderen en kleine aanpassingen kunt u zelf doen. Voor loodgieterswerk, elektra en tegelwerk raden wij altijd een vakspecialist aan. Dit garandeert de kwaliteit en voorkomt kostbare fouten. Via De Badkamer vindt u eenvoudig gekwalificeerde vakmensen.',
+    a: 'Schilderen en kleine aanpassingen kunt u prima zelf. Maar voor loodgieterswerk, elektra en tegelwerk raden wij altijd een vakspecialist aan — fouten kosten u op de lange termijn meer dan de besparing oplevert. Via ons netwerk vindt u snel een betrouwbare vakman.',
   },
   {
     q: 'Welke badkamertrends zijn populair in 2026?',
-    a: 'In 2026 zien we een sterke verschuiving naar wandpanelen in plaats van tegels (geen voegen, minder onderhoud), duurzame materialen met een levensduur van 25+ jaar, en comfort boven luxe — praktisch en tijdloos in plaats van opvallend. Regendouches, rimfree toiletten en inbouwkranen zijn inmiddels standaard in middenklasse renovaties.',
+    a: 'Grote verschuiving naar wandpanelen in plaats van tegels (geen voegen, minder onderhoud). Verder: duurzame materialen met 25+ jaar levensduur en comfort boven opvallende luxe. Regendouches, rimfree toiletten en inbouwkranen zijn inmiddels standaard — zelfs in middenklasse renovaties.',
   },
   {
     q: 'Is de offerte echt gratis en vrijblijvend?',
-    a: 'Ja, het aanvragen van offertes via De Badkamer is volledig gratis en vrijblijvend. U ontvangt offertes van lokale vakmensen en beslist zelf of en met wie u in zee gaat. Er zijn geen verplichtingen aan verbonden.',
+    a: 'Ja, 100%. U ontvangt offertes van geverifieerde lokale vakmensen en beslist volledig zelf of en met wie u in zee gaat. Geen verplichtingen, geen verborgen kosten, geen verrassingen.',
   },
 ];
 
 export default function HomePage() {
-  useSEO({ title: 'Badkamer Renovatie | Gratis Offertes NL & BE - De Badkamer', description: 'Plan uw badkamerrenovatie met AI-visualisatie. Vergelijk gratis offertes van lokale vakmensen in Nederland en België. Gemiddelde kosten: €8.000 – €25.000.' });
+  useSEO({ title: 'Badkamer Renovatie | AI Visualisatie & Gratis Offertes - De Badkamer', description: 'Zie uw nieuwe badkamer vóórdat u begint. Upload een foto, ontvang een AI-visualisatie en vergelijk gratis offertes van 150+ vakmensen in Nederland en België.' });
 
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -77,28 +77,28 @@ export default function HomePage() {
         <div className="relative max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-28">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div>
-              <p className="text-primary font-semibold text-sm mb-4 tracking-wide">Badkamer renovatie in Nederland & België</p>
+              <p className="text-primary font-semibold text-sm mb-4 tracking-wide">Nr. 1 badkamer renovatieplatform van Nederland & België</p>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] text-neutral-900 mb-6">
-                Zie uw nieuwe badkamer <span className="text-primary">vóórdat u begint</span>.
+                Uw droomkamer in beeld <span className="text-primary">— binnen 2 minuten</span>.
               </h1>
               <p className="text-lg text-neutral-700 leading-relaxed mb-4 max-w-lg">
-                Upload een foto, ontvang een AI-visualisatie van uw droomkamer &mdash; én vergelijk direct vrijblijvende offertes van vakmensen bij u in de buurt.
+                Upload een foto van uw badkamer en onze AI toont direct hoe uw renovatie eruitziet. Kies uw stijl, vergelijk prijzen en ontvang vrijblijvende offertes van gecertificeerde vakmensen bij u in de buurt.
               </p>
               <p className="text-sm text-neutral-500 mb-8 max-w-lg">
-                Gemiddelde investering voor een complete badkamerrenovatie: <strong className="text-neutral-700">&euro;8.000 &ndash; &euro;25.000</strong> (incl. materialen, arbeid en BTW).
+                Gemiddelde investering: <strong className="text-neutral-700">&euro;8.000 &ndash; &euro;25.000</strong> (incl. materiaal, arbeid en BTW). Geen verrassingen achteraf.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
                   to="/planner"
                   className="inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-white font-bold text-base px-8 py-4 rounded-full transition-all hover:shadow-xl hover:shadow-accent/25 hover:-translate-y-0.5"
                 >
-                  <Sparkles size={18} /> Start AI Visualisatie <ArrowRight size={18} />
+                  <Sparkles size={18} /> Visualiseer Uw Badkamer <ArrowRight size={18} />
                 </Link>
                 <Link
                   to="/offerte-aanvragen"
                   className="inline-flex items-center justify-center gap-2 bg-white border-2 border-neutral-300/50 text-neutral-700 font-semibold text-base px-8 py-4 rounded-full transition-all hover:border-primary hover:text-primary"
                 >
-                  Ontvang Gratis Offertes <ArrowRight size={18} />
+                  Gratis Offertes Aanvragen <ArrowRight size={18} />
                 </Link>
               </div>
             </div>
@@ -118,8 +118,8 @@ export default function HomePage() {
                   <CheckCircle className="text-success" size={24} />
                 </div>
                 <div>
-                  <p className="font-bold text-sm text-neutral-900">500+ projecten</p>
-                  <p className="text-xs text-neutral-500">succesvol gematcht</p>
+                  <p className="font-bold text-sm text-neutral-900">500+ huiseigenaren</p>
+                  <p className="text-xs text-neutral-500">gingen u voor</p>
                 </div>
               </div>
             </div>
@@ -147,8 +147,8 @@ export default function HomePage() {
       <section className="py-20 md:py-28">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
-            <p className="text-primary font-semibold text-sm mb-3">Hoe het werkt</p>
-            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900">Van eerste idee tot concrete offerte &mdash; in 3 stappen</h2>
+            <p className="text-primary font-semibold text-sm mb-3">Simpel. Snel. Slim.</p>
+            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900">Van foto tot offerte &mdash; in 3 stappen</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8 md:gap-12">
             {steps.map((s, i) => (
@@ -170,9 +170,9 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20">
             <div>
-              <p className="text-primary font-semibold text-sm mb-3">Kosten overzicht</p>
-              <h2 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900 mb-4">Wat kost een badkamerrenovatie in 2026?</h2>
-              <p className="text-neutral-500 mb-8 leading-relaxed">Actuele gemiddelde prijzen per onderdeel &mdash; inclusief materiaal, arbeid en BTW.</p>
+              <p className="text-primary font-semibold text-sm mb-3">Transparante prijzen</p>
+              <h2 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900 mb-4">Weet wat u betaalt &mdash; vóórdat u begint</h2>
+              <p className="text-neutral-500 mb-8 leading-relaxed">Actuele richtprijzen 2026 per onderdeel &mdash; inclusief materiaal, arbeid en BTW. Geen verborgen kosten.</p>
               <div className="space-y-0 border border-neutral-300/50 rounded-2xl overflow-hidden">
                 {costOverview.map((item, i) => (
                   <div key={i} className={`flex justify-between items-center px-6 py-4 ${i % 2 === 0 ? 'bg-neutral-100/50' : 'bg-white'}`}>
@@ -216,14 +216,14 @@ export default function HomePage() {
             <div className="absolute top-0 right-0 w-72 h-72 bg-white/5 rounded-full blur-3xl" />
             <div className="relative grid lg:grid-cols-2 gap-10 items-center">
               <div>
-                <p className="text-white/70 font-semibold text-sm mb-3">Exclusieve tool &mdash; gratis te gebruiken</p>
-                <h2 className="text-3xl md:text-4xl font-black tracking-tight mb-4">Zie het eindresultaat vóór de eerste tegelhamer valt</h2>
-                <p className="text-white/80 leading-relaxed mb-8">Upload een foto van uw huidige badkamer, kies uw stijl, en ontvang binnen enkele minuten een realistische AI-visualisatie &mdash; inclusief een gepersonaliseerde prijsindicatie op basis van uw keuzes en m².</p>
+                <p className="text-white/70 font-semibold text-sm mb-3">Exclusieve AI-tool &mdash; gratis voor iedereen</p>
+                <h2 className="text-3xl md:text-4xl font-black tracking-tight mb-4">Niet dromen, maar zien. Vóór de eerste tegelhamer valt.</h2>
+                <p className="text-white/80 leading-relaxed mb-8">Upload een foto, kies uw stijl en materialen, en ontvang een fotorealistische AI-visualisatie van uw nieuwe badkamer &mdash; inclusief een persoonlijke kostenberekening op basis van uw m² en keuzes. Zo weet u precies waar u aan toe bent.</p>
                 <Link
                   to="/planner"
                   className="inline-flex items-center gap-2 bg-accent hover:bg-accent-hover text-white font-bold px-8 py-4 rounded-full transition-all hover:shadow-xl"
                 >
-                  <Sparkles size={18} /> Probeer de AI Planner &mdash; Gratis <ArrowRight size={16} />
+                  <Sparkles size={18} /> Start Gratis Visualisatie <ArrowRight size={16} />
                 </Link>
               </div>
               <div className="rounded-2xl overflow-hidden shadow-2xl">
@@ -244,7 +244,7 @@ export default function HomePage() {
         <div className="max-w-3xl mx-auto px-4 md:px-8">
           <div className="text-center mb-12">
             <p className="text-primary font-semibold text-sm mb-3">Veelgestelde vragen</p>
-            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900">Alles over badkamer renovatie</h2>
+            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900">Uw vragen, eerlijk beantwoord</h2>
           </div>
           <div className="space-y-3">
             {faqs.map((faq, i) => (
@@ -270,20 +270,20 @@ export default function HomePage() {
       {/* Final CTA */}
       <section className="bg-neutral-100 py-20 md:py-28">
         <div className="max-w-3xl mx-auto px-4 md:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900 mb-4">Klaar voor uw nieuwe badkamer?</h2>
-          <p className="text-neutral-500 mb-8 text-lg">Start met een gratis AI-visualisatie, of ontvang direct vrijblijvende offertes van vakmensen bij u in de buurt.</p>
+          <h2 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900 mb-4">Uw droomkamer begint hier</h2>
+          <p className="text-neutral-500 mb-8 text-lg">Zie binnen 2 minuten hoe uw nieuwe badkamer eruitziet, of ontvang direct vrijblijvende offertes van vakmensen bij u in de buurt.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/planner"
               className="inline-flex items-center gap-2 bg-accent hover:bg-accent-hover text-white font-bold text-lg px-10 py-5 rounded-full transition-all hover:shadow-xl hover:shadow-accent/25 hover:-translate-y-0.5"
             >
-              <Sparkles size={20} /> Start AI Visualisatie <ArrowRight size={20} />
+              <Sparkles size={20} /> Visualiseer Uw Badkamer <ArrowRight size={20} />
             </Link>
             <Link
               to="/offerte-aanvragen"
               className="inline-flex items-center gap-2 bg-white border-2 border-neutral-300/50 text-neutral-700 font-semibold text-lg px-10 py-5 rounded-full transition-all hover:border-primary hover:text-primary"
             >
-              Ontvang Gratis Offertes <ArrowRight size={20} />
+              Gratis Offertes Aanvragen <ArrowRight size={20} />
             </Link>
           </div>
         </div>
