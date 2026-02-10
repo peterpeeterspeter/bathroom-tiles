@@ -70,9 +70,12 @@ export interface StyleTag {
 
 export interface ExpertAnalysis {
   currentState: string;
+  conditionScore: number;
+  keepElements: string[];
   opportunities: string[];
   recommendations: string[];
   layoutAdvice: string;
+  estimatedComplexity: 'eenvoudig' | 'gemiddeld' | 'complex';
 }
 
 export interface StyleProfile {

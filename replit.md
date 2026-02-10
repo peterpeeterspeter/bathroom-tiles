@@ -7,7 +7,7 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
 - **Framework**: React 19 + TypeScript + Vite 6
 - **Styling**: Tailwind CSS v4
 - **AI (generation)**: Google Gemini API (`@google/genai`) via LaoZhang proxy (gemini-3-pro-image-preview for renders)
-- **AI (style analysis)**: Google Gemini API direct (gemini-3-flash-preview for style tag extraction, via GOOGLE_AI_API_KEY)
+- **AI (expert analysis)**: Google Gemini API direct (gemini-3-flash-preview for 9-step expert renovation analysis, via GOOGLE_AI_API_KEY)
 - **Backend**: Supabase (external, not local DB)
 - **PDF Generation**: jspdf + html2canvas
 - **Routing**: react-router-dom v7
@@ -15,7 +15,7 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
 ## AI Pipeline (PlannerPage)
 1. **Style Selection** — User picks preset or uploads reference images (no AI call yet)
 2. **Dimensions & Photo** — User enters dimensions + uploads bathroom photo
-3. **Expert Analysis + Product Configuration** — `analyzeProjectContext()` runs with all inputs (style preset, reference images, bathroom photo, dimensions) → produces enriched StyleProfile with expert renovation advice → products scored by style profile
+3. **Expert Analysis + Product Configuration** — `analyzeProjectContext()` runs with all inputs (style preset, reference images, bathroom photo, dimensions) → 9-step analysis with pricing context → produces enriched StyleProfile with condition score, keep elements, opportunities, recommendations, layout advice, complexity estimate → products scored by style profile
 4. **Processing** (parallel):
    - `analyzeBathroomInput()` + `generateEmptySpace()` run in parallel
    - Then `calculateRenovationCost()` + `generateRenovationRender()` run in parallel

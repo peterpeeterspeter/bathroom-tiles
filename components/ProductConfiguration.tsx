@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowRight, ShoppingBag, Info, Loader2, Eye, Lightbulb, Layout, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, ShoppingBag, Info, Loader2, Eye, Lightbulb, Layout, CheckCircle2, Gauge, Bookmark, Wrench } from 'lucide-react';
 import { StyleProfile, DatabaseProduct } from '../types';
 import { ScoredProduct, fetchProductsForProfile, getProductsByCategory } from '../lib/productService';
 import { CategoryProductSelector } from './CategoryProductSelector';
@@ -62,11 +62,35 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, onProdu
             {expert && (
               <>
                 <div className="bg-white p-5 md:p-6 rounded-2xl border-2 border-neutral-300/30 shadow-sm">
-                  <h4 className="font-black uppercase text-[10px] tracking-widest mb-3 flex items-center gap-2 text-neutral-500">
-                    <Eye size={14} className="text-primary" /> Huidige Staat
-                  </h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-black uppercase text-[10px] tracking-widest flex items-center gap-2 text-neutral-500">
+                      <Eye size={14} className="text-primary" /> Huidige Staat
+                    </h4>
+                    <div className="flex items-center gap-1.5">
+                      <Gauge size={12} className={expert.conditionScore <= 4 ? 'text-red-500' : expert.conditionScore <= 6 ? 'text-amber-500' : 'text-emerald-500'} />
+                      <span className={`text-[10px] font-black ${expert.conditionScore <= 4 ? 'text-red-500' : expert.conditionScore <= 6 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                        {expert.conditionScore}/10
+                      </span>
+                    </div>
+                  </div>
                   <p className="text-[11px] font-bold text-neutral-700 leading-relaxed">{expert.currentState}</p>
                 </div>
+
+                {expert.keepElements.length > 0 && (
+                  <div className="bg-white p-5 md:p-6 rounded-2xl border-2 border-neutral-300/30 shadow-sm">
+                    <h4 className="font-black uppercase text-[10px] tracking-widest mb-3 flex items-center gap-2 text-neutral-500">
+                      <Bookmark size={14} className="text-primary" /> Behouden
+                    </h4>
+                    <ul className="space-y-1.5">
+                      {expert.keepElements.map((el, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <CheckCircle2 size={12} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+                          <span className="text-[11px] font-bold text-neutral-700 leading-relaxed">{el}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 <div className="bg-white p-5 md:p-6 rounded-2xl border-2 border-neutral-300/30 shadow-sm">
                   <h4 className="font-black uppercase text-[10px] tracking-widest mb-3 flex items-center gap-2 text-neutral-500">
@@ -104,6 +128,20 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, onProdu
                     <p className="text-[11px] font-bold text-neutral-700 leading-relaxed">{expert.layoutAdvice}</p>
                   </div>
                 )}
+
+                <div className="bg-neutral-900 text-white p-4 rounded-2xl flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Wrench size={14} className="text-primary" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Complexiteit</span>
+                  </div>
+                  <span className={`text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full ${
+                    expert.estimatedComplexity === 'eenvoudig' ? 'bg-emerald-500/20 text-emerald-400' :
+                    expert.estimatedComplexity === 'gemiddeld' ? 'bg-amber-500/20 text-amber-400' :
+                    'bg-red-500/20 text-red-400'
+                  }`}>
+                    {expert.estimatedComplexity}
+                  </span>
+                </div>
               </>
             )}
 
