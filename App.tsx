@@ -8,6 +8,7 @@ const KostenPage = lazy(() => import('./pages/KostenPage'));
 const QuotePage = lazy(() => import('./pages/QuotePage'));
 const AdviesPage = lazy(() => import('./pages/AdviesPage'));
 const ArticlePage = lazy(() => import('./pages/ArticlePage'));
+const InspiratiePage = lazy(() => import('./pages/InspiratiePage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const VoorwaardenPage = lazy(() => import('./pages/VoorwaardenPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
@@ -33,6 +34,7 @@ export default function App() {
         <Route index element={<HomePage />} />
         <Route path="badkamer-renovatie-kosten" element={<KostenPage />} />
         <Route path="offerte-aanvragen" element={<QuotePage />} />
+        <Route path="badkamer-inspiratie" element={<InspiratiePage />} />
         <Route path="advies" element={<AdviesPage />} />
         <Route path="advies/:slug" element={<ArticlePage />} />
         <Route path="privacy" element={<PrivacyPage />} />

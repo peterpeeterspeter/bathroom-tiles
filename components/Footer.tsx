@@ -29,7 +29,7 @@ export const Footer = () => (
             <Link to="/" className="block text-sm text-white/60 hover:text-white transition-colors">Home</Link>
             <Link to="/badkamer-renovatie-kosten" className="block text-sm text-white/60 hover:text-white transition-colors">Kosten Badkamer Renovatie</Link>
             <Link to="/planner" className="block text-sm text-white/60 hover:text-white transition-colors">AI Badkamer Planner</Link>
-            <Link to="/advies" className="block text-sm text-white/60 hover:text-white transition-colors">Advies & Inspiratie</Link>
+            <Link to="/badkamer-inspiratie" className="block text-sm text-white/60 hover:text-white transition-colors">Inspiratie</Link>
             <Link to="/offerte-aanvragen" className="block text-sm text-white/60 hover:text-white transition-colors">Gratis Offerte Aanvragen</Link>
           </nav>
         </div>

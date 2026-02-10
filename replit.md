@@ -29,7 +29,7 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
 
 ## Directory Structure
 - `/components` - React UI components
-- `/pages` - Page-level components (Home, Kosten, Planner, Advies, etc.)
+- `/pages` - Page-level components (Home, Kosten, Planner, Inspiratie, Advies, etc.)
 - `/lib` - Utility services (supabase client, analytics, PDF, SEO, productService)
 - `/services` - AI services (Gemini integration, style analysis)
 - `/supabase` - Supabase migrations and edge functions
@@ -61,6 +61,7 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
   - Added Toevoegen/Verwijderen options for Shower and Bathtub categories
   - Cost estimate now scope-aware: kept items have zero cost
   - Homepage hero changed from image to video
+- 2026-02-10: New Inspiratie page at /badkamer-inspiratie with 14 before/after transformation cards, multi-filter pills, lightbox with swipe/keyboard nav, CTA + FAQ section. Nav updated from Advies to Inspiratie.
 - 2026-02-10: Enhanced expert analysis response schema with description fields for longer, more detailed output
 - 2026-02-09: Initial Replit setup - configured Vite for port 5000 with allowedHosts
 - 2026-02-09: Fixed production build env var issue (removed typeof process guards)
