@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { ProjectSpec, Estimate, BudgetTier, FixtureType, MaterialConfig, StyleProfile, DatabaseProduct } from "../types";
+import { ProjectSpec, Estimate, BudgetTier, FixtureType, MaterialConfig, StyleProfile, DatabaseProduct, ProductAction } from "../types";
 
 const getApiKey = (): string => {
   const key = process.env.API_KEY || process.env.GEMINI_API_KEY || '';
@@ -131,59 +131,6 @@ Analyze this bathroom photo and identify:
   }
 };
 
-export const generateEmptySpace = async (base64Image: string, spec: ProjectSpec): Promise<string> => {
-  const ai = createClient();
-  const model = "gemini-3-pro-image-preview";
-  const mimeType = getMimeType(base64Image);
-
-  const prompt = `DOEL: Toon deze badkamer als een volledig gestripte, lege ruimte — klaar voor renovatie. Alsof een sloopploeg alles heeft verwijderd.
-
-WAT DE LEGE RUIMTE MOET TONEN:
-- Vloer: egaal ruw grijs beton (gietvloer/dekvloer), consistent over het HELE oppervlak zonder onderbrekingen of vlekken
-- Muren: egaal ruwe witte gipspleister, consistent over ALLE muren zonder schaduwen of contouren van verwijderde objecten
-- Plafond: bestaand plafond behouden zoals het is
-
-WAT EXACT BEHOUDEN BLIJFT (niet verwijderen):
-- Alle raamkozijnen, raamglas en daglichttoetreding
-- Alle deurkozijnen en deuren
-- Plafondbalken, nissen, alkoven en andere bouwkundige elementen
-- De originele lichtrichting en lichtbron
-- Het exacte kamerperspectief, de kijkhoek en verhoudingen
-
-WAT VOLLEDIG VERDWIJNT (geen spoor van achterlaten):
-- Alle sanitair (toilet, wastafel, bad, douche)
-- Alle meubels (kasten, rekken, spiegels)
-- Alle wandafwerking (tegels, panelen, verf)
-- Alle vloerafwerking (tegels, vinyl, hout)
-- Alle accessoires (handdoekrekken, zeepdispensers, verlichting)
-- BELANGRIJK: geen schaduwen, contouren of afdrukken van verwijderde objecten — de muren en vloer zijn volkomen egaal
-
-Het resultaat moet eruitzien als een kale ruwbouw-ruimte die net is opgeleverd door de aannemer: leeg, schoon, klaar voor nieuwe afwerking.`;
-
-  const attempt = async (): Promise<string> => {
-    const response = await ai.models.generateContent({
-      model,
-      contents: { parts: [{ inlineData: { mimeType, data: base64Image.split(',')[1] } }, { text: prompt }] },
-    });
-    for (const part of response.candidates?.[0]?.content?.parts || []) {
-      if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-    }
-    throw new Error("No image returned from empty shell generation");
-  };
-
-  try {
-    return await attempt();
-  } catch (firstError) {
-    console.warn("Empty shell generation failed, retrying...", firstError);
-    try {
-      return await attempt();
-    } catch (retryError) {
-      console.error("Empty shell generation failed after retry:", retryError);
-      throw new Error("Kon de ruimte niet leegmaken voor visualisatie. Probeer een andere foto met beter licht of een breder perspectief.");
-    }
-  }
-};
-
 const LABOR_RATE_TABLE = `
 LABOR RATE TABLE (EUR, Netherlands 2025 market rates):
 - DEMOLITION: €35/m2 (removal of existing fixtures, tiles, screed)
@@ -210,7 +157,8 @@ export const calculateRenovationCost = async (
   tier: BudgetTier,
   styleProfile: StyleProfile,
   materials: MaterialConfig,
-  products: DatabaseProduct[]
+  products: DatabaseProduct[],
+  productActions?: Record<string, string>
 ): Promise<Estimate> => {
   const ai = createClient();
   const model = "gemini-3-pro-preview";
@@ -248,6 +196,14 @@ export const calculateRenovationCost = async (
 
     USER MATERIAL PREFERENCES:
     ${JSON.stringify(materials)}
+
+    ${productActions ? `RENOVATION SCOPE:
+    The customer has chosen the following actions per category.
+    Only include costs for items marked REPLACE or ADD. Items marked KEEP cost nothing (no material, no labor).
+    Items marked REMOVE only incur demolition/removal labor cost.
+    Categories not listed default to REPLACE.
+${['Tile', 'Vanity', 'Toilet', 'Faucet', 'Shower', 'Bathtub', 'Lighting'].map(cat => `    - ${cat}: ${(productActions[cat] || 'replace').toUpperCase()}`).join('\n')}
+    ` : ''}
 
     ${LABOR_RATE_TABLE}
 
@@ -350,133 +306,204 @@ export const calculateRenovationCost = async (
   }
 };
 
-const fetchImageAsBase64 = async (url: string): Promise<{ data: string; mimeType: string } | null> => {
-  try {
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    const blob = await response.blob();
-    const mimeType = blob.type || 'image/jpeg';
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        const base64 = result.split(',')[1];
-        resolve({ data: base64, mimeType });
-      };
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    return null;
-  }
+export const fetchProductImagesAsBase64 = async (
+  products: DatabaseProduct[]
+): Promise<Map<string, { base64: string; mimeType: string }>> => {
+  const imageMap = new Map<string, { base64: string; mimeType: string }>();
+
+  await Promise.all(
+    products.map(async (product) => {
+      try {
+        const response = await fetch(product.image_url);
+        if (!response.ok) return;
+        const blob = await response.blob();
+        const buffer = await blob.arrayBuffer();
+        const base64 = btoa(
+          new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+        );
+        imageMap.set(product.id, {
+          base64,
+          mimeType: blob.type || 'image/jpeg',
+        });
+      } catch (err) {
+        console.warn(`Failed to fetch image for product ${product.id}:`, err);
+      }
+    })
+  );
+
+  return imageMap;
 };
 
-export const generateRenovationRender = async (
-  spec: ProjectSpec,
+const CATEGORY_LABELS_NL: Record<string, string> = {
+  Tile: 'Vloer & Wanden',
+  Vanity: 'Wastafelmeubel',
+  Toilet: 'Toilet',
+  Faucet: 'Kranen',
+  Shower: 'Douche',
+  Bathtub: 'Bad',
+  Lighting: 'Verlichting',
+};
+
+export const generateRenovation = async (
+  bathroomBase64: string,
+  bathroomMimeType: string,
   styleProfile: StyleProfile,
-  materials: MaterialConfig,
-  base64Shell: string,
-  products: DatabaseProduct[]
+  productActions: Record<string, string>,
+  selectedProducts: DatabaseProduct[],
+  productImages: Map<string, { base64: string; mimeType: string }>
 ): Promise<string> => {
   const ai = createClient();
   const model = "gemini-3-pro-image-preview";
-  const mimeType = getMimeType(base64Shell);
-
-  const sinkLocation = spec.existingFixtures.find(f => f.type === FixtureType.SINK);
-  const sinkCoords = sinkLocation ? `X:${sinkLocation.positionX}%, Y:${sinkLocation.positionY}%` : "standard position";
-
-  const getProductImageUrl = (name: string): string => {
-    return products.find(p => p.name === name)?.image_url || "";
-  };
 
   const styleDesc = styleProfile.summary;
   const topTags = styleProfile.tags.slice(0, 8).map(t => t.tag).join(', ');
+  const presetDesc = styleProfile.presetName
+    ? `${styleProfile.presetName}: ${styleProfile.summary}`
+    : styleProfile.summary;
 
-  const materialEntries = [
-    { label: 'Vloer-/wandtegel', name: materials.floorTile },
-    { label: 'Kranen', name: materials.faucetFinish },
-    { label: 'Toilet', name: materials.toiletType },
-    { label: 'Badmeubel', name: materials.vanityType },
-    { label: 'Verlichting', name: materials.lightingType },
-    ...(materials.bathtubType ? [{ label: 'Ligbad', name: materials.bathtubType }] : []),
-    ...(materials.showerType ? [{ label: 'Douche', name: materials.showerType }] : []),
-  ];
+  const parts: any[] = [];
 
-  const imageUrls = materialEntries
-    .map(e => getProductImageUrl(e.name))
-    .filter(url => url && url.startsWith('http'));
+  if (styleProfile.referenceImageUrls && styleProfile.referenceImageUrls.length > 0) {
+    for (const refUrl of styleProfile.referenceImageUrls) {
+      const match = refUrl.match(/^data:(.*);base64,(.*)$/);
+      if (match) {
+        parts.push({ inlineData: { mimeType: match[1], data: match[2] } });
+      }
+    }
+    parts.push({
+      text: "[INSPIRATIEBEELDEN — dit is de stijl die de klant wil bereiken]"
+    });
+  }
 
-  const fetchedImages = await Promise.all(
-    imageUrls.slice(0, 4).map(url => fetchImageAsBase64(url))
-  );
+  parts.push({
+    inlineData: { mimeType: bathroomMimeType, data: bathroomBase64 }
+  });
+  parts.push({
+    text: "[FOTO HUIDIGE BADKAMER — dit is de huidige staat die gerenoveerd moet worden]"
+  });
 
-  const inlineImageParts: any[] = fetchedImages
-    .filter((img): img is { data: string; mimeType: string } => img !== null)
-    .map(img => ({ inlineData: { mimeType: img.mimeType, data: img.data } }));
+  let imageIndex = 0;
+  const imageLabels: string[] = [];
 
-  const area = (spec.estimatedWidthMeters * spec.estimatedLengthMeters).toFixed(1);
+  for (const product of selectedProducts) {
+    const imgData = productImages.get(product.id);
+    if (imgData) {
+      imageIndex++;
+      parts.push({
+        inlineData: { mimeType: imgData.mimeType, data: imgData.base64 }
+      });
+      const label = `[PRODUCT ${imageIndex}: ${product.name} (${product.category})]`;
+      parts.push({ text: label });
+      imageLabels.push(`Product ${imageIndex}: ${product.name} — categorie: ${product.category}`);
+    }
+  }
 
-  const bathtubSection = materials.bathtubType
-    ? `\n- ${materials.bathtubType}: Tegen de wand tegenover de deur, of in de langste beschikbare hoek. Badkraan aan het voeteneinde.`
-    : '';
-  const showerSection = materials.showerType
-    ? `\n- ${materials.showerType}: Inloopdouche met glazen wand, bij voorkeur naast het raam (als aanwezig) voor daglicht. Regendouchekop + handdouche.`
-    : '';
+  const scopeLines: string[] = [];
+  const categories = ['Tile', 'Vanity', 'Toilet', 'Faucet', 'Shower', 'Bathtub', 'Lighting'];
 
-  const prompt = `DOEL: Transformeer deze lege ruwbouw-badkamer tot een prachtig gerenoveerde badkamer. Het eindresultaat moet eruitzien als een professionele interieurfoto voor een woonmagazine.
+  for (const cat of categories) {
+    const action = productActions[cat] || 'replace';
+    const nlLabel = CATEGORY_LABELS_NL[cat] || cat;
+    const product = selectedProducts.find(p => p.category === cat);
+    const productImg = product ? imageLabels.find(l => l.includes(product.name)) : null;
 
-RUIMTE: ${spec.estimatedWidthMeters}m breed × ${spec.estimatedLengthMeters}m lang × ${spec.ceilingHeightMeters}m hoog (${area} m²)
+    if (action === 'keep') {
+      scopeLines.push(`${nlLabel} — BEHOUDEN: Bewaar het bestaande element EXACT zoals zichtbaar op de badkamerfoto. Zelfde uiterlijk, zelfde materiaal, zelfde staat. Mag verplaatst worden als de nieuwe indeling dat vereist, maar het uiterlijk blijft identiek.`);
+    } else if (action === 'remove') {
+      scopeLines.push(`${nlLabel} — VERWIJDEREN: Verwijder dit element volledig. Vul de vrijgekomen ruimte naadloos op met het vloer- en wandmateriaal.`);
+    } else if (action === 'add') {
+      scopeLines.push(`${nlLabel} — TOEVOEGEN (${productImg || 'zie referentie'}): Er is momenteel GEEN ${nlLabel.toLowerCase()} in deze badkamer. Installeer het product uit de bijgevoegde referentiefoto op de meest logische plek in de nieuwe indeling.`);
+    } else {
+      if (productImg) {
+        scopeLines.push(`${nlLabel} — VERVANGEN (${productImg}): Verwijder het bestaande element en installeer het product uit de bijgevoegde referentiefoto. Match kleur, vorm, materiaal en afwerking EXACT.`);
+      } else {
+        scopeLines.push(`${nlLabel} — VERVANGEN: Vervang door een modern, stijlvol alternatief passend bij de ontwerpstijl.`);
+      }
+    }
+  }
 
-PRODUCTEN — gebruik de bijgevoegde productfoto's als EXACTE visuele referentie:
+  const prompt = `
+Transform the bathroom in the photo into a fully renovated space.
+You are a senior interior architect with complete creative freedom over the layout and design.
 
-VLOER & WANDEN:
-- ${materials.floorTile}: Toepassen als vloertegel EN op de wanden in natte zones (douchewand, rondom bad). Toon realistische voeglijnen passend bij het tegelformaat. Tegels lopen DOOR zonder onderbreking — geen wisseling van materiaal halverwege een wand.
+STEP 1 — STUDY THE SHELL:
+Analyze the bathroom photo. Identify ONLY the fixed structural elements:
+- Outer walls and their positions
+- Window(s): exact position, size, and how light enters
+- Door(s): exact position and which way they open
+- Ceiling height and any beams or slopes
+- Where existing water supply and drainage likely connect (typically the wall where current fixtures are mounted)
+THESE are your only constraints. Everything else — the interior layout, where fixtures go, the flow of the space — is yours to redesign.
 
-SANITAIR PLAATSING:
-- ${materials.vanityType}: Plaats tegen de langste vrije wand, op ca. 85cm hoogte. Spiegel erboven.
-- ${materials.toiletType}: Plaats tegen een korte wand of in een hoek, minimaal 15cm van de zijwand. Inbouwreservoir (de muur erachter is vlak afgewerkt met een bedieningspaneel).${bathtubSection}${showerSection}
-- ${materials.faucetFinish}: Passend bij het sanitair, wandmontage waar mogelijk.
-- ${materials.lightingType}: Spiegelverlichting boven de wastafel, indirecte sfeerverlichting elders.
+STEP 2 — DESIGN THE LAYOUT:
+Create the optimal bathroom layout for this space. Place fixtures where they make the most sense based on:
+- Plumbing logic: toilets and showers need drainage — keep them near the wall where existing plumbing connects
+- Flow: minimum 60cm free passage in front of every fixture
+- Natural light: place the vanity mirror where it catches daylight if possible
+- Privacy: toilet not directly visible from the door
+- The customer's style preference
+You may completely change the interior layout from the original photo. Move the toilet, swap sides, anything — as long as it makes spatial and plumbing sense.
 
-ONTWERPSTIJL: ${styleDesc}
-Kernwoorden: ${topTags}
+STEP 3 — APPLY CHANGES:
+The customer has specified what to replace and what to keep:
 
-REALISME & KWALITEIT:
-- Materialen tonen textuur: houtnerf, steenstructuur, metaalglans — geen platte vlakken
-- Voegen en naden zijn zichtbaar en consistent (kleur voeg past bij tegel)
-- Kranen en sanitair tonen realistische reflecties en highlights
-- Glazen douchewand toont subtiele reflecties en transparantie
-- Handdoeken (neutraal wit of grijs) op een rek voor bewoonbare sfeer
+${scopeLines.join('\n\n')}
 
-LICHT & SFEER:
-- Zacht natuurlijk daglicht vanuit bestaande ramen
-- Warme kleurtemperatuur (3000K sfeer)
-- Subtiele schaduwen die diepte geven
-- Geen harde spots of overbelichting
+For REPLACED items: use the reference product photos as EXACT visual guide — match color, shape, material, and finish precisely.
+For KEPT items: preserve their appearance EXACTLY as they look in the original bathroom photo. They may be repositioned in the new layout but their visual appearance stays identical.
 
-STRIKTE BEPERKINGEN:
-- GEEN nieuwe ramen of deuren toevoegen die niet in het origineel staan
-- EXACT dezelfde kamerverhoudingen, perspectief en kijkhoek behouden
-- Alle bouwkundige elementen (balken, nissen, alkoven) intact laten
-- Geen decoratieve objecten die niet in de productlijst staan (geen planten, kaarsen, kunst — alleen handdoeken)
-- De producten in de render moeten visueel OVEREENKOMEN met de bijgevoegde productfoto's qua kleur, vorm en afwerking`;
+STEP 4 — STYLE AND ATMOSPHERE:
+Design style: ${presetDesc}
+Qualities: ${topTags}
 
-  const parts: any[] = [
-    { inlineData: { mimeType, data: base64Shell.split(',')[1] } },
-    ...inlineImageParts,
-    { text: prompt },
-  ];
+Light and mood:
+- Natural daylight from existing window(s), same direction as the original photo
+- Warm color temperature (3000K)
+- Soft realistic shadows from all fixtures
+- No hard spots or overexposure
+
+Finishing:
+- 1-2 neutral white or grey towels on a rail
+- Realistic textures: wood grain, stone texture, metal sheen
+- Chrome and glass show realistic reflections
+- Consistent grout lines if tiles are used
+- NOTHING else: no plants, candles, art, bottles, or decorative objects
+
+FIXED CONSTRAINTS (non-negotiable):
+- Outer walls = IDENTICAL to the bathroom photo
+- Window positions and sizes = IDENTICAL to the bathroom photo
+- Door positions = IDENTICAL to the bathroom photo
+- Ceiling beams, slopes = IDENTICAL to the bathroom photo
+- Camera angle and perspective = IDENTICAL to the bathroom photo
+- Do NOT add windows or doors not in the original photo
+- KEPT items match their appearance in the original photo
+- REPLACED items match their reference product photos exactly
+- Professional interior magazine photography quality
+`;
+
+  parts.push({ text: prompt });
 
   try {
     const response = await ai.models.generateContent({
       model,
       contents: { parts },
+      config: {
+        responseModalities: ['TEXT', 'IMAGE'],
+        imageConfig: {
+          imageSize: '2K',
+        },
+      },
     });
+
     for (const part of response.candidates?.[0]?.content?.parts || []) {
-      if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      if (part.inlineData) {
+        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      }
     }
-    throw new Error("Render failed");
+
+    throw new Error("No image in render response");
   } catch (error) {
+    console.error("Renovation render error:", error);
     throw error;
   }
 };

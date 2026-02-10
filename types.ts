@@ -112,6 +112,8 @@ export interface StylePreset {
   tags: string[];
 }
 
+export type ProductAction = 'replace' | 'keep' | 'add' | 'remove';
+
 export enum BudgetTier {
   BUDGET = 'Budget',
   STANDARD = 'Standard',

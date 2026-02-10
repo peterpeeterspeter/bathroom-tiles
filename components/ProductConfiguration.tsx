@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, ShoppingBag, Info, Loader2, Eye, Lightbulb, Layout, CheckCircle2, Gauge, Bookmark, Wrench } from 'lucide-react';
-import { StyleProfile, DatabaseProduct } from '../types';
+import { StyleProfile, DatabaseProduct, ProductAction } from '../types';
 import { ScoredProduct, fetchProductsForProfile, getProductsByCategory } from '../lib/productService';
 import { CategoryProductSelector } from './CategoryProductSelector';
 
@@ -16,14 +16,18 @@ const CATEGORY_LABELS: Record<string, string> = {
   Tile: 'Tegels & Afwerking',
 };
 
+const SHOWER_BATHTUB_CATEGORIES = new Set(['Shower', 'Bathtub']);
+
 interface ProductConfigurationProps {
   styleProfile: StyleProfile;
   selectedProductIds: Record<string, string>;
+  productActions: Record<string, ProductAction>;
   onProductSelect: (category: string, product: DatabaseProduct) => void;
+  onActionChange: (category: string, action: ProductAction) => void;
   onNext: () => void;
 }
 
-export const ProductConfiguration = ({ styleProfile, selectedProductIds, onProductSelect, onNext }: ProductConfigurationProps) => {
+export const ProductConfiguration = ({ styleProfile, selectedProductIds, productActions, onProductSelect, onActionChange, onNext }: ProductConfigurationProps) => {
   const [productsByCategory, setProductsByCategory] = useState<Record<string, ScoredProduct[]>>({});
   const [loading, setLoading] = useState(true);
 
@@ -161,19 +165,89 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, onProdu
               <Loader2 className="animate-spin text-neutral-500" size={32} />
             </div>
           ) : (
-            CATEGORIES.map((cat, i) => (
-              <div key={cat} className="animate-slide-up" style={{ animationDelay: `${i * 100}ms` }}>
-                <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-white border-2 border-neutral-300/30 flex items-center justify-center text-primary shadow-sm"><ShoppingBag size={18} /></div>
-                  <h4 className="font-black uppercase tracking-widest text-xs md:text-sm">{CATEGORY_LABELS[cat] || cat}</h4>
+            CATEGORIES.map((cat, i) => {
+              const action = productActions[cat] || 'replace';
+              const isShowerBathtub = SHOWER_BATHTUB_CATEGORIES.has(cat);
+              return (
+                <div key={cat} className="animate-slide-up" style={{ animationDelay: `${i * 100}ms` }}>
+                  <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-white border-2 border-neutral-300/30 flex items-center justify-center text-primary shadow-sm"><ShoppingBag size={18} /></div>
+                    <h4 className="font-black uppercase tracking-widest text-xs md:text-sm">{CATEGORY_LABELS[cat] || cat}</h4>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <button
+                      onClick={() => onActionChange(cat, 'replace')}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                        action === 'replace'
+                          ? 'bg-neutral-900 text-white'
+                          : 'bg-surface border border-neutral-300/50 text-neutral-500 hover:border-neutral-400'
+                      }`}
+                    >
+                      Vervangen
+                    </button>
+                    <button
+                      onClick={() => onActionChange(cat, 'keep')}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                        action === 'keep'
+                          ? 'bg-neutral-900 text-white'
+                          : 'bg-surface border border-neutral-300/50 text-neutral-500 hover:border-neutral-400'
+                      }`}
+                    >
+                      Behouden
+                    </button>
+                    {isShowerBathtub && (
+                      <>
+                        <button
+                          onClick={() => onActionChange(cat, 'add')}
+                          className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                            action === 'add'
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-surface border border-neutral-300/50 text-neutral-500 hover:border-neutral-400'
+                          }`}
+                        >
+                          Toevoegen
+                        </button>
+                        <button
+                          onClick={() => onActionChange(cat, 'remove')}
+                          className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                            action === 'remove'
+                              ? 'bg-red-600 text-white'
+                              : 'bg-surface border border-neutral-300/50 text-neutral-500 hover:border-neutral-400'
+                          }`}
+                        >
+                          Verwijderen
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {(action === 'replace' || action === 'add') && (
+                    <CategoryProductSelector
+                      products={productsByCategory[cat] || []}
+                      selectedId={selectedProductIds[cat]}
+                      onSelect={(p) => onProductSelect(cat, p)}
+                    />
+                  )}
+
+                  {action === 'keep' && (
+                    <div className="bg-surface border border-neutral-300/30 rounded-xl p-4 text-center">
+                      <p className="text-[11px] font-bold text-neutral-500">
+                        Het huidige {(CATEGORY_LABELS[cat] || cat).toLowerCase()} wordt behouden zoals op uw foto.
+                      </p>
+                    </div>
+                  )}
+
+                  {action === 'remove' && (
+                    <div className="bg-red-50 border border-red-200/50 rounded-xl p-4 text-center">
+                      <p className="text-[11px] font-bold text-red-600">
+                        {(CATEGORY_LABELS[cat] || cat)} wordt volledig verwijderd uit de badkamer.
+                      </p>
+                    </div>
+                  )}
                 </div>
-                <CategoryProductSelector
-                  products={productsByCategory[cat] || []}
-                  selectedId={selectedProductIds[cat]}
-                  onSelect={(p) => onProductSelect(cat, p)}
-                />
-              </div>
-            ))
+              );
+            })
           )}
 
           <div className="bg-surface border border-neutral-300/50 p-4 md:p-6 rounded-xl flex gap-3 md:gap-4 items-start">

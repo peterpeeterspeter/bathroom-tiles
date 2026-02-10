@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { RefreshCw, AlertCircle, Image as ImageIcon, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BeforeAfterSlider } from '../components/BeforeAfterSlider';
-import { analyzeBathroomInput, calculateRenovationCost, generateRenovationRender, generateEmptySpace } from '../services/geminiService';
-import { ProjectSpec, Estimate, StyleProfile, StylePreset, BudgetTier, MaterialConfig, DatabaseProduct } from '../types';
+import { analyzeBathroomInput, calculateRenovationCost, generateRenovation, fetchProductImagesAsBase64 } from '../services/geminiService';
+import { ProjectSpec, Estimate, StyleProfile, StylePreset, BudgetTier, MaterialConfig, DatabaseProduct, ProductAction } from '../types';
 import { Logo } from '../components/Logo';
 import { StepIndicator } from '../components/StepIndicator';
 import { StyleInspiration, ReferenceImage, StyleSelectionResult } from '../components/StyleInspiration';
@@ -58,6 +58,7 @@ export default function PlannerPage() {
   const [analyzingStyle, setAnalyzingStyle] = useState(false);
   const [selectedProductIds, setSelectedProductIds] = useState<Record<string, string>>({});
   const [selectedProductNames, setSelectedProductNames] = useState<Record<string, string>>({});
+  const [productActions, setProductActions] = useState<Record<string, ProductAction>>({});
   const [materialConfig, setMaterialConfig] = useState<MaterialConfig>({
     floorTile: 'AI_MATCH', wallTile: 'AI_MATCH', vanityType: 'AI_MATCH', faucetFinish: 'AI_MATCH', toiletType: 'AI_MATCH', lightingType: 'AI_MATCH', bathtubType: 'AI_MATCH', showerType: 'AI_MATCH'
   });
@@ -184,6 +185,23 @@ export default function PlannerPage() {
     trackEvent('product_selected', { category, productId: product.id, productName: product.name });
   }, []);
 
+  const handleActionChange = useCallback((category: string, action: ProductAction) => {
+    setProductActions(prev => ({ ...prev, [category]: action }));
+    if (action === 'keep' || action === 'remove') {
+      setSelectedProductIds(prev => {
+        const next = { ...prev };
+        delete next[category];
+        return next;
+      });
+      setSelectedProductNames(prev => {
+        const next = { ...prev };
+        delete next[category];
+        return next;
+      });
+    }
+    trackEvent('product_action_changed', { category, action });
+  }, []);
+
   const handleDimensionChange = useCallback((field: string, value: number) => {
     setProjectSpec(prev => ({ ...(prev || {} as ProjectSpec), [field]: value }));
   }, []);
@@ -201,14 +219,12 @@ export default function PlannerPage() {
     try {
       if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) await window.aistudio.openSelectKey();
 
-      setLoadingMessage('Foto optimaliseren en analyseren...');
+      setLoadingMessage('Ruimte analyseren...');
       const compressed = await compressImage(imagePreview, 1500);
       const mimeType = compressed.match(/^data:(.*);base64,/)?.[1] || 'image/jpeg';
+      const base64 = compressed.split(',')[1];
 
-      const [aiSpec, empty] = await Promise.all([
-        analyzeBathroomInput(compressed.split(',')[1], mimeType),
-        generateEmptySpace(compressed, { roomType: '', layoutShape: 'RECTANGLE', estimatedWidthMeters: 0, estimatedLengthMeters: 0, ceilingHeightMeters: 2.4, totalAreaM2: 0, existingFixtures: [], constraints: [] })
-      ]);
+      const aiSpec = await analyzeBathroomInput(base64, mimeType);
 
       const userDims = projectSpec;
       const mergedSpec: ProjectSpec = {
@@ -222,15 +238,34 @@ export default function PlannerPage() {
 
       if (abortRef.current?.signal.aborted) throw new Error('timeout');
 
-      setLoadingMessage('Uw nieuwe badkamer renderen...');
-      const products = await fetchAllActiveProducts();
-      const [est, url] = await Promise.all([
-        calculateRenovationCost(mergedSpec, BudgetTier.STANDARD, styleProfile, materialConfig, products),
-        generateRenovationRender(mergedSpec, styleProfile, materialConfig, empty, products)
+      setLoadingMessage('Producten voorbereiden...');
+      const allProducts = await fetchAllActiveProducts();
+      const selectedProducts: DatabaseProduct[] = [];
+      for (const [_category, productId] of Object.entries(selectedProductIds)) {
+        const product = allProducts.find(p => p.id === productId);
+        if (product) selectedProducts.push(product);
+      }
+
+      const productImageMap = await fetchProductImagesAsBase64(selectedProducts);
+
+      if (abortRef.current?.signal.aborted) throw new Error('timeout');
+
+      setLoadingMessage('Uw nieuwe badkamer ontwerpen...');
+
+      const [render, est] = await Promise.all([
+        generateRenovation(
+          base64,
+          mimeType,
+          styleProfile,
+          productActions,
+          selectedProducts,
+          productImageMap
+        ),
+        calculateRenovationCost(mergedSpec, BudgetTier.STANDARD, styleProfile, materialConfig, allProducts, productActions)
       ]);
 
+      setRenderUrl(render);
       setEstimate(est);
-      setRenderUrl(url);
 
       const duration = Math.floor((Date.now() - startTime) / 1000);
       trackEvent('generation_completed', { durationSeconds: duration, total: est.grandTotal });
@@ -289,6 +324,7 @@ export default function PlannerPage() {
     setAnalyzingStyle(false);
     setSelectedProductIds({});
     setSelectedProductNames({});
+    setProductActions({});
     setImagePreview(null);
     setProjectSpec(null);
     setEstimate(null);
@@ -368,7 +404,9 @@ export default function PlannerPage() {
             <ProductConfiguration
               styleProfile={styleProfile}
               selectedProductIds={selectedProductIds}
+              productActions={productActions}
               onProductSelect={handleProductSelect}
+              onActionChange={handleActionChange}
               onNext={() => { startProcessing(); trackEvent('products_configured', { products: selectedProductIds }); }}
             />
           )}

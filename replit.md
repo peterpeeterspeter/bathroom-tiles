@@ -15,13 +15,17 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
 ## AI Pipeline (PlannerPage)
 1. **Style Selection** — User picks preset or uploads reference images (no AI call yet)
 2. **Dimensions & Photo** — User enters dimensions + uploads bathroom photo
-3. **Expert Analysis + Product Configuration** — `analyzeProjectContext()` runs with all inputs (style preset, reference images, bathroom photo, dimensions) → 9-step analysis with pricing context → produces enriched StyleProfile with condition score, keep elements, opportunities, recommendations, layout advice, complexity estimate → products scored by style profile
-4. **Processing** (parallel):
-   - `analyzeBathroomInput()` + `generateEmptySpace()` run in parallel
-   - Then `calculateRenovationCost()` + `generateRenovationRender()` run in parallel
+3. **Expert Analysis + Product Configuration** — `analyzeProjectContext()` runs with all inputs → 9-step analysis → enriched StyleProfile. Each product category has Vervangen/Behouden toggle (+ Toevoegen/Verwijderen for shower/bathtub)
+4. **Processing**:
+   - `analyzeBathroomInput()` runs first (gemini-3-pro-preview)
+   - Product images fetched as base64
+   - `generateRenovation()` + `calculateRenovationCost()` run in parallel
+   - Single-shot render: original photo + inspiration images + product reference images → gemini-3-pro-image-preview with Thinking mode + 2K output
+   - Cost estimate is scope-aware: kept items have zero cost
 5. User dimensions take priority over AI-estimated dimensions
 6. Photos are compressed to 1500px max before API calls
-7. Product reference images are sent as inline image parts to the render model
+7. Product reference images sent as inline base64 parts (up to 14 images supported)
+8. `generateEmptySpace()` removed — no longer needed with single-shot approach
 
 ## Directory Structure
 - `/components` - React UI components
@@ -49,6 +53,15 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
 - Do NOT use `typeof process` guards around `process.env.*` — Vite replaces these tokens at build time
 
 ## Recent Changes
+- 2026-02-10: Single-shot rendering pipeline:
+  - Removed two-step pipeline (generateEmptySpace + generateRenovationRender)
+  - Added single-shot generateRenovation() — original photo goes directly to gemini-3-pro-image-preview with Thinking mode + 2K output
+  - Product reference images fetched as base64 and sent inline (up to 14)
+  - Added Behouden/Vervangen toggle per product category in ProductConfiguration
+  - Added Toevoegen/Verwijderen options for Shower and Bathtub categories
+  - Cost estimate now scope-aware: kept items have zero cost
+  - Homepage hero changed from image to video
+- 2026-02-10: Enhanced expert analysis response schema with description fields for longer, more detailed output
 - 2026-02-09: Initial Replit setup - configured Vite for port 5000 with allowedHosts
 - 2026-02-09: Fixed production build env var issue (removed typeof process guards)
 - 2026-02-09: Connected Supabase and LaoZhang proxy
