@@ -1,0 +1,60 @@
+DOEL: Transformeer deze lege ruwbouw-badkamer tot een prachtig 
+gerenoveerde badkamer. Het eindresultaat moet eruitzien als een 
+professionele interieurfoto voor een woonmagazine.
+
+RUIMTE: {{width}}m breed × {{length}}m lang × {{height}}m hoog ({{area}} m²)
+
+PRODUCTEN — gebruik de bijgevoegde productfoto's als EXACTE visuele referentie:
+
+VLOER & WANDEN:
+- {{tileName}}: Toepassen als vloertegel EN op de wanden in natte zones 
+  (douchewand, rondom bad). Toon realistische voeglijnen passend bij 
+  het tegelformaat. Tegels lopen DOOR zonder onderbreking — geen 
+  wisseling van materiaal halverwege een wand.
+{{#if hasWallPanels}}
+- Droge wanden: wandpanelen in plaats van tegels, strakke naadloze look
+{{/if}}
+
+SANITAIR PLAATSING:
+- {{vanityName}}: Plaats tegen de langste vrije wand, op ca. 85cm hoogte. 
+  Spiegel erboven.
+- {{toiletName}}: Plaats tegen een korte wand of in een hoek, minimaal 
+  15cm van de zijwand. Inbouwreservoir (de muur erachter is vlak 
+  afgewerkt met een bedieningspaneel).
+{{#if hasBathtub}}
+- {{bathtubName}}: Tegen de wand tegenover de deur, of in de langste 
+  beschikbare hoek. Badkraan aan het voeteneinde.
+{{/if}}
+{{#if hasShower}}
+- {{showerName}}: Inloopdouche met glazen wand, bij voorkeur naast 
+  het raam (als aanwezig) voor daglicht. Regendouchekop + handdouche.
+{{/if}}
+- {{faucetName}}: Passend bij het sanitair, wandmontage waar mogelijk.
+- {{lightingName}}: Spiegelverlichting boven de wastafel, indirecte 
+  sfeerverlichting elders.
+
+ONTWERPSTIJL: {{styleSummary}}
+Kernwoorden: {{top8Tags}}
+
+REALISME & KWALITEIT:
+- Materialen tonen textuur: houtnerf, steenstructuur, metaalglans — 
+  geen platte vlakken
+- Voegen en naden zijn zichtbaar en consistent (kleur voeg past bij tegel)
+- Kranen en sanitair tonen realistische reflecties en highlights
+- Glazen douchewand toont subtiele reflecties en transparantie
+- Handdoeken (neutraal wit of grijs) op een rek voor bewoonbare sfeer
+
+LICHT & SFEER:
+- Zacht natuurlijk daglicht vanuit bestaande ramen
+- Warme kleurtemperatuur (3000K sfeer)
+- Subtiele schaduwen die diepte geven
+- Geen harde spots of overbelichting
+
+STRIKTE BEPERKINGEN:
+- GEEN nieuwe ramen of deuren toevoegen die niet in het origineel staan
+- EXACT dezelfde kamerverhoudingen, perspectief en kijkhoek behouden
+- Alle bouwkundige elementen (balken, nissen, alkoven) intact laten
+- Geen decoratieve objecten die niet in de productlijst staan 
+  (geen planten, kaarsen, kunst — alleen handdoeken)
+- De producten in de render moeten visueel OVEREENKOMEN met de 
+  bijgevoegde productfoto's qua kleur, vorm en afwerking
