@@ -104,11 +104,13 @@ export default function HomePage() {
             </div>
             <div className="relative">
               <div className="rounded-3xl overflow-hidden shadow-2xl shadow-primary/10">
-                <img
-                  src="https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=1"
-                  alt="Moderne badkamer renovatie"
+                <video
+                  src="/hero-video.mp4"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
                   className="w-full h-[400px] lg:h-[500px] object-cover"
-                  loading="eager"
                 />
               </div>
               <div className="absolute -bottom-4 -left-4 bg-white rounded-2xl shadow-xl p-4 flex items-center gap-3">
