@@ -136,15 +136,29 @@ export const generateEmptySpace = async (base64Image: string, spec: ProjectSpec)
   const model = "gemini-3-pro-image-preview";
   const mimeType = getMimeType(base64Image);
 
-  const prompt = `Remove all furniture, fixtures, and sanitary ware from this bathroom photo. This includes toilets, sinks, vanities, mirrors, cabinets, and decorative items.
+  const prompt = `DOEL: Toon deze badkamer als een volledig gestripte, lege ruimte — klaar voor renovatie. Alsof een sloopploeg alles heeft verwijderd.
 
-Fill the cleared areas naturally:
-- Floors: raw grey concrete screed
-- Walls: rough white plaster
+WAT DE LEGE RUIMTE MOET TONEN:
+- Vloer: egaal ruw grijs beton (gietvloer/dekvloer), consistent over het HELE oppervlak zonder onderbrekingen of vlekken
+- Muren: egaal ruwe witte gipspleister, consistent over ALLE muren zonder schaduwen of contouren van verwijderde objecten
+- Plafond: bestaand plafond behouden zoals het is
 
-Keep the room's structure exactly as-is: preserve the perspective, all window frames, door frames, ceiling beams, and the original lighting direction.
+WAT EXACT BEHOUDEN BLIJFT (niet verwijderen):
+- Alle raamkozijnen, raamglas en daglichttoetreding
+- Alle deurkozijnen en deuren
+- Plafondbalken, nissen, alkoven en andere bouwkundige elementen
+- De originele lichtrichting en lichtbron
+- Het exacte kamerperspectief, de kijkhoek en verhoudingen
 
-The result should look like a stripped-back empty shell ready for renovation.`;
+WAT VOLLEDIG VERDWIJNT (geen spoor van achterlaten):
+- Alle sanitair (toilet, wastafel, bad, douche)
+- Alle meubels (kasten, rekken, spiegels)
+- Alle wandafwerking (tegels, panelen, verf)
+- Alle vloerafwerking (tegels, vinyl, hout)
+- Alle accessoires (handdoekrekken, zeepdispensers, verlichting)
+- BELANGRIJK: geen schaduwen, contouren of afdrukken van verwijderde objecten — de muren en vloer zijn volkomen egaal
+
+Het resultaat moet eruitzien als een kale ruwbouw-ruimte die net is opgeleverd door de aannemer: leeg, schoon, klaar voor nieuwe afwerking.`;
 
   const attempt = async (): Promise<string> => {
     const response = await ai.models.generateContent({
@@ -379,13 +393,13 @@ export const generateRenovationRender = async (
   const topTags = styleProfile.tags.slice(0, 8).map(t => t.tag).join(', ');
 
   const materialEntries = [
-    { label: 'Floor/Wall Tile', name: materials.floorTile },
-    { label: 'Faucets', name: materials.faucetFinish },
+    { label: 'Vloer-/wandtegel', name: materials.floorTile },
+    { label: 'Kranen', name: materials.faucetFinish },
     { label: 'Toilet', name: materials.toiletType },
-    { label: 'Vanity', name: materials.vanityType },
-    { label: 'Lighting', name: materials.lightingType },
-    ...(materials.bathtubType ? [{ label: 'Bathtub', name: materials.bathtubType }] : []),
-    ...(materials.showerType ? [{ label: 'Shower', name: materials.showerType }] : []),
+    { label: 'Badmeubel', name: materials.vanityType },
+    { label: 'Verlichting', name: materials.lightingType },
+    ...(materials.bathtubType ? [{ label: 'Ligbad', name: materials.bathtubType }] : []),
+    ...(materials.showerType ? [{ label: 'Douche', name: materials.showerType }] : []),
   ];
 
   const imageUrls = materialEntries
@@ -400,33 +414,52 @@ export const generateRenovationRender = async (
     .filter((img): img is { data: string; mimeType: string } => img !== null)
     .map(img => ({ inlineData: { mimeType: img.mimeType, data: img.data } }));
 
-  const materialList = materialEntries.map(e => `- ${e.label}: ${e.name}`).join('\n');
+  const area = (spec.estimatedWidthMeters * spec.estimatedLengthMeters).toFixed(1);
 
-  const prompt = `Transform this empty bathroom shell into a beautifully renovated bathroom using these specific products and style.
+  const bathtubSection = materials.bathtubType
+    ? `\n- ${materials.bathtubType}: Tegen de wand tegenover de deur, of in de langste beschikbare hoek. Badkraan aan het voeteneinde.`
+    : '';
+  const showerSection = materials.showerType
+    ? `\n- ${materials.showerType}: Inloopdouche met glazen wand, bij voorkeur naast het raam (als aanwezig) voor daglicht. Regendouchekop + handdouche.`
+    : '';
 
-PRODUCTS TO INSTALL:
-${materialList}
+  const prompt = `DOEL: Transformeer deze lege ruwbouw-badkamer tot een prachtig gerenoveerde badkamer. Het eindresultaat moet eruitzien als een professionele interieurfoto voor een woonmagazine.
 
-${inlineImageParts.length > 0 ? 'The reference product images above show the exact materials, fixtures, and finishes to use.' : ''}
+RUIMTE: ${spec.estimatedWidthMeters}m breed × ${spec.estimatedLengthMeters}m lang × ${spec.ceilingHeightMeters}m hoog (${area} m²)
 
-DESIGN STYLE: ${styleDesc}
-Key qualities: ${topTags}
+PRODUCTEN — gebruik de bijgevoegde productfoto's als EXACTE visuele referentie:
 
-PLACEMENT GUIDANCE:
-- Apply ${materials.floorTile} as floor tiles and on wet-area walls (seamless, properly grouted)
-- Install ${materials.vanityType} at ${sinkCoords}
-- Position fixtures naturally based on the room layout
+VLOER & WANDEN:
+- ${materials.floorTile}: Toepassen als vloertegel EN op de wanden in natte zones (douchewand, rondom bad). Toon realistische voeglijnen passend bij het tegelformaat. Tegels lopen DOOR zonder onderbreking — geen wisseling van materiaal halverwege een wand.
 
-PHOTOGRAPHY STYLE:
-- Professional interior photography, eye-level perspective
-- Soft natural daylight from existing windows, warm color temperature
-- Magazine-quality composition, clean and inviting atmosphere
-- Sharp focus throughout, subtle depth of field on background
+SANITAIR PLAATSING:
+- ${materials.vanityType}: Plaats tegen de langste vrije wand, op ca. 85cm hoogte. Spiegel erboven.
+- ${materials.toiletType}: Plaats tegen een korte wand of in een hoek, minimaal 15cm van de zijwand. Inbouwreservoir (de muur erachter is vlak afgewerkt met een bedieningspaneel).${bathtubSection}${showerSection}
+- ${materials.faucetFinish}: Passend bij het sanitair, wandmontage waar mogelijk.
+- ${materials.lightingType}: Spiegelverlichting boven de wastafel, indirecte sfeerverlichting elders.
 
-CONSTRAINTS:
-- Do not add windows or doors that aren't in the original image
-- Maintain the exact room geometry and perspective of the base image
-- Keep all architectural elements (beams, niches, alcoves) intact`;
+ONTWERPSTIJL: ${styleDesc}
+Kernwoorden: ${topTags}
+
+REALISME & KWALITEIT:
+- Materialen tonen textuur: houtnerf, steenstructuur, metaalglans — geen platte vlakken
+- Voegen en naden zijn zichtbaar en consistent (kleur voeg past bij tegel)
+- Kranen en sanitair tonen realistische reflecties en highlights
+- Glazen douchewand toont subtiele reflecties en transparantie
+- Handdoeken (neutraal wit of grijs) op een rek voor bewoonbare sfeer
+
+LICHT & SFEER:
+- Zacht natuurlijk daglicht vanuit bestaande ramen
+- Warme kleurtemperatuur (3000K sfeer)
+- Subtiele schaduwen die diepte geven
+- Geen harde spots of overbelichting
+
+STRIKTE BEPERKINGEN:
+- GEEN nieuwe ramen of deuren toevoegen die niet in het origineel staan
+- EXACT dezelfde kamerverhoudingen, perspectief en kijkhoek behouden
+- Alle bouwkundige elementen (balken, nissen, alkoven) intact laten
+- Geen decoratieve objecten die niet in de productlijst staan (geen planten, kaarsen, kunst — alleen handdoeken)
+- De producten in de render moeten visueel OVEREENKOMEN met de bijgevoegde productfoto's qua kleur, vorm en afwerking`;
 
   const parts: any[] = [
     { inlineData: { mimeType, data: base64Shell.split(',')[1] } },
