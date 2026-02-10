@@ -249,22 +249,37 @@ SLECHT voorbeeld aanbeveling:
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            currentState: { type: Type.STRING },
-            condition_score: { type: Type.INTEGER },
+            currentState: {
+              type: Type.STRING,
+              description: "Uitgebreide beschrijving van de huidige badkamer op basis van de foto: indeling, materialen, staat van onderhoud, sterke en zwakke punten. Minimaal 4-6 zinnen."
+            },
+            condition_score: {
+              type: Type.INTEGER,
+              description: "Conditiescore 1-10 van de huidige badkamer (1-3 verouderd, 4-5 gedateerd, 6-7 redelijk, 8-10 goed)"
+            },
             keepElements: {
               type: Type.ARRAY,
-              items: { type: Type.STRING }
+              items: { type: Type.STRING },
+              description: "Elementen in de huidige badkamer die het waard zijn om te behouden. Alleen wat daadwerkelijk zichtbaar is in de foto."
             },
             opportunities: {
               type: Type.ARRAY,
-              items: { type: Type.STRING }
+              items: { type: Type.STRING },
+              description: "3-4 concrete renovatiekansen specifiek voor deze ruimte. Formaat per kans: '[Wat je ziet] → [De kans die dit biedt]'. Elke kans minimaal 2 zinnen."
             },
             recommendations: {
               type: Type.ARRAY,
-              items: { type: Type.STRING }
+              items: { type: Type.STRING },
+              description: "3-4 concrete aanbevelingen met prijsindicatie. Elke aanbeveling bevat: WAT vervangen/toevoegen, WAAR in de ruimte, WAAROM het past bij de stijl, en een indicatieve prijsrange. Minimaal 3 zinnen per aanbeveling."
             },
-            layoutAdvice: { type: Type.STRING },
-            estimated_complexity: { type: Type.STRING },
+            layoutAdvice: {
+              type: Type.STRING,
+              description: "Advies over optimale indeling: bestaande aansluitingen, meest praktische opstelling, of leidingwerk verplaatst moet worden. Minimaal 3-4 zinnen."
+            },
+            estimated_complexity: {
+              type: Type.STRING,
+              description: "Geschatte complexiteit: 'eenvoudig' (2-6 werkdagen), 'gemiddeld' (1-2 weken), of 'complex' (2-3+ weken)"
+            },
             tags: {
               type: Type.ARRAY,
               items: {
@@ -274,9 +289,13 @@ SLECHT voorbeeld aanbeveling:
                   weight: { type: Type.NUMBER }
                 },
                 required: ["tag", "weight"]
-              }
+              },
+              description: "Stijltags uit de gecontroleerde vocabulaire met gewichten (0.0-1.0), alleen tags >= 0.3"
             },
-            summary_nl: { type: Type.STRING },
+            summary_nl: {
+              type: Type.STRING,
+              description: "Professionele samenvatting van 2-3 zinnen in het Nederlands. Toon: zelfverzekerd, praktisch, enthousiasmerend maar realistisch."
+            },
           },
           required: ["currentState", "condition_score", "keepElements", "opportunities", "recommendations", "layoutAdvice", "estimated_complexity", "tags", "summary_nl"]
         }
