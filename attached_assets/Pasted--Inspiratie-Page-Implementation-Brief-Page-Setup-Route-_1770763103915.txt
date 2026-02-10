@@ -1,0 +1,395 @@
+## Inspiratie Page — Implementation Brief
+
+### Page Setup
+
+**Route:** `/badkamer-inspiratie`
+**Nav label:** `Inspiratie`
+**SEO title:** `Badkamer Inspiratie 2026 | Voor & Na Renovaties - De Badkamer`
+**Meta description:** `Bekijk realistische voor- en na-visualisaties van badkamerrenovaties. Van kleine badkamer tot luxe verbouwing. Ontdek wat er mogelijk is met uw ruimte.`
+
+**Images:** 14 static before/after images (single image per transformation, split down the middle with VOOR on the left and NA on the right). Store in Supabase Storage or `/public/inspiratie/`.
+
+**File naming convention:**
+```
+inspiratie-01-kleine-badkamer-modern.webp
+inspiratie-02-gezinsbadkamer-scandinavisch.webp
+inspiratie-03-ruime-badkamer-luxe.webp
+inspiratie-04-zolderbadkamer-slim.webp
+inspiratie-05-apart-toilet-boutique.webp
+inspiratie-06-jaren-80-transformatie.webp
+inspiratie-07-en-suite-slaapkamer.webp
+inspiratie-08-samenvoegen-bad-toilet.webp
+inspiratie-09-senioren-veilig-stijlvol.webp
+inspiratie-10-industrieel-loft.webp
+inspiratie-11-scandinavisch-gezin.webp
+inspiratie-12-donker-sfeervol.webp
+inspiratie-13-douchecabine-inloopdouche.webp
+inspiratie-14-mediterraans-warm.webp
+```
+
+---
+
+### Page Structure
+
+**Hero section:**
+
+```
+Headline: Wat is er mogelijk met úw badkamer?
+Subline:  Realistische voor- en na-visualisaties van 
+          badkamerrenovaties in Nederland. Van opfrisbeurt 
+          tot complete verbouwing.
+```
+
+**Filter pills row:**
+
+```
+[Alle] [Kleine badkamer] [Gezinsbadkamer] [Zolderbadkamer] 
+[Senioren] [Budget] [Midden] [Luxe] [Industrieel] 
+[Scandinavisch] [Modern] [Warm & Natuurlijk]
+```
+
+Clicking a pill filters the cards below. "Alle" is active by default. Multiple filters can be active at once. Each card has tags that determine which filters match.
+
+**Card grid:** 2 columns on desktop, 1 column on mobile. Each card is a full-width image with a text block below it.
+
+---
+
+### Card Layout Per Transformation
+
+```
+┌──────────────────────────────────────────────┐
+│                                              │
+│  [Full-width before/after image]             │
+│  The single generated image showing          │
+│  VOOR on the left, NA on the right           │
+│                                              │
+│  Aspect ratio: 16:9                          │
+│  Rounded corners, subtle shadow              │
+│  On hover: slight scale-up (1.02)            │
+│  Clicking opens a lightbox/modal             │
+│  showing the image full-screen               │
+│                                              │
+├──────────────────────────────────────────────┤
+│                                              │
+│  Kleine badkamer — Modern             [tag]  │
+│  Rijtjeshuis, ca. 4 m²                      │
+│                                              │
+│  Wat is er veranderd:                        │
+│  • Douchecabine → inloopdouche              │
+│  • Staand toilet → hangtoilet               │
+│  • Losstaande wastafel → zwevend meubel     │
+│  • Kleine tegels → groot formaat            │
+│                                              │
+│  ┌────────────┬──────────────┬────────────┐  │
+│  │ Investering│ Doorlooptijd │ Oppervlakte│  │
+│  │€8.000-     │ 4-5 werk-   │ ca. 4 m²  │  │
+│  │ €12.000    │ dagen       │            │  │
+│  └────────────┴──────────────┴────────────┘  │
+│                                              │
+│  [Probeer dit met uw eigen badkamer →]       │
+│                                              │
+└──────────────────────────────────────────────┘
+```
+
+**The three stats** (investering, doorlooptijd, oppervlakte) sit in a row of small info blocks — same visual treatment as the trust bar on the homepage. Compact, scannable.
+
+**The CTA** at the bottom of each card links to `/planner`. If possible, pass the matching style preset as a URL parameter so the planner pre-selects the right style: `/planner?style=modern`.
+
+---
+
+### Card Data (All 14)
+
+```typescript
+const inspiratieCards = [
+  {
+    id: 1,
+    image: '/inspiratie/inspiratie-01-kleine-badkamer-modern.webp',
+    title: 'Kleine badkamer — Modern',
+    context: 'Rijtjeshuis, ca. 4 m²',
+    changes: [
+      'Douchecabine → inloopdouche met glazen wand',
+      'Staand toilet → wandhangend rimfree toilet',
+      'Losstaande wastafel → zwevend meubel in eikenhout',
+      'Kleine witte tegels → groot formaat betonlook',
+    ],
+    investment: '€8.000 – €12.000',
+    duration: '4-5 werkdagen',
+    area: 'ca. 4 m²',
+    style: 'modern',
+    tags: ['Kleine badkamer', 'Modern', 'Budget'],
+  },
+  {
+    id: 2,
+    image: '/inspiratie/inspiratie-02-gezinsbadkamer-scandinavisch.webp',
+    title: 'Gezinsbadkamer — Scandinavisch Modern',
+    context: 'Rijtjeshuis, ca. 6 m²',
+    changes: [
+      'Beige tegels → wit marmer-look porselein',
+      'Oud ligbad → inloopdouche met regendouche',
+      'Enkele wastafel → dubbel meubel met twee spiegels',
+      'Bruine vloer → lichtgrijze grootformaat tegels',
+      'Radiator → matzwart handdoekradiator',
+    ],
+    investment: '€14.000 – €18.000',
+    duration: '7-8 werkdagen',
+    area: 'ca. 6 m²',
+    style: 'scandinavisch',
+    tags: ['Gezinsbadkamer', 'Midden', 'Scandinavisch'],
+  },
+  {
+    id: 3,
+    image: '/inspiratie/inspiratie-03-ruime-badkamer-luxe.webp',
+    title: 'Ruime badkamer — Hotel Luxe',
+    context: 'Vrijstaand woning, ca. 9 m²',
+    changes: [
+      'Hoekbad → vrijstaand ovaal bad als centerpiece',
+      'Aparte douche → ruime inloopdouche met dubbele douchekop',
+      'Kersen houten meubel → zwevend walnoot meubel',
+      'Zeegroen tegels → Calacatta marmer-look wandplaten',
+      'Bidet verwijderd — ruimte gewonnen',
+    ],
+    investment: '€20.000 – €28.000',
+    duration: '10-12 werkdagen',
+    area: 'ca. 9 m²',
+    style: 'luxe',
+    tags: ['Luxe', 'Gezinsbadkamer'],
+  },
+  {
+    id: 4,
+    image: '/inspiratie/inspiratie-04-zolderbadkamer-slim.webp',
+    title: 'Zolderbadkamer — Slim Ontworpen',
+    context: 'Zolderkamer met schuin dak, ca. 5 m²',
+    changes: [
+      'Douchebak met gordijn → verzonken inloopdouche onder schuin dak',
+      'Zellige tegels op de schuine douchewand als accent',
+      'Klein fonteintje → compact zwevend meubel in licht eiken',
+      'Vinyl → doorlopende lichtgrijze betonlook tegels',
+      'Schone Velux brengt meer licht in de ruimte',
+    ],
+    investment: '€10.000 – €15.000',
+    duration: '5-7 werkdagen',
+    area: 'ca. 5 m²',
+    style: 'modern',
+    tags: ['Zolderbadkamer', 'Modern'],
+  },
+  {
+    id: 5,
+    image: '/inspiratie/inspiratie-05-apart-toilet-boutique.webp',
+    title: 'Apart toilet — Boutique Stijl',
+    context: 'Rijtjeshuis, ca. 1 m²',
+    changes: [
+      'Staand toilet → wandhangend met verborgen reservoir',
+      'Witte tegels → diep bosgroen geschilderd',
+      'Linoleum → zwarte hexagonale mozaïektegels',
+      'Kaal peertje → inbouwspot + wandlamp',
+      'Messing accenten voor een boutique hotelgevoel',
+    ],
+    investment: '€2.500 – €4.000',
+    duration: '1-2 werkdagen',
+    area: 'ca. 1 m²',
+    style: 'modern',
+    tags: ['Kleine badkamer', 'Budget'],
+  },
+  {
+    id: 6,
+    image: '/inspiratie/inspiratie-06-jaren-80-transformatie.webp',
+    title: 'Jaren-80 badkamer — Totale Transformatie',
+    context: 'Tussenwoning, ca. 5 m²',
+    changes: [
+      'Roze sanitair volledig vervangen door wit',
+      'Roze tegels → terrazzo-look porselein',
+      'Ligbad → ruime inloopdouche met zwart frame',
+      'Zwevend meubel in saliegroen als stijlaccent',
+      'Matzwarte kranen en accessoires',
+    ],
+    investment: '€12.000 – €16.000',
+    duration: '6-8 werkdagen',
+    area: 'ca. 5 m²',
+    style: 'modern',
+    tags: ['Midden', 'Modern'],
+  },
+  {
+    id: 7,
+    image: '/inspiratie/inspiratie-07-en-suite-slaapkamer.webp',
+    title: 'En-suite — Verlengstuk van de slaapkamer',
+    context: 'Master bedroom, ca. 4 m²',
+    changes: [
+      'Plastic douchecabine → open inloopdouche met glazen paneel',
+      'Laminaat meubel → slank zwevend meubel in wit/eiken',
+      'Deur verwijderd — open overgang van slaapkamer naar badkamer',
+      'Vloer loopt door vanuit de slaapkamer voor ruimtelijk effect',
+    ],
+    investment: '€10.000 – €14.000',
+    duration: '5-6 werkdagen',
+    area: 'ca. 4 m²',
+    style: 'modern',
+    tags: ['Modern', 'Midden'],
+  },
+  {
+    id: 8,
+    image: '/inspiratie/inspiratie-08-samenvoegen-bad-toilet.webp',
+    title: 'Samenvoegen badkamer + toilet',
+    context: 'Rijtjeshuis, ca. 5 m² (samengevoegd)',
+    changes: [
+      'Tussenmuur verwijderd — twee kleine ruimtes worden één',
+      'Twee deuren → één brede opening',
+      'Twee gescheiden vloeren → doorlopende kalksteenlook tegel',
+      'Ruimte voor inloopdouche + compact vrijstaand bad',
+      '30-50% meer bruikbare ruimte',
+    ],
+    investment: '€18.000 – €25.000',
+    duration: '8-10 werkdagen',
+    area: 'ca. 5 m²',
+    style: 'modern',
+    tags: ['Gezinsbadkamer', 'Midden'],
+  },
+  {
+    id: 9,
+    image: '/inspiratie/inspiratie-09-senioren-veilig-stijlvol.webp',
+    title: 'Seniorenbadkamer — Veilig & Stijlvol',
+    context: 'Gelijkvloerse woning, ca. 6 m²',
+    changes: [
+      'Hoog bad → drempelvrije inloopdouche met zitbank',
+      'Gladde vloer → antislip matte tegels (R10)',
+      'Standaard toilet → comforthoogte (46cm zithoogte)',
+      'Subtiele grijpstangen geïntegreerd in het design',
+      'Goede verlichting op alle plekken',
+    ],
+    investment: '€14.000 – €20.000',
+    duration: '7-9 werkdagen',
+    area: 'ca. 6 m²',
+    style: 'modern',
+    tags: ['Senioren', 'Midden'],
+  },
+  {
+    id: 10,
+    image: '/inspiratie/inspiratie-10-industrieel-loft.webp',
+    title: 'Industrieel Loft',
+    context: 'Appartement, ca. 7 m²',
+    changes: [
+      'Witte tegels → gepolijste donkere betonvloer',
+      'Accentmuur in exposed baksteen',
+      'Wit acrylbad → vrijstaand matzwart bad',
+      'Meubel van hergebruikt hout op stalen beugels',
+      'Zwart stalen douchewand in fabrieksraam-stijl',
+      'Koperen kraan met patina als accent',
+    ],
+    investment: '€16.000 – €22.000',
+    duration: '8-10 werkdagen',
+    area: 'ca. 7 m²',
+    style: 'industrieel',
+    tags: ['Industrieel', 'Midden'],
+  },
+  {
+    id: 11,
+    image: '/inspiratie/inspiratie-11-scandinavisch-gezin.webp',
+    title: 'Lichte gezinsbadkamer — Scandinavisch',
+    context: 'Tussenwoning, ca. 7 m²',
+    changes: [
+      'Crème tegels met mozaïekrand → witte handgemaakte zellige',
+      'Hoekbad met kapotte jets → ingebouwd bad met tegelsurround',
+      'Donker houten meubel → berken multiplex zwevend meubel',
+      'Bruine vloer → warme eikenlook porseleinen planken',
+      'Dubbele ronde spiegels in eikenhouten lijst',
+    ],
+    investment: '€14.000 – €19.000',
+    duration: '7-9 werkdagen',
+    area: 'ca. 7 m²',
+    style: 'scandinavisch',
+    tags: ['Scandinavisch', 'Gezinsbadkamer'],
+  },
+  {
+    id: 12,
+    image: '/inspiratie/inspiratie-12-donker-sfeervol.webp',
+    title: 'Donker & Sfeervol — Boutique',
+    context: 'Appartement, ca. 5 m²',
+    changes: [
+      'Witte tegels → matzwarte grootformaat tegels',
+      'Witte muren → diepe houtskool kalkpleister',
+      'Bad → inloopdouche met donkergroene marmerlook platen',
+      'Witte wastafel op donker eiken meubel als contrast',
+      'Geborsteld gouden kraan, spiegel en accessoires',
+    ],
+    investment: '€12.000 – €17.000',
+    duration: '6-8 werkdagen',
+    area: 'ca. 5 m²',
+    style: 'modern',
+    tags: ['Modern', 'Midden'],
+  },
+  {
+    id: 13,
+    image: '/inspiratie/inspiratie-13-douchecabine-inloopdouche.webp',
+    title: 'Douchecabine → Inloopdouche',
+    context: 'Rijtjeshuis, ca. 4 m²',
+    changes: [
+      'Afgesloten plastic douchecabine volledig verwijderd',
+      'Drempelvrije inloopdouche met twee glazen panelen',
+      'Doorlopende cementlook tegels voor ruimtelijk effect',
+      'Lineaire douchegoot in plaats van verhoogde douchebak',
+      'Ruimte voelt direct groter door open karakter',
+    ],
+    investment: '€6.000 – €10.000',
+    duration: '3-5 werkdagen',
+    area: 'ca. 4 m²',
+    style: 'modern',
+    tags: ['Kleine badkamer', 'Budget'],
+  },
+  {
+    id: 14,
+    image: '/inspiratie/inspiratie-14-mediterraans-warm.webp',
+    title: 'Mediterraans Warm',
+    context: 'Tussenwoning, ca. 6 m²',
+    changes: [
+      'Blauwgrijze koude tegels → warme terracotta porseleintegels',
+      'Kale wanden → handgemaakte crème zellige tegels',
+      'Bad → inloopdouche met boogvormige nis',
+      'Zwevend eiken meubel met geribbeld front',
+      'Vergrijsd messing kranen en accessoires',
+      'Linnen raamgordijn in plaats van rolgordijn',
+    ],
+    investment: '€14.000 – €19.000',
+    duration: '7-8 werkdagen',
+    area: 'ca. 6 m²',
+    style: 'warm',
+    tags: ['Warm & Natuurlijk', 'Midden'],
+  },
+];
+```
+
+---
+
+### Bottom Section: CTA + FAQ
+
+**CTA block:**
+
+```
+Headline: Benieuwd wat er mogelijk is met uw badkamer?
+Subline:  Upload een foto en ontvang binnen enkele minuten 
+          een persoonlijke visualisatie — inclusief prijsindicatie.
+Buttons:  [Start AI Visualisatie — Gratis →]  [Ontvang Offertes →]
+```
+
+**FAQ:**
+
+**Q: Zijn dit echte renovaties?**
+> Deze visualisaties zijn gegenereerd met onze AI Badkamer Planner op basis van typische Nederlandse badkamers. Ze tonen wat er mogelijk is met verschillende budgetten en stijlen. Elke situatie is uniek — gebruik de AI Planner om een visualisatie te krijgen op basis van uw eigen badkamer.
+
+**Q: Kloppen de genoemde prijzen?**
+> De prijsindicaties zijn gebaseerd op actuele marktprijzen in Nederland (februari 2026), inclusief materialen, arbeid en BTW. Exacte kosten hangen af van uw specifieke situatie, locatie en materiaalkeuzes. Vraag een gratis offerte aan voor een nauwkeurige prijsopgave.
+
+**Q: Kan ik dezelfde stijl kiezen in de AI Planner?**
+> Ja. Alle getoonde stijlen zijn beschikbaar als voorkeur in onze AI Planner. U kunt ook eigen inspiratiefoto's uploaden of een Pinterest-link plakken.
+
+---
+
+### Lightbox Behavior
+
+When a user clicks any card image:
+
+- Open a full-screen overlay/modal with the image at maximum resolution
+- Dark backdrop (rgba 0,0,0,0.9)
+- Close on click outside, ESC key, or X button
+- Swipe left/right to navigate between transformations
+- Show the title below the image in the lightbox
+
+No slider needed — the image already has VOOR and NA side by side.
