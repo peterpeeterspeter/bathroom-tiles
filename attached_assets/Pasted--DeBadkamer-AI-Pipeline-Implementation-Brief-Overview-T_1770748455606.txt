@@ -1,0 +1,755 @@
+ DeBadkamer AI Pipeline — Implementation Brief
+
+## Overview
+
+This document describes the changes needed to upgrade the AI planner pipeline. Three major changes:
+
+1. **Single-shot Pro rendering** — Replace the current two-step pipeline (empty room + render) with a single `gemini-3-pro-image-preview` call that reasons through the transformation using its built-in Thinking mode
+2. **"Behouden" (keep existing) option** — Each product category in step 2 gets a "keep existing" option so users can choose what to replace and what to keep
+3. **Improved prompts** — Better structured prompts that give the AI creative freedom over layout while respecting structural constraints
+
+---
+
+## Current Architecture (What Exists)
+
+```
+Step 1: StyleInspiration → style profile (tags + summary)
+Step 2: ProductConfiguration → user picks a product for EVERY category
+Step 3: DimensionsPhoto → user uploads photo + enters dimensions
+Step 4: Processing:
+  a) analyzeBathroomInput() → ProjectSpec (gemini-3-pro-preview)
+  b) generateEmptySpace() → empty shell image (gemini-3-pro-image-preview)
+  c) In parallel:
+     - calculateRenovationCost() → Estimate (gemini-3-pro-preview)
+     - generateRenovationRender() → final render (gemini-3-pro-image-preview)
+Step 5: Results + Lead Capture
+```
+
+**Problems:**
+- Two image generation calls (empty + render) — expensive, slow, and context is lost between them
+- The render never sees the original photo — only the empty shell, so original geometry is already degraded
+- User MUST select a product for every category — no option to keep existing fixtures
+- The render prompt uses "8k, Unreal Engine 5, Raytraced" (gaming terms that don't help diffusion models)
+- Product images are referenced by URL text in the prompt — not sent as inline images
+- Absolute measurements in the prompt (meters) that the model can't interpret visually
+
+---
+
+## New Architecture (What To Build)
+
+```
+Step 1: StyleInspiration → style profile (unchanged)
+Step 2: ProductConfiguration → user picks products OR "behouden" per category
+Step 3: DimensionsPhoto → user uploads photo + enters dimensions (unchanged)
+Step 4: Processing:
+  a) analyzeBathroomInput() → ProjectSpec (gemini-3-flash — model upgrade)
+  b) generateRenovation() → single-shot render (gemini-3-pro-image-preview)
+     - Receives: original photo + all selected product reference images
+     - Uses Thinking mode to reason through the transformation
+     - Knows which categories to replace and which to keep
+  c) calculateRenovationCost() → Estimate (gemini-3-flash — model upgrade)
+     - Now scope-aware: only charges for replaced items
+Step 5: Results + Lead Capture (unchanged)
+```
+
+**Key changes:**
+- `generateEmptySpace()` is REMOVED — no longer needed
+- `generateRenovationRender()` is replaced by `generateRenovation()` which takes the ORIGINAL photo
+- Product reference images are fetched and sent as inline base64 (not URLs in text)
+- The model has creative freedom over layout — only outer walls, windows, and doors are fixed
+- Each category can be "behouden" (keep existing from photo)
+
+---
+
+## File Changes
+
+### 1. types.ts — Add New Types
+
+Add these new types/interfaces:
+
+```typescript
+// Product selection action per category
+export type ProductAction = 'replace' | 'keep';
+
+// What the user chose for each category
+export interface ProductSelection {
+  action: ProductAction;
+  product?: DatabaseProduct; // only set when action === 'replace'
+}
+
+// Full renovation scope — one entry per category
+export interface RenovationScope {
+  floor: ProductSelection;
+  walls: ProductSelection;
+  vanity: ProductSelection;
+  toilet: ProductSelection;
+  faucets: ProductSelection;
+  shower: ProductSelection & { action: ProductAction | 'add' | 'remove' };
+  bathtub: ProductSelection & { action: ProductAction | 'add' | 'remove' };
+  lighting: ProductSelection;
+}
+
+// Expert analysis from the AI architect (for future use)
+export interface ExpertAnalysis {
+  currentState: string;
+  condition_score: number;
+  keepElements: string[];
+  opportunities: string[];
+  recommendations: string[];
+  layoutAdvice: string;
+  estimated_complexity: 'eenvoudig' | 'gemiddeld' | 'complex';
+  tags: StyleTag[];
+  summary_nl: string;
+}
+```
+
+Update `MaterialConfig` — this interface can be simplified or removed since `RenovationScope` replaces it. But for backward compatibility, you can keep it and derive it from `RenovationScope`.
+
+### 2. components/ProductConfiguration.tsx — Add "Behouden" Option
+
+**Current behavior:** For each category (Bathtub, Shower, Vanity, Toilet, Faucet, Lighting, Tile), the component renders a `CategoryProductSelector` that shows product cards. User must pick one.
+
+**New behavior:** For each category, show a toggle/option BEFORE the product cards:
+
+```
+┌─────────────────────────────────────┐
+│ Wastafelmeubel                      │
+│                                     │
+│ [● Vervangen]  [○ Behouden]         │
+│                                     │
+│ (product cards only show if         │
+│  "Vervangen" is selected)           │
+└─────────────────────────────────────┘
+```
+
+For Shower and Bathtub, add two extra options:
+- "Toevoegen" (add — I don't currently have one but want one)
+- "Verwijderen" (remove — I have one but don't want it)
+
+**Implementation approach:**
+
+Update the props interface:
+
+```typescript
+interface ProductConfigurationProps {
+  styleProfile: StyleProfile;
+  selectedProductIds: Record<string, string>;
+  productActions: Record<string, ProductAction>; // NEW
+  onProductSelect: (category: string, product: DatabaseProduct) => void;
+  onActionChange: (category: string, action: ProductAction) => void; // NEW
+  onNext: () => void;
+}
+```
+
+For each category in the render loop, add a toggle row above the `CategoryProductSelector`:
+
+```tsx
+{CATEGORIES.map((cat, i) => (
+  <div key={cat}>
+    <div className="flex items-center gap-3 mb-4">
+      <ShoppingBag size={18} />
+      <h4 className="font-black uppercase tracking-widest text-xs">
+        {CATEGORY_LABELS[cat]}
+      </h4>
+    </div>
+
+    {/* NEW: Action toggle */}
+    <div className="flex gap-2 mb-4">
+      <button
+        onClick={() => onActionChange(cat, 'replace')}
+        className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+          productActions[cat] !== 'keep'
+            ? 'bg-neutral-900 text-white'
+            : 'bg-surface border border-neutral-300/50 text-neutral-500'
+        }`}
+      >
+        Vervangen
+      </button>
+      <button
+        onClick={() => onActionChange(cat, 'keep')}
+        className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+          productActions[cat] === 'keep'
+            ? 'bg-neutral-900 text-white'
+            : 'bg-surface border border-neutral-300/50 text-neutral-500'
+        }`}
+      >
+        Behouden
+      </button>
+    </div>
+
+    {/* Only show product selector when replacing */}
+    {productActions[cat] !== 'keep' && (
+      <CategoryProductSelector
+        products={productsByCategory[cat] || []}
+        selectedId={selectedProductIds[cat]}
+        onSelect={(p) => onProductSelect(cat, p)}
+      />
+    )}
+
+    {productActions[cat] === 'keep' && (
+      <div className="bg-surface border border-neutral-300/30 rounded-xl p-4 text-center">
+        <p className="text-xs font-bold text-neutral-500">
+          Het huidige {CATEGORY_LABELS[cat]?.toLowerCase()} wordt behouden zoals op uw foto.
+        </p>
+      </div>
+    )}
+  </div>
+))}
+```
+
+### 3. pages/PlannerPage.tsx — Update State and Processing
+
+**New state variables:**
+
+```typescript
+const [productActions, setProductActions] = useState<Record<string, string>>({});
+// All categories default to 'replace' (current behavior)
+```
+
+**New handler:**
+
+```typescript
+const handleActionChange = useCallback((category: string, action: string) => {
+  setProductActions(prev => ({ ...prev, [category]: action }));
+  // If switching to 'keep', clear the product selection for this category
+  if (action === 'keep') {
+    setSelectedProductIds(prev => {
+      const next = { ...prev };
+      delete next[category];
+      return next;
+    });
+    setSelectedProductNames(prev => {
+      const next = { ...prev };
+      delete next[category];
+      return next;
+    });
+  }
+}, []);
+```
+
+**Pass to ProductConfiguration:**
+
+```tsx
+<ProductConfiguration
+  styleProfile={styleProfile}
+  selectedProductIds={selectedProductIds}
+  productActions={productActions}
+  onProductSelect={handleProductSelect}
+  onActionChange={handleActionChange}
+  onNext={() => { setStep(3); }}
+/>
+```
+
+**Update `startProcessing()`:**
+
+Replace the current processing flow. Remove `generateEmptySpace` call entirely. Replace `generateRenovationRender` with the new `generateRenovation` function.
+
+```typescript
+const startProcessing = async () => {
+  if (!imagePreview || !styleProfile) return;
+  setStep(4);
+  setLoading(true);
+  setError(null);
+  abortRef.current = new AbortController();
+
+  try {
+    if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) {
+      await window.aistudio.openSelectKey();
+    }
+
+    setLoadingMessage('Ruimte analyseren...');
+    const mimeType = imagePreview.match(/^data:(.*);base64,/)?.[1] || 'image/jpeg';
+    const base64 = imagePreview.split(',')[1];
+    const spec = await analyzeBathroomInput(base64, mimeType);
+    setProjectSpec(spec);
+
+    if (abortRef.current?.signal.aborted) throw new Error('timeout');
+
+    // Fetch product reference images for selected products
+    setLoadingMessage('Producten voorbereiden...');
+    const allProducts = await fetchAllActiveProducts();
+    const selectedProducts: DatabaseProduct[] = [];
+    for (const [category, productId] of Object.entries(selectedProductIds)) {
+      const product = allProducts.find(p => p.id === productId);
+      if (product) selectedProducts.push(product);
+    }
+
+    // Fetch actual product images as base64
+    const productImages = await fetchProductImagesAsBase64(selectedProducts);
+
+    if (abortRef.current?.signal.aborted) throw new Error('timeout');
+
+    setLoadingMessage('Uw nieuwe badkamer ontwerpen...');
+
+    // Single-shot render + cost estimate in parallel
+    const [render, est] = await Promise.all([
+      generateRenovation(
+        base64,
+        mimeType,
+        styleProfile,
+        productActions,
+        selectedProducts,
+        productImages
+      ),
+      calculateRenovationCost(spec, BudgetTier.STANDARD, styleProfile, materialConfig, allProducts)
+    ]);
+
+    setRenderUrl(render);
+    setEstimate(est);
+
+  } catch (err: any) {
+    // ... error handling (same as current)
+  } finally {
+    setLoading(false);
+  }
+};
+```
+
+### 4. services/geminiService.ts — New Render Function
+
+**Remove:** `generateEmptySpace()` function (lines 142-172)
+
+**Remove:** `generateRenovationRender()` function (lines 300-360)
+
+**Add:** New `generateRenovation()` function and helper to fetch product images:
+
+```typescript
+// Helper: fetch product images as base64 for inline sending to Gemini
+export const fetchProductImagesAsBase64 = async (
+  products: DatabaseProduct[]
+): Promise<Map<string, { base64: string; mimeType: string }>> => {
+  const imageMap = new Map<string, { base64: string; mimeType: string }>();
+
+  await Promise.all(
+    products.map(async (product) => {
+      try {
+        const response = await fetch(product.image_url);
+        const blob = await response.blob();
+        const buffer = await blob.arrayBuffer();
+        const base64 = btoa(
+          new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+        );
+        imageMap.set(product.id, {
+          base64,
+          mimeType: blob.type || 'image/jpeg',
+        });
+      } catch (err) {
+        console.warn(`Failed to fetch image for product ${product.id}:`, err);
+      }
+    })
+  );
+
+  return imageMap;
+};
+
+
+// NEW: Single-shot renovation render using Pro with Thinking mode
+export const generateRenovation = async (
+  bathroomBase64: string,
+  bathroomMimeType: string,
+  styleProfile: StyleProfile,
+  productActions: Record<string, string>,
+  selectedProducts: DatabaseProduct[],
+  productImages: Map<string, { base64: string; mimeType: string }>
+): Promise<string> => {
+  const ai = createClient();
+  const model = "gemini-3-pro-image-preview";
+
+  const styleDesc = styleProfile.summary;
+  const topTags = styleProfile.tags.slice(0, 8).map(t => t.tag).join(', ');
+  const presetDesc = styleProfile.presetName
+    ? `${styleProfile.presetName}: ${styleProfile.summary}`
+    : styleProfile.summary;
+
+  // Build the content parts array: images first, then prompt text
+  const parts: any[] = [];
+
+  // Optional: inspiration/reference images from step 1
+  if (styleProfile.referenceImageUrls && styleProfile.referenceImageUrls.length > 0) {
+    for (const refUrl of styleProfile.referenceImageUrls) {
+      const match = refUrl.match(/^data:(.*);base64,(.*)$/);
+      if (match) {
+        parts.push({ inlineData: { mimeType: match[1], data: match[2] } });
+      }
+    }
+    parts.push({
+      text: "[INSPIRATIEBEELDEN — dit is de stijl die de klant wil bereiken]"
+    });
+  }
+
+  // The original bathroom photo (ALWAYS included)
+  parts.push({
+    inlineData: { mimeType: bathroomMimeType, data: bathroomBase64 }
+  });
+  parts.push({
+    text: "[FOTO HUIDIGE BADKAMER — dit is de huidige staat die gerenoveerd moet worden]"
+  });
+
+  // Product reference images (only for categories being replaced)
+  let imageIndex = 0;
+  const imageLabels: string[] = [];
+
+  for (const product of selectedProducts) {
+    const imgData = productImages.get(product.id);
+    if (imgData) {
+      imageIndex++;
+      parts.push({
+        inlineData: { mimeType: imgData.mimeType, data: imgData.base64 }
+      });
+      const label = `[PRODUCT ${imageIndex}: ${product.name} (${product.category})]`;
+      parts.push({ text: label });
+      imageLabels.push(`Product ${imageIndex}: ${product.name} — categorie: ${product.category}`);
+    }
+  }
+
+  // Build the scope description
+  const scopeLines: string[] = [];
+  const categories = ['Tile', 'Vanity', 'Toilet', 'Faucet', 'Shower', 'Bathtub', 'Lighting'];
+  const categoryLabelsNL: Record<string, string> = {
+    Tile: 'Vloer & Wanden',
+    Vanity: 'Wastafelmeubel',
+    Toilet: 'Toilet',
+    Faucet: 'Kranen',
+    Shower: 'Douche',
+    Bathtub: 'Bad',
+    Lighting: 'Verlichting',
+  };
+
+  for (const cat of categories) {
+    const action = productActions[cat] || 'replace';
+    const nlLabel = categoryLabelsNL[cat] || cat;
+    const product = selectedProducts.find(p => p.category === cat);
+    const productImg = product ? imageLabels.find(l => l.includes(product.name)) : null;
+
+    if (action === 'keep') {
+      scopeLines.push(`${nlLabel} — BEHOUDEN: Bewaar het bestaande element EXACT zoals zichtbaar op de badkamerfoto. Zelfde uiterlijk, zelfde materiaal, zelfde staat. Mag verplaatst worden als de nieuwe indeling dat vereist, maar het uiterlijk blijft identiek.`);
+    } else if (action === 'remove') {
+      scopeLines.push(`${nlLabel} — VERWIJDEREN: Verwijder dit element volledig. Vul de vrijgekomen ruimte naadloos op met het vloer- en wandmateriaal.`);
+    } else if (action === 'add') {
+      scopeLines.push(`${nlLabel} — TOEVOEGEN (${productImg || 'zie referentie'}): Er is momenteel GEEN ${nlLabel.toLowerCase()} in deze badkamer. Installeer het product uit de bijgevoegde referentiefoto op de meest logische plek in de nieuwe indeling.`);
+    } else {
+      // replace
+      if (productImg) {
+        scopeLines.push(`${nlLabel} — VERVANGEN (${productImg}): Verwijder het bestaande element en installeer het product uit de bijgevoegde referentiefoto. Match kleur, vorm, materiaal en afwerking EXACT.`);
+      } else {
+        scopeLines.push(`${nlLabel} — VERVANGEN: Vervang door een modern, stijlvol alternatief passend bij de ontwerpstijl.`);
+      }
+    }
+  }
+
+  // The main prompt
+  const prompt = `
+Transform the bathroom in the photo into a fully renovated space.
+You are a senior interior architect with complete creative freedom over the layout and design.
+
+STEP 1 — STUDY THE SHELL:
+Analyze the bathroom photo. Identify ONLY the fixed structural elements:
+- Outer walls and their positions
+- Window(s): exact position, size, and how light enters
+- Door(s): exact position and which way they open
+- Ceiling height and any beams or slopes
+- Where existing water supply and drainage likely connect (typically the wall where current fixtures are mounted)
+THESE are your only constraints. Everything else — the interior layout, where fixtures go, the flow of the space — is yours to redesign.
+
+STEP 2 — DESIGN THE LAYOUT:
+Create the optimal bathroom layout for this space. Place fixtures where they make the most sense based on:
+- Plumbing logic: toilets and showers need drainage — keep them near the wall where existing plumbing connects
+- Flow: minimum 60cm free passage in front of every fixture
+- Natural light: place the vanity mirror where it catches daylight if possible
+- Privacy: toilet not directly visible from the door
+- The customer's style preference
+You may completely change the interior layout from the original photo. Move the toilet, swap sides, anything — as long as it makes spatial and plumbing sense.
+
+STEP 3 — APPLY CHANGES:
+The customer has specified what to replace and what to keep:
+
+${scopeLines.join('\n\n')}
+
+For REPLACED items: use the reference product photos as EXACT visual guide — match color, shape, material, and finish precisely.
+For KEPT items: preserve their appearance EXACTLY as they look in the original bathroom photo. They may be repositioned in the new layout but their visual appearance stays identical.
+
+STEP 4 — STYLE AND ATMOSPHERE:
+Design style: ${presetDesc}
+Qualities: ${topTags}
+
+Light and mood:
+- Natural daylight from existing window(s), same direction as the original photo
+- Warm color temperature (3000K)
+- Soft realistic shadows from all fixtures
+- No hard spots or overexposure
+
+Finishing:
+- 1-2 neutral white or grey towels on a rail
+- Realistic textures: wood grain, stone texture, metal sheen
+- Chrome and glass show realistic reflections
+- Consistent grout lines if tiles are used
+- NOTHING else: no plants, candles, art, bottles, or decorative objects
+
+FIXED CONSTRAINTS (non-negotiable):
+- Outer walls = IDENTICAL to the bathroom photo
+- Window positions and sizes = IDENTICAL to the bathroom photo
+- Door positions = IDENTICAL to the bathroom photo
+- Ceiling beams, slopes = IDENTICAL to the bathroom photo
+- Camera angle and perspective = IDENTICAL to the bathroom photo
+- Do NOT add windows or doors not in the original photo
+- KEPT items match their appearance in the original photo
+- REPLACED items match their reference product photos exactly
+- Professional interior magazine photography quality
+`;
+
+  parts.push({ text: prompt });
+
+  try {
+    const response = await ai.models.generateContent({
+      model,
+      contents: { parts },
+      config: {
+        responseModalities: ['TEXT', 'IMAGE'],
+        imageConfig: {
+          imageSize: '2K',
+        },
+      },
+    });
+
+    // Extract the final image from the response
+    for (const part of response.candidates?.[0]?.content?.parts || []) {
+      if (part.inlineData) {
+        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      }
+    }
+
+    // If using the newer SDK response format
+    if (response.parts) {
+      for (const part of response.parts) {
+        if (part.inlineData) {
+          return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        }
+      }
+    }
+
+    throw new Error("No image in render response");
+  } catch (error) {
+    console.error("Renovation render error:", error);
+    throw error;
+  }
+};
+```
+
+### 5. services/styleAnalysis.ts — Model Upgrade
+
+Change line 50 from:
+```typescript
+const model = "gemini-3-pro-preview";
+```
+To:
+```typescript
+const model = "gemini-3-flash";
+```
+
+This makes style analysis faster and cheaper. The task (tag extraction + summary) doesn't need Pro.
+
+### 6. services/geminiService.ts — Model Upgrades for Text Analysis
+
+In `analyzeBathroomInput()` (line 52), change:
+```typescript
+const model = "gemini-3-pro-preview";
+```
+To:
+```typescript
+const model = "gemini-3-flash";
+```
+
+In `calculateRenovationCost()` (line 182), change:
+```typescript
+const model = "gemini-3-pro-preview";
+```
+To:
+```typescript
+const model = "gemini-3-flash";
+```
+
+These are text/JSON analysis tasks that don't need Pro. Flash is faster and cheaper.
+
+### 7. Update calculateRenovationCost — Scope Awareness
+
+The cost calculation should know which items are being replaced vs kept. Items marked "behouden" should have zero cost.
+
+Pass `productActions` into the function and add to the system instruction:
+
+```typescript
+export const calculateRenovationCost = async (
+  spec: ProjectSpec,
+  tier: BudgetTier,
+  styleProfile: StyleProfile,
+  materials: MaterialConfig,
+  products: DatabaseProduct[],
+  productActions: Record<string, string> // NEW parameter
+): Promise<Estimate> => {
+```
+
+Add to the system instruction:
+```
+RENOVATION SCOPE:
+The customer has chosen the following actions per category.
+Only include costs for items marked REPLACE. Items marked KEEP cost nothing.
+${Object.entries(productActions).map(([cat, action]) => `- ${cat}: ${action.toUpperCase()}`).join('\n')}
+```
+
+---
+
+## What Gets Removed
+
+1. **`generateEmptySpace()` function** — entire function in geminiService.ts (lines 142-172). No longer needed.
+2. **`generateRenovationRender()` function** — entire function (lines 300-360). Replaced by `generateRenovation()`.
+3. **Loading message "Sloopwerkzaamheden simuleren..."** — in PlannerPage.tsx line 111. The empty room step no longer exists.
+4. **The empty shell variable** — in PlannerPage.tsx `startProcessing()`. No `const empty = await generateEmptySpace(...)`.
+
+---
+
+## What Gets Added
+
+1. **`ProductAction` type** and `RenovationScope` interface in types.ts
+2. **"Behouden/Vervangen" toggle** per category in ProductConfiguration.tsx
+3. **`generateRenovation()` function** in geminiService.ts — single-shot Pro render
+4. **`fetchProductImagesAsBase64()` helper** in geminiService.ts
+5. **`productActions` state** in PlannerPage.tsx
+6. **`handleActionChange` handler** in PlannerPage.tsx
+
+---
+
+## API/Model Summary
+
+| Function | Current Model | New Model | Reason |
+|----------|--------------|-----------|--------|
+| `analyzeStyleFromReferences()` | `gemini-3-pro-preview` | `gemini-3-flash` | Tag extraction doesn't need Pro |
+| `analyzeBathroomInput()` | `gemini-3-pro-preview` | `gemini-3-flash` | Room analysis doesn't need Pro |
+| `generateEmptySpace()` | `gemini-3-pro-image-preview` | REMOVED | No longer needed |
+| `generateRenovationRender()` | `gemini-3-pro-image-preview` | REMOVED | Replaced by generateRenovation |
+| `generateRenovation()` | N/A (new) | `gemini-3-pro-image-preview` | Single-shot with Thinking mode, up to 14 ref images |
+| `calculateRenovationCost()` | `gemini-3-pro-preview` | `gemini-3-flash` | Text/JSON task doesn't need Pro |
+
+**Cost per user session (estimated):**
+- Style analysis (Flash): ~$0.002
+- Room analysis (Flash): ~$0.002
+- Renovation render (Pro 2K): ~$0.134
+- Cost estimate (Flash): ~$0.002
+- **Total: ~$0.14 per user** (down from ~$0.27 with the two-step pipeline)
+
+---
+
+## Important: gemini-3-pro-image-preview API Config
+
+The new `generateRenovation()` function uses `gemini-3-pro-image-preview` with these specific config options from the API docs:
+
+```typescript
+config: {
+  responseModalities: ['TEXT', 'IMAGE'],  // Must include IMAGE
+  imageConfig: {
+    imageSize: '2K',                       // 1K, 2K, or 4K (uppercase K required)
+    // aspectRatio will auto-match input image
+  },
+}
+```
+
+Key notes from the API docs:
+- Pro supports up to 14 reference images (6 with high fidelity for objects)
+- Thinking mode is enabled by default and CANNOT be disabled
+- The model generates up to 2 interim "thought images" before the final output
+- Thought images are not charged — only the final output counts
+- The SDK handles thought signatures automatically when using the chat feature
+- All generated images include a SynthID watermark
+
+---
+
+## UI Flow (What The User Experiences)
+
+### Step 2 — Product Selection (Updated)
+
+For each of the 7 categories, the user sees:
+
+```
+┌─────────────────────────────────────────────────┐
+│  ● Tegels & Afwerking                           │
+│                                                 │
+│  [■ Vervangen]  [□ Behouden]                    │
+│                                                 │
+│  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐              │
+│  │     │ │     │ │     │ │     │              │
+│  │ A   │ │ B   │ │ C   │ │ D   │              │
+│  │     │ │     │ │     │ │     │              │
+│  └─────┘ └─────┘ └─────┘ └─────┘              │
+├─────────────────────────────────────────────────┤
+│  ● Wastafelmeubel                               │
+│                                                 │
+│  [□ Vervangen]  [■ Behouden]                    │
+│                                                 │
+│  ┌─────────────────────────────────────────┐    │
+│  │  Het huidige wastafelmeubel wordt       │    │
+│  │  behouden zoals op uw foto.             │    │
+│  └─────────────────────────────────────────┘    │
+├─────────────────────────────────────────────────┤
+│  ● Douche                                       │
+│                                                 │
+│  [■ Vervangen] [□ Behouden] [□ Verwijderen]     │
+│                                                 │
+│  (product cards...)                             │
+└─────────────────────────────────────────────────┘
+```
+
+Default state: all categories set to "Vervangen" (same as current behavior — nothing breaks for existing users).
+
+### Step 4 — Processing (Updated loading messages)
+
+```
+"Ruimte analyseren..."        → analyzeBathroomInput (Flash, ~2s)
+"Producten voorbereiden..."   → fetching product images as base64
+"Uw nieuwe badkamer ontwerpen..." → generateRenovation (Pro, ~10-15s)
+```
+
+Total processing time: ~15-20s (down from ~25-40s with two-step pipeline).
+
+---
+
+## Data Flow Through The Prompt
+
+```
+Step 1 output: StyleProfile
+  ├── tags: [{tag: "clean-lines", weight: 0.9}, ...]
+  ├── summary: "Strakke moderne stijl met neutrale tinten..."
+  ├── presetName: "Modern"
+  └── referenceImageUrls: [dataUrl1, dataUrl2] (from Pinterest/uploads)
+
+Step 2 output: selectedProducts + productActions
+  ├── Tile: { action: 'replace', product: {name: "Betonlook 60x60", image_url: "..."} }
+  ├── Vanity: { action: 'keep' }
+  ├── Toilet: { action: 'replace', product: {name: "Villeroy Subway 3.0", ...} }
+  ├── Faucet: { action: 'replace', product: {name: "Grohe Essence", ...} }
+  ├── Shower: { action: 'replace', product: {name: "Hansgrohe Raindance", ...} }
+  ├── Bathtub: { action: 'keep' }
+  └── Lighting: { action: 'keep' }
+
+Step 3 output: bathroom photo (base64) + dimensions
+
+All of this feeds into generateRenovation() as:
+  Image 1: inspiration images (if any)
+  Image 2: bathroom photo
+  Image 3-N: product reference photos (only for 'replace' categories)
+  Text: the structured prompt with scope per category
+```
+
+---
+
+## Testing Checklist
+
+After implementation, test these scenarios:
+
+1. **All replace** (default) — should behave like current system but better quality
+2. **All keep** — should basically return a cleaned-up version of the original photo
+3. **Mix** — e.g., new tiles + new toilet, keep vanity + keep bathtub
+4. **Remove shower** — should fill the space with wall/floor material
+5. **Add bathtub** (when original has none) — model should find a logical position
+6. **With inspiration images** from step 1 — should influence the style
+7. **Without inspiration images** (preset only) — should still work
+8. **Error handling** — API timeout, failed image fetch, missing products
+9. **Cost estimate** — "keep" items should show zero cost in the estimate
+10. **Before/after slider** — still works since we use original photo as "before"

@@ -1,0 +1,169 @@
+Option B: Single-Shot (Recommended)
+Skip the empty room. One call to Pro with Thinking.
+
+Inputs (images in this order):
+
+Image 1:  Original bathroom photo (the current state)
+Image 2:  Tile/material texture reference
+Image 3:  Vanity reference photo
+Image 4:  Toilet reference photo
+Image 5:  Faucet reference photo  
+Image 6:  Shower or bathtub reference photo
+Image 7:  Lighting reference (if available)
+Optional: Up to 3 inspiration/Pinterest images from step 1
+
+The prompt — structured for Pro's Thinking mode:
+
+Transform the bathroom in image 1 into a fully renovated 
+bathroom. The reference photos (images 2-7) show the EXACT 
+products to use — match their color, shape, material, and 
+finish precisely.
+
+{{#if hasInspirationImages}}
+The inspiration images show the target aesthetic the customer 
+wants to achieve.
+{{/if}}
+
+STEP 1 — STUDY THE EXISTING ROOM:
+Analyze image 1 carefully. Note:
+- The exact camera angle, height, and perspective
+- The vanishing point and how walls recede
+- Where the window(s) are and how light enters
+- Where the door is
+- The room proportions (which walls are longer, which shorter)
+- Any architectural features (beams, niches, alcoves, 
+  sloped ceiling)
+ALL of these remain IDENTICAL in the final image.
+
+STEP 2 — PLAN THE LAYOUT:
+{{#if expertAnalysis}}
+An expert has analyzed this specific room and advises:
+Layout: {{expertAnalysis.layoutAdvice}}
+Keep these elements: {{expertAnalysis.keepElements}}
+Key opportunities: {{expertAnalysis.opportunities[0]}}
+Complexity: {{expertAnalysis.estimated_complexity}}
+Use this advice to guide placement decisions below.
+{{/if}}
+Based on the room shape and where the door/window are, 
+determine the most logical position for each fixture. 
+Plumbing typically connects on the wall where the existing 
+fixtures are — keep new fixtures near those same walls when 
+possible.
+
+STEP 3 — APPLY MATERIALS:
+Using the material from image 2:
+- Floor: Apply as floor tiles across the entire floor. 
+  Lay in a straight grid. Show grout lines that are subtle 
+  but visible — the line spacing should match the tile 
+  proportions in the reference photo. Lines converge 
+  naturally toward the perspective vanishing point.
+- Wet-area walls (shower zone, behind vanity): Same tile 
+  material, running from floor to ceiling, continuous 
+  without interruption.
+- Dry walls: Smooth white or light-toned plaster finish.
+{{#if hasWallPanels}}
+  Alternatively for dry walls: seamless wall panels with 
+  invisible joints for a modern, grout-free look.
+{{/if}}
+
+STEP 4 — PLACE EACH FIXTURE:
+Install each product. Use the reference photos as EXACT 
+visual guide — do not improvise the design.
+
+VANITY (image 3): 
+Mount against a wall with clear floor space in front of it. 
+Standard height ~85cm. Frameless mirror centered above. The 
+vanity should be proportionally correct for this room — not 
+too large, not too small relative to the wall it sits against.
+
+TOILET (image 4):
+Wall-hung, against a wall perpendicular to the vanity wall 
+if possible. Concealed cistern — the wall behind is flat 
+with only a flush plate visible. Minimum 15cm clearance 
+from the side wall.
+
+FAUCET (image 5):
+Installed on or above the vanity basin. If wall-mounted: 
+protruding from the wall above the basin. Match the exact 
+finish from the reference (chrome, matte black, brushed 
+nickel, gold).
+
+{{#if hasShower}}
+SHOWER (image 6):
+Walk-in with a frameless glass panel. Rain shower head 
+mounted on the wall. Hand shower on a rail below it. 
+Shower floor is flush with the room floor (no step up). 
+Position near the window if one exists (natural light 
+in the shower is desirable). 
+{{/if}}
+{{#if hasBathtub}}
+BATHTUB (image 6):
+Against the longest available wall. Faucet at the foot end. 
+If freestanding: leave at least 15cm space around all sides.
+{{/if}}
+
+{{#if hasLighting}}
+LIGHTING (image 7):
+Mirror lighting above or beside the vanity mirror. Indirect 
+ambient light elsewhere — warm tone, no harsh spots.
+{{/if}}
+
+STEP 5 — STYLE AND ATMOSPHERE:
+Design style: {{styleSummary}}
+{{#if stylePresetDescription}}
+Style character: {{stylePresetDescription}}
+{{/if}}
+
+The overall feel should match these qualities: {{top8Tags}}
+
+Lighting:
+- Primary light: natural daylight from the existing 
+  window(s), matching the original light direction
+- Color temperature: warm (3000K atmosphere)
+- Soft shadows from all fixtures onto adjacent surfaces
+- No hard spotlight effects or overexposure
+
+Finishing touches:
+- 1-2 rolled or folded towels in neutral white or grey 
+  on a towel rail or the vanity
+- Realistic material textures: visible wood grain, stone 
+  texture, metal sheen — no flat CG surfaces
+- Chrome and glass show realistic reflections
+- Grout lines are consistent in color and width throughout
+- NOTHING else — no plants, candles, artwork, rugs, 
+  bottles, or decorative objects
+
+ABSOLUTE CONSTRAINTS:
+- Room shape and proportions = IDENTICAL to image 1
+- Camera angle and perspective = IDENTICAL to image 1
+- Window positions, door positions = IDENTICAL to image 1
+- Ceiling beams, niches, alcoves = IDENTICAL to image 1
+- Do NOT add any windows or doors not present in image 1
+- Do NOT add any objects not listed above
+- Products must visually MATCH reference images 2-7 
+  in color, shape, and finish
+
+The final image should look like a professional interior 
+photograph for a high-end design magazine — sharp, 
+well-composed, inviting, and real.
+
+What's Different From Your Current Prompt
+Aspect	Your current prompt	New prompt
+Input image	Empty shell (original photo already lost)	Original bathroom photo (model sees the real geometry)
+Measurements	"{{width}}m breed × {{length}}m lang" (meaningless to the model)	Removed. Model analyzes proportions directly from the photo
+Layout guidance	Generic rules ("langste vrije wand")	Fed from ExpertAnalysis when available — specific to THIS room
+Product → image mapping	"{{vanityName}}" as text	"image 3" — explicitly tied to a numbered reference photo
+Thinking guidance	None — one flat block of instructions	STEP 1-5 structure that matches how Pro's Thinking mode sequences its work
+Step 1: Study the room	Missing entirely	Model is explicitly told to analyze perspective, vanishing point, and architectural features FIRST before any changes
+Step 2: Plan layout	Missing	Model plans where things go BEFORE rendering — using ExpertAnalysis if available
+Edit framing	"DOEL: Transformeer..." (generation framing)	"Transform the bathroom in image 1..." (edit framing — triggers structure preservation)
+Negative constraints	Listed at the end	Repeated per step ("NOTHING else") AND at the end — redundancy is intentional for emphasis
+Inspiration images	Not included	Passed as additional reference when available from step 1
+keepElements from ExpertAnalysis	Not used	Fed into step 2 — model knows what to preserve from the original
+The Biggest Single Improvement
+Sending the original bathroom photo instead of the empty shell. Right now you're:
+
+Taking the original photo
+Destroying its geometry in the empty-room step
+Asking the render step to maintain geometry it has never seen
+With single-shot Pro, the model sees the original photo and reasons through the transformation internally. The Thinking mode's interim images are where it mentally "strips" the room. The final output transforms directly from the real photo — preserving the geometry it can actually see.
