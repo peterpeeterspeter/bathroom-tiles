@@ -1,5 +1,3 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -111,7 +109,7 @@ Deno.serve(async (req: Request) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "De Badkamer <noreply@debadkamer.com>",
+        from: "De Badkamer <onboarding@resend.dev>",
         to: ["peterpeeterspeter@gmail.com"],
         subject: `Nieuw Lead: ${payload.name} — ${payload.postcode} — EUR ${payload.estimateLow || "?"}+`,
         html: emailHtml,
