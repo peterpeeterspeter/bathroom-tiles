@@ -23,7 +23,7 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
    - Render receives full ProjectSpec as SPATIAL CONTEXT preamble + anchor coordinates injected into STEP 1 for model to verify reasoning against hard coordinates
    - Occlusion map used as negative constraint in ABSOLUTE CONSTRAINTS to prevent hallucination in non-visible areas
    - All constraint logic in English; Dutch only for product category names
-   - Single-shot render: original photo + inspiration images + product reference images → gemini-3-pro-image-preview with thinkingBudget:8192 + 2K output
+   - Single-shot render: original photo + inspiration images + product reference images → gemini-3-pro-image-preview with built-in thinking (proxy default HIGH) + 2K output
    - Cost estimate (temperature 0.1) is scope-aware: kept items have zero cost, fixture condition and plumbing wall distance affect labor costs
 5. User dimensions take priority over AI-estimated dimensions
 6. Photos are compressed to 1500px max before API calls
@@ -34,7 +34,7 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
 | Function | Model | Temperature | Thinking | Notes |
 |---|---|---|---|---|
 | analyzeBathroomInput | gemini-3-pro-preview | 0.2 | N/A | Enhanced schema: CameraSpec, WallSpec[] with ShellAnchor[], fixture confidence, occlusions |
-| generateRenovation | gemini-3-pro-image-preview | default | built-in (proxy) | 2x2 grid (4 variations), anchor coords in STEP 1, occlusion negative constraints, English constraint logic, 4K output, proxy-only (no direct API fallback) |
+| generateRenovation | gemini-3-pro-image-preview | default | built-in (proxy) | Single-shot render, anchor coords in STEP 1, occlusion negative constraints, English constraint logic, 2K output, proxy-only (no direct API fallback) |
 | calculateRenovationCost | gemini-3-pro-preview | 0.1 | N/A | Plumbing wall awareness, fixture condition affects labor |
 
 ## Directory Structure
@@ -81,15 +81,11 @@ Run `supabase/migrations/20260211_create_projects_and_storage.sql` in Supabase S
 Deploy `supabase/functions/send-lead-notification` and set `RESEND_API_KEY` in Supabase secrets
 
 ## Recent Changes
-- 2026-02-11: 2x2 grid render + lightbox:
-  - generateRenovation prompt updated: OUTPUT FORMAT block for 4 variations in 2x2 grid
-  - thinkingConfig switched from thinkingBudget:8192 to thinkingLevel:'HIGH' (Gemini 3 API)
-  - imageSize upgraded from '2K' to '4K' (each quadrant ~2K effective resolution)
-  - Removed thinkingConfig entirely (proxy has built-in thinking), restored imageSize:'4K'
-  - Retry now stays on proxy (proxyOnly=true), 2 retries at 8s intervals
-  - New RenderGrid component: 2x2 grid display with click-to-zoom lightbox, keyboard nav (←→/ESC), Voor/Na toggle
-  - BeforeAfterSlider replaced in PlannerPage.tsx and ResultDisplay.tsx
-  - Variation axes: fixture arrangement, tile pattern, lighting mood, spatial composition
+- 2026-02-11: Render config cleanup:
+  - Reverted 2x2 grid back to single-image render with BeforeAfterSlider
+  - Removed thinkingConfig entirely (proxy has built-in thinking at HIGH by default)
+  - imageSize: '2K', proxy-only retry (proxyOnly=true), 2 retries at 8s intervals
+  - Kept 4 enhancements: anchor coords in STEP 1, occlusion map in ABSOLUTE CONSTRAINTS, enhanced analysis schema (ShellAnchor), English constraint logic
 - 2026-02-11: B2B contractor marketing page (`/voor-vakmensen`):
   - 12-section marketing page: Hero, Problem comparison, How it works, What's in a lead, Lead score explained, Pricing tiers, ROI calculator (interactive), Testimonials, Before/After showcase, FAQ, Final CTA, Sign-up form
   - Route added in App.tsx, nav link in Header.tsx, footer link in Footer.tsx

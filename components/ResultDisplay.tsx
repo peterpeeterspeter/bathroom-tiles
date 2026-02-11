@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Download, Image as ImageIcon, Info, Smartphone, Calendar, Euro, Loader2 } from 'lucide-react';
 import { Estimate, StyleProfile } from '../types';
-import { RenderGrid } from './RenderGrid';
+import { BeforeAfterSlider } from './BeforeAfterSlider';
 import { generateResultPdf } from '../lib/pdfService';
 
 interface ResultDisplayProps {
@@ -81,10 +81,10 @@ export const ResultDisplay = ({ name, styleProfile, estimate, renderUrl, imagePr
          <div className="space-y-6 md:space-y-8">
            <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary"><ImageIcon size={18} /></div>
-              <h3 className="font-bold uppercase tracking-widest text-sm text-neutral-500">Renovatie Varianten</h3>
+              <h3 className="font-bold uppercase tracking-widest text-sm text-neutral-500">Renovatie Visualisatie</h3>
            </div>
            <div className="relative">
-              <RenderGrid renderUrl={renderUrl} beforeUrl={imagePreview} />
+              <BeforeAfterSlider before={imagePreview} after={renderUrl} />
               <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-primary/20 rounded-full blur-[40px] -z-10" />
            </div>
            <div className="bg-surface p-6 md:p-8 rounded-2xl border border-neutral-300/30">
