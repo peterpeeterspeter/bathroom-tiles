@@ -65,7 +65,7 @@ function calculateLeadScore(payload: LeadPayload): number {
   return Math.min(100, score);
 }
 
-export async function submitLead(payload: LeadPayload): Promise<{ success: boolean; error?: string; leadId?: string; leadScore: number }> {
+export async function submitLead(payload: LeadPayload): Promise<{ success: boolean; leadScore: number }> {
   const styleName = payload.styleProfile?.presetName || payload.styleProfile?.summary?.slice(0, 50) || '';
   const leadScore = calculateLeadScore(payload);
 
@@ -98,20 +98,27 @@ export async function submitLead(payload: LeadPayload): Promise<{ success: boole
   if (payload.utmMedium) row.utm_medium = payload.utmMedium;
   if (payload.utmCampaign) row.utm_campaign = payload.utmCampaign;
 
-  let result = await supabase.from('leads').insert(row).select('id').single();
+  let result = await supabase.from('leads').insert(row);
 
   if (result.error && result.error.message.includes('column')) {
-    const safeRow = { ...row };
-    delete safeRow.project_id;
-    delete safeRow.lead_score;
-    delete safeRow.selected_product_details;
-    result = await supabase.from('leads').insert(safeRow).select('id').single();
+    console.warn('Lead insert failed with column error, retrying with safe columns:', result.error.message);
+    const safeRow: Record<string, unknown> = {
+      name: row.name,
+      email: row.email,
+      phone: row.phone,
+      postcode: row.postcode,
+      selected_style: row.selected_style,
+      source: row.source,
+      country: row.country,
+    };
+    result = await supabase.from('leads').insert(safeRow);
   }
 
   if (result.error) {
-    return { success: false, error: result.error.message, leadScore };
+    console.error('Lead submission failed:', result.error.code, result.error.message, result.error.details);
+    throw new Error(result.error.message);
   }
-  return { success: true, leadId: result.data?.id, leadScore };
+  return { success: true, leadScore };
 }
 
 export async function sendLeadNotification(payload: Record<string, unknown>): Promise<void> {
