@@ -1,0 +1,277 @@
+Here's my brainstorm for the **B2B contractor marketing page** — the page where you sell your AI-qualified leads to bathroom renovation contractors.
+
+---
+
+## Contractor Marketing Page: Full Brainstorm
+
+### Page URL: `/voor-vakmensen` (or `/voor-installateurs`)
+
+---
+
+### SECTION 1: Hero — "Stop met koude leads"
+
+**Purpose:** Immediately speak to the contractor's #1 pain point
+
+```
+Headline:     "Ontvang badkamer-leads die al een compleet plan hebben"
+Subheadline:  "Onze AI-planner levert u klanten met stijlkeuze, productlijst,
+               foto's, afmetingen en budget — nog vóór het eerste gesprek."
+```
+
+**Visual:** Split screen or angled layout:
+- Left: the email notification they'd receive (screenshot of the Resend email with real data — name, postcode, products, lead score, render link)
+- Right: the CTA
+
+**Two CTAs:**
+- Primary (orange): "Word Partner — Gratis Aanmelden"
+- Secondary (outline): "Bekijk een Voorbeeld Lead"
+
+**Trust badges below hero:**
+- "150+ aangesloten vakmensen"
+- "Gemiddeld 4.8/5 klanttevredenheid"
+- "Alleen leads in uw regio"
+- "Geen vaste abonnementskosten" (if pay-per-lead model)
+
+---
+
+### SECTION 2: The Problem — "Het probleem met traditionele leads"
+
+**Purpose:** Agitate the pain. Contractors know this feeling.
+
+Three columns showing the **old way vs. De Badkamer way:**
+
+| Traditional Lead | De Badkamer Lead |
+|---|---|
+| "Ik wil mijn badkamer renoveren" | Complete AI Project Dossier |
+| No photos, no dimensions | Foto + AI-render van het resultaat |
+| No idea about budget | Prijsindicatie EUR 8.000–15.000 |
+| "Ik kijk nog rond" | Lead score 85/100 — klaar om te starten |
+| You call, they don't pick up | Telefoonnummer + gewenste timeline |
+| 10 offertes aangevraagd bij concurrenten | Exclusief in uw regio |
+
+**Key message:** "Een gewone lead kost u 30 minuten om te kwalificeren. Onze leads zijn al gekwalificeerd door AI."
+
+---
+
+### SECTION 3: How It Works — "Hoe werkt het?"
+
+**Purpose:** Show the flow from consumer → planner → lead → contractor
+
+Four-step visual (horizontal timeline or vertical cards):
+
+```
+1. Klant ontwerpt     →  2. AI analyseert    →  3. Lead komt bij u  →  4. U sluit de deal
+   hun droombadkamer       foto's, stijl,          Compleet dossier       Offerte → Opdracht
+   met onze AI-planner     producten, budget        in uw inbox
+```
+
+Each step has a small illustration or screenshot:
+1. Screenshot of the planner (style selection)
+2. Screenshot of AI render output
+3. Screenshot of the email notification
+4. Happy contractor shaking hands (stock photo or illustration)
+
+---
+
+### SECTION 4: What You Get — "Wat zit er in een lead?"
+
+**Purpose:** Show the richness of the AI Project Dossier. This is the unique selling point.
+
+Interactive mockup or visual breakdown of a sample lead:
+
+- **Contactgegevens**: Naam, email, telefoon, postcode, gewenste timeline
+- **Stijlprofiel**: Geselecteerde stijl + AI-samenvatting (e.g. "Modern industrieel met warm hout")
+- **Productkeuzes**: Tabel met merk, model, prijsklasse per categorie (kraan, toilet, douche, tegels...)
+- **Ruimteanalyse**: Afmetingen (bv. 3.2m x 2.8m = 9.0 m²)
+- **Originele foto**: Klikbare link naar foto van de huidige badkamer
+- **AI Visualisatie**: Klikbare link naar het AI-gegenereerde renovatiebeeld
+- **Prijsindicatie**: EUR 8.500 – EUR 12.000
+- **Lead Score**: 82/100
+
+**Callout box:** "Gemiddeld besteden onze klanten 8 minuten aan het plannen van hun badkamer. Dat is 8 minuten onderzoek dat u niet meer hoeft te doen."
+
+---
+
+### SECTION 5: Lead Score Explained — "Lead Score: weet direct waar u aan toe bent"
+
+**Purpose:** Explain the scoring system — this builds trust and shows sophistication
+
+Visual gauge/meter showing the scoring breakdown:
+
+```
+Lead Score: 82/100
+
+  Contact compleet      ████████░░  20/25
+  Project volledigheid  ██████████  35/35
+  AI outputs            ██████████  20/20
+  Budgetsignaal         ███████░░░  7/20
+```
+
+**Three tier callouts:**
+- **Score 70-100**: "Hoge intentie — deze klant is klaar om te starten"
+- **Score 40-69**: "Oriëntatiefase — goed voor opvolging binnen een week"
+- **Score 0-39**: "Vroeg stadium — deze sturen we niet door" (shows you filter quality)
+
+**Key message:** "Wij sturen u alleen leads met een score van 40+. Lagere scores worden niet doorgestuurd."
+
+---
+
+### SECTION 6: Pricing — "Transparante prijzen, geen verrassingen"
+
+**Purpose:** Show pricing model clearly
+
+Two or three pricing tiers (depending on your model):
+
+**Option A — Pay-per-lead:**
+```
+┌─────────────────┬──────────────────┬─────────────────────┐
+│   STANDAARD     │    PREMIUM       │    EXCLUSIEF        │
+│   EUR 25/lead   │    EUR 45/lead   │    EUR 75/lead      │
+│                 │                  │                     │
+│  Gedeeld (max   │  Max 3 offertes  │  100% exclusief     │
+│  5 offertes)    │  per lead        │  alleen voor u      │
+│                 │                  │                     │
+│  Alle regio's   │  Uw regio's      │  Uw regio's         │
+│  Score 40+      │  Score 50+       │  Score 60+          │
+│  Email notif.   │  + SMS notif.    │  + Prioriteit       │
+│                 │  + PDF dossier   │  + Direct bellen    │
+└─────────────────┴──────────────────┴─────────────────────┘
+```
+
+**Option B — Monthly subscription:**
+```
+Basis: EUR 149/maand (10 leads) | Groei: EUR 299/maand (25 leads) | Pro: EUR 499/maand (unlimited)
+```
+
+**Below pricing:** "Geen opzegkosten. Maandelijks opzegbaar. Start vandaag, ontvang morgen uw eerste lead."
+
+---
+
+### SECTION 7: ROI Calculator — "Bereken uw rendement"
+
+**Purpose:** Interactive tool that makes the value tangible
+
+Simple calculator with sliders:
+- Gemiddelde opdrachtwaarde: [EUR 8.000 slider]
+- Conversiepercentage: [25% slider]
+- Aantal leads per maand: [10 slider]
+
+**Output:**
+```
+→ 10 leads x 25% conversie = 2.5 opdrachten/maand
+→ 2.5 x EUR 8.000 = EUR 20.000 omzet/maand
+→ Leadkosten: EUR 250/maand
+→ ROI: 8.000%
+```
+
+---
+
+### SECTION 8: Social Proof — "Wat vakmensen zeggen"
+
+**Purpose:** Testimonials from contractors (even if initially fictional/placeholder)
+
+Three testimonial cards:
+
+> "De leads van De Badkamer zijn anders. De klant heeft al nagedacht over stijl, producten en budget. Het eerste gesprek is meteen inhoudelijk."
+> — **Jan V.**, Sanitairtechniek Rotterdam, partner sinds 2025
+
+> "Ik was sceptisch over AI-leads, maar het AI-render helpt enorm. De klant weet precies wat hij wil en ik kan direct een accurate offerte maken."
+> — **Marco D.**, Badkamer Specialist Antwerpen
+
+> "Vroeger reed ik 5x per week naar mensen die nog aan het vergelijken waren. Nu heb ik 3 vaste opdrachten per maand via De Badkamer."
+> — **Pieter K.**, Installatietechniek Eindhoven
+
+---
+
+### SECTION 9: Before/After Showcase — "Resultaten van onze AI-planner"
+
+**Purpose:** Show the quality of the AI output — this builds credibility for both the contractor AND the consumer facing side
+
+Grid of 3-4 before/after pairs using the `BeforeAfterSlider` component you already have. Each pair shows:
+- Before: actual bathroom photo
+- After: AI-generated renovation render
+- Style label + estimated budget
+
+---
+
+### SECTION 10: FAQ for Contractors
+
+**Purpose:** Handle objections
+
+1. **"Hoe exclusief zijn de leads?"**
+   → Depends on tier. Standaard = shared (max 5), Exclusief = 100% exclusief.
+
+2. **"Kan ik leads filteren op regio?"**
+   → Ja, u stelt uw postcode-regio's in bij aanmelding. U ontvangt alleen leads in uw werkgebied.
+
+3. **"Wat als de klant niet opneemt?"**
+   → U krijgt het lead terug als credit als er binnen 72 uur geen contact gemaakt kan worden.
+
+4. **"Hoe nauwkeurig is de AI-prijsindicatie?"**
+   → Binnen 20% van de werkelijke kosten op basis van Q1 2026 markttarieven. Het is indicatief — u maakt altijd uw eigen offerte.
+
+5. **"Moet ik een contract tekenen?"**
+   → Nee, maandelijks opzegbaar. Geen minimale afname.
+
+6. **"Hoe snel ontvang ik leads na aanmelding?"**
+   → Direct na goedkeuring (meestal binnen 24 uur). U ontvangt leads via email en optioneel via SMS.
+
+---
+
+### SECTION 11: Final CTA — Full-width accent bar
+
+```
+Headline:    "Klaar om te groeien?"
+Subheadline: "Meld u vandaag aan en ontvang uw eerste lead binnen 24 uur."
+CTA button:  "Word Partner" (orange, large)
+Below:       "Gratis aanmelden — geen vaste kosten — direct opzegbaar"
+```
+
+---
+
+### SECTION 12: Contractor Sign-up Form (or separate page)
+
+**Compact inline form or link to `/voor-vakmensen/aanmelden`:**
+
+Fields:
+- Bedrijfsnaam
+- Contactpersoon
+- Email
+- Telefoon
+- KvK-nummer (Chamber of Commerce — builds trust both ways)
+- Werkgebied (postcodegebieden, multi-select)
+- Specialisatie (checkboxes: Complete badkamer / Sanitair / Tegels / Loodgieter / Elektra)
+- Gewenst plan (Standaard / Premium / Exclusief)
+
+---
+
+## Page Architecture Summary
+
+```
+/voor-vakmensen
+│
+├── Hero (pain point + email preview)
+├── Problem comparison (old vs new leads)
+├── How it works (4 steps)
+├── What's in a lead (dossier breakdown)
+├── Lead score explained (gauge visual)
+├── Pricing tiers (cards)
+├── ROI calculator (interactive)
+├── Testimonials (3 cards)
+├── Before/after showcase (slider grid)
+├── FAQ (6 questions)
+├── Final CTA (accent bar)
+└── Sign-up form (inline or linked)
+```
+
+---
+
+## Key Design Notes
+
+- **Reuse existing design system** — same primary (#0E7C6B), accent (#E8883C), Tailwind classes
+- **Reuse components** — Header, Footer, Layout, InlineLeadForm (adapted for B2B), BeforeAfterSlider
+- **Tone shift** — still professional Dutch, but speak to business outcomes (ROI, time saved, conversion rates) instead of dream bathrooms
+- **Mobile-first** — contractors browse on phones between jobs
+- **One clear CTA throughout** — "Word Partner" in orange, repeated every 2-3 sections
+
+Want me to create the actual page implementation, or refine any section first?
