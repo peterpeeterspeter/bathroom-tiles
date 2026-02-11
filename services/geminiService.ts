@@ -708,10 +708,10 @@ ${occlusionLines.length > 0 ? `- Occluded zones (${occlusionLines.join('; ')}): 
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
           thinkingConfig: {
-            thinkingLevel: 'HIGH' as any,
+            thinkingBudget: 8192,
           },
           imageConfig: {
-            imageSize: '4K',
+            imageSize: '2K',
           },
         },
       });

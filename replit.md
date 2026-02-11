@@ -34,7 +34,7 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
 | Function | Model | Temperature | Thinking | Notes |
 |---|---|---|---|---|
 | analyzeBathroomInput | gemini-3-pro-preview | 0.2 | N/A | Enhanced schema: CameraSpec, WallSpec[] with ShellAnchor[], fixture confidence, occlusions |
-| generateRenovation | gemini-3-pro-image-preview | default | thinkingLevel: HIGH | 2x2 grid (4 variations), anchor coords in STEP 1, occlusion negative constraints, English constraint logic, 4K output |
+| generateRenovation | gemini-3-pro-image-preview | default | thinkingBudget: 8192 | 2x2 grid (4 variations), anchor coords in STEP 1, occlusion negative constraints, English constraint logic, 2K output |
 | calculateRenovationCost | gemini-3-pro-preview | 0.1 | N/A | Plumbing wall awareness, fixture condition affects labor |
 
 ## Directory Structure
@@ -85,6 +85,7 @@ Deploy `supabase/functions/send-lead-notification` and set `RESEND_API_KEY` in S
   - generateRenovation prompt updated: OUTPUT FORMAT block for 4 variations in 2x2 grid
   - thinkingConfig switched from thinkingBudget:8192 to thinkingLevel:'HIGH' (Gemini 3 API)
   - imageSize upgraded from '2K' to '4K' (each quadrant ~2K effective resolution)
+  - Reverted to thinkingBudget:8192 + imageSize:'2K' due to API 400 errors with new config via proxy
   - New RenderGrid component: 2x2 grid display with click-to-zoom lightbox, keyboard nav (←→/ESC), Voor/Na toggle
   - BeforeAfterSlider replaced in PlannerPage.tsx and ResultDisplay.tsx
   - Variation axes: fixture arrangement, tile pattern, lighting mood, spatial composition
