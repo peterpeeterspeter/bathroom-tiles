@@ -367,7 +367,14 @@ export default function PlannerPage() {
     const totalLow = Math.round((estimate?.grandTotal || 0) * 0.85);
     const totalHigh = Math.round((estimate?.grandTotal || 0) * 1.15);
 
-    const leadResult = await submitLead({
+    const timeoutMs = 15000;
+    const withTimeout = <T,>(promise: Promise<T>, label: string): Promise<T> =>
+      Promise.race([
+        promise,
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`${label} timeout`)), timeoutMs)),
+      ]);
+
+    const leadResult = await withTimeout(submitLead({
       name: data.name,
       email: data.email,
       phone: data.phone,
@@ -386,41 +393,13 @@ export default function PlannerPage() {
       preferredTimeline: data.preferredTimeline,
       hasOriginalPhoto: !!imagePreview,
       hasRender: !!renderUrl,
-    });
+    }), 'submitLead');
 
     if (projectId) {
       markProjectLeadSubmitted(projectId).catch(() => {});
     }
 
-    let originalPhotoUrl: string | null = null;
-    let renderImageUrl: string | null = null;
-    if (projectId) {
-      const [origPath, renderPath] = await Promise.all([
-        getProjectImagePath(projectId, 'original_photo'),
-        getProjectImagePath(projectId, 'ai_render'),
-      ]);
-      if (origPath) originalPhotoUrl = await getSignedImageUrl(origPath);
-      if (renderPath) renderImageUrl = await getSignedImageUrl(renderPath);
-    }
-
-    sendLeadNotification({
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      postcode: data.postcode,
-      preferredTimeline: data.preferredTimeline,
-      styleName: styleProfile?.presetName || styleProfile?.summary?.slice(0, 50) || '',
-      styleSummary: styleProfile?.summary || '',
-      products: selectedProductDetailsRef.current,
-      roomWidth: spec?.estimatedWidthMeters,
-      roomLength: spec?.estimatedLengthMeters,
-      roomArea: spec?.totalAreaM2,
-      estimateLow: totalLow,
-      estimateHigh: totalHigh,
-      leadScore: leadResult.leadScore,
-      originalPhotoUrl,
-      renderImageUrl,
-    }).catch(err => console.error('Email notification failed (non-blocking):', err));
+    setLeadSubmitted(true);
 
     trackEvent('lead_submitted', {
       source: styleProfile?.source,
@@ -430,7 +409,41 @@ export default function PlannerPage() {
       leadScore: leadResult.leadScore,
     });
 
-    setLeadSubmitted(true);
+    (async () => {
+      try {
+        let originalPhotoUrl: string | null = null;
+        let renderImageUrl: string | null = null;
+        if (projectId) {
+          const [origPath, renderPath] = await Promise.all([
+            getProjectImagePath(projectId, 'original_photo'),
+            getProjectImagePath(projectId, 'ai_render'),
+          ]);
+          if (origPath) originalPhotoUrl = await getSignedImageUrl(origPath);
+          if (renderPath) renderImageUrl = await getSignedImageUrl(renderPath);
+        }
+
+        await sendLeadNotification({
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          postcode: data.postcode,
+          preferredTimeline: data.preferredTimeline,
+          styleName: styleProfile?.presetName || styleProfile?.summary?.slice(0, 50) || '',
+          styleSummary: styleProfile?.summary || '',
+          products: selectedProductDetailsRef.current,
+          roomWidth: spec?.estimatedWidthMeters,
+          roomLength: spec?.estimatedLengthMeters,
+          roomArea: spec?.totalAreaM2,
+          estimateLow: totalLow,
+          estimateHigh: totalHigh,
+          leadScore: leadResult.leadScore,
+          originalPhotoUrl,
+          renderImageUrl,
+        });
+      } catch (err) {
+        console.error('Email notification failed (non-blocking):', err);
+      }
+    })();
   };
 
   const reset = () => {

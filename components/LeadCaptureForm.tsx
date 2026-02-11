@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, CheckCircle, User, Mail, Smartphone, MapPin, Calendar, Loader2 } from 'lucide-react';
+import { ArrowRight, CheckCircle, User, Mail, Smartphone, MapPin, Calendar, Loader2, AlertCircle, RotateCcw } from 'lucide-react';
 
 interface LeadData {
   name: string;
@@ -32,13 +32,22 @@ export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
   const [leadData, setLeadData] = useState<LeadData>({ name: '', email: '', phone: '', postcode: '', preferredTimeline: '' });
   const [gdprConsent, setGdprConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!gdprConsent) return;
     setSubmitting(true);
+    setError(null);
     try {
       await onSubmit(leadData, gdprConsent);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('timeout')) {
+        setError('Het versturen duurde te lang. Controleer uw internetverbinding en probeer het opnieuw.');
+      } else {
+        setError('Er ging iets mis bij het versturen. Probeer het opnieuw.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -52,6 +61,16 @@ export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
           <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-4">Ontvang uw prijsindicatie</h2>
           <p className="text-neutral-500 text-sm">Vul uw gegevens in om uw persoonlijke prijsindicatie en visueel voorstel als PDF te ontvangen &mdash; gratis en vrijblijvend.</p>
         </div>
+
+        {error && (
+          <div className="mb-6 flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
+            <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={18} />
+            <div className="flex-1">
+              <p className="text-red-700 text-sm font-medium">{error}</p>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
           <div className="space-y-3 md:space-y-4">
             {fields.map(field => (
@@ -102,7 +121,13 @@ export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
               !gdprConsent ? 'bg-neutral-300/50 text-neutral-500 cursor-not-allowed' : 'bg-accent hover:bg-accent-hover text-white shadow-lg shadow-accent/20'
             }`}
           >
-            {submitting ? <Loader2 size={20} className="animate-spin" /> : <>Bekijk Prijsindicatie <ArrowRight size={20}/></>}
+            {submitting ? (
+              <><Loader2 size={20} className="animate-spin" /> Versturen...</>
+            ) : error ? (
+              <><RotateCcw size={20} /> Opnieuw proberen</>
+            ) : (
+              <>Bekijk Prijsindicatie <ArrowRight size={20}/></>
+            )}
           </button>
         </form>
       </div>
