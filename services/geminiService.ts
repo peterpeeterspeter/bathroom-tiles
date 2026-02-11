@@ -21,13 +21,54 @@ const getBaseUrl = (): string | undefined => {
   return undefined;
 };
 
-const createClient = () => {
+const getDirectApiKey = (): string => {
+  const key = process.env.GOOGLE_AI_API_KEY || '';
+  if (key) return key;
+  try {
+    const viteKey = (import.meta as any).env?.VITE_GOOGLE_AI_API_KEY;
+    if (viteKey) return viteKey;
+  } catch {}
+  return '';
+};
+
+const createClient = (useDirect = false) => {
+  if (useDirect) {
+    const directKey = getDirectApiKey();
+    if (directKey) {
+      return new GoogleGenAI({ apiKey: directKey });
+    }
+  }
   const baseUrl = getBaseUrl();
   return new GoogleGenAI({
     apiKey: getApiKey(),
     ...(baseUrl ? { httpOptions: { baseUrl } } : {}),
   });
 };
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function withRetry<T>(
+  fn: (useDirect: boolean) => Promise<T>,
+  maxRetries = 2,
+  baseDelay = 3000
+): Promise<T> {
+  let lastError: any;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const useDirect = attempt > 0;
+    try {
+      return await fn(useDirect);
+    } catch (err: any) {
+      lastError = err;
+      const status = err?.status || err?.statusCode || 0;
+      const isRetryable = status === 429 || status === 503 || status === 500;
+      if (!isRetryable || attempt === maxRetries) throw err;
+      const delay = baseDelay * Math.pow(2, attempt);
+      console.warn(`API call failed (${status}), retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries}, switching to direct API)...`);
+      await sleep(delay);
+    }
+  }
+  throw lastError;
+}
 
 const cleanJson = (text: string) => {
   if (!text) return "";
@@ -45,7 +86,6 @@ const getMimeType = (dataUrl: string): string => {
 };
 
 export const analyzeBathroomInput = async (base64Image: string, mimeType: string = "image/jpeg"): Promise<ProjectSpec> => {
-  const ai = createClient();
   const model = "gemini-3-pro-preview";
 
   const systemInstruction = `You are a bathroom layout analyst for De Badkamer, a renovation company.
@@ -58,18 +98,20 @@ Analyze this bathroom photo and identify:
 5. Any demolition notes — what needs removal or special attention.`;
 
   try {
-    const response = await ai.models.generateContent({
-      model,
-      contents: {
-        parts: [
-          { inlineData: { mimeType, data: base64Image } },
-          { text: "Analyze this bathroom's layout, dimensions, and fixtures." }
-        ]
-      },
-      config: {
-        systemInstruction,
-        responseMimeType: "application/json",
-        responseSchema: {
+    const response = await withRetry(async (useDirect) => {
+      const ai = createClient(useDirect);
+      return ai.models.generateContent({
+        model,
+        contents: {
+          parts: [
+            { inlineData: { mimeType, data: base64Image } },
+            { text: "Analyze this bathroom's layout, dimensions, and fixtures." }
+          ]
+        },
+        config: {
+          systemInstruction,
+          responseMimeType: "application/json",
+          responseSchema: {
           type: Type.OBJECT,
           properties: {
             estimated_dimensions: {
@@ -99,6 +141,7 @@ Analyze this bathroom photo and identify:
           required: ["estimated_dimensions", "fixtures"]
         }
       }
+    });
     });
 
     if (response.text) {
@@ -160,7 +203,6 @@ export const calculateRenovationCost = async (
   products: DatabaseProduct[],
   productActions?: Record<string, string>
 ): Promise<Estimate> => {
-  const ai = createClient();
   const model = "gemini-3-pro-preview";
 
   const styleDesc = styleProfile.summary;
@@ -217,13 +259,15 @@ ${['Tile', 'Vanity', 'Toilet', 'Faucet', 'Shower', 'Bathtub', 'Lighting'].map(ca
   `;
 
   try {
-    const response = await ai.models.generateContent({
-      model,
-      contents: { parts: [{ text: "Generate the cost estimate JSON." }] },
-      config: {
-        systemInstruction,
-        responseMimeType: "application/json",
-        responseSchema: {
+    const response = await withRetry(async (useDirect) => {
+      const ai = createClient(useDirect);
+      return ai.models.generateContent({
+        model,
+        contents: { parts: [{ text: "Generate the cost estimate JSON." }] },
+        config: {
+          systemInstruction,
+          responseMimeType: "application/json",
+          responseSchema: {
           type: Type.OBJECT,
           properties: {
             materials: {
@@ -260,6 +304,7 @@ ${['Tile', 'Vanity', 'Toilet', 'Faucet', 'Shower', 'Bathtub', 'Lighting'].map(ca
           required: ["materials", "labor_operations"]
         }
       }
+    });
     });
 
     if (response.text) {
@@ -328,7 +373,6 @@ export const generateRenovation = async (
   selectedProducts: DatabaseProduct[],
   productImages: Map<string, { base64: string; mimeType: string }>
 ): Promise<string> => {
-  const ai = createClient();
   const model = "gemini-3-pro-image-preview";
 
   const styleDesc = styleProfile.summary;
@@ -460,16 +504,19 @@ FIXED CONSTRAINTS (non-negotiable):
   parts.push({ text: prompt });
 
   try {
-    const response = await ai.models.generateContent({
-      model,
-      contents: { parts },
-      config: {
-        responseModalities: ['TEXT', 'IMAGE'],
-        imageConfig: {
-          imageSize: '2K',
+    const response = await withRetry(async (useDirect) => {
+      const ai = createClient(useDirect);
+      return ai.models.generateContent({
+        model,
+        contents: { parts },
+        config: {
+          responseModalities: ['TEXT', 'IMAGE'],
+          imageConfig: {
+            imageSize: '2K',
+          },
         },
-      },
-    });
+      });
+    }, 3, 5000);
 
     for (const part of response.candidates?.[0]?.content?.parts || []) {
       if (part.inlineData) {
