@@ -11,6 +11,7 @@ const ArticlePage = lazy(() => import('./pages/ArticlePage'));
 const InspiratiePage = lazy(() => import('./pages/InspiratiePage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const VoorwaardenPage = lazy(() => import('./pages/VoorwaardenPage'));
+const VoorVakmensenPage = lazy(() => import('./pages/VoorVakmensenPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const SuspenseFallback = () => (
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="advies/:slug" element={<ArticlePage />} />
         <Route path="privacy" element={<PrivacyPage />} />
         <Route path="voorwaarden" element={<VoorwaardenPage />} />
+        <Route path="voor-vakmensen" element={<VoorVakmensenPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

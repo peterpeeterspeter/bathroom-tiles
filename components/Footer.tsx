@@ -31,6 +31,7 @@ export const Footer = () => (
             <Link to="/planner" className="block text-sm text-white/60 hover:text-white transition-colors">AI Badkamer Planner</Link>
             <Link to="/badkamer-inspiratie" className="block text-sm text-white/60 hover:text-white transition-colors">Inspiratie</Link>
             <Link to="/offerte-aanvragen" className="block text-sm text-white/60 hover:text-white transition-colors">Gratis Offerte Aanvragen</Link>
+            <Link to="/voor-vakmensen" className="block text-sm text-white/60 hover:text-white transition-colors">Voor Vakmensen</Link>
           </nav>
         </div>
 

@@ -8,6 +8,7 @@ const navLinks = [
   { to: '/badkamer-renovatie-kosten', label: 'Kosten' },
   { to: '/planner', label: 'AI Planner' },
   { to: '/badkamer-inspiratie', label: 'Inspiratie' },
+  { to: '/voor-vakmensen', label: 'Voor Vakmensen' },
 ];
 
 export const Header = () => {

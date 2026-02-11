@@ -71,6 +71,12 @@ Run `supabase/migrations/20260211_create_projects_and_storage.sql` in Supabase S
 Deploy `supabase/functions/send-lead-notification` and set `RESEND_API_KEY` in Supabase secrets
 
 ## Recent Changes
+- 2026-02-11: B2B contractor marketing page (`/voor-vakmensen`):
+  - 12-section marketing page: Hero, Problem comparison, How it works, What's in a lead, Lead score explained, Pricing tiers, ROI calculator (interactive), Testimonials, Before/After showcase, FAQ, Final CTA, Sign-up form
+  - Route added in App.tsx, nav link in Header.tsx, footer link in Footer.tsx
+  - Interactive ROI calculator with sliders (order value, conversion rate, leads/month)
+  - Contractor sign-up form with specialisatie toggles, plan selection, KvK field
+  - Reuses design system (primary teal, accent orange, Tailwind classes)
 - 2026-02-11: Lead generation system:
   - Created `projects` table + migration (supabase/migrations/20260211_create_projects_and_storage.sql)
   - Built projectService.ts for project CRUD and image uploads to Supabase Storage
