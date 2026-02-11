@@ -48,7 +48,7 @@ export default function QuotePage() {
     setSubmitting(true);
     setError(null);
     try {
-      const result = await submitLead({
+      await submitLead({
         name: form.name,
         email: form.email,
         phone: form.phone,
@@ -59,13 +59,8 @@ export default function QuotePage() {
         bathroomSize,
         preferredTimeline: timeline,
       });
-      if (result.success) {
-        trackEvent('lead_submitted', { source: 'quote_form', renovationType, bathroomSize, timeline, country });
-        setSubmitted(true);
-      } else {
-        setError(result.error || 'Er is iets misgegaan bij het verzenden. Probeer het later opnieuw.');
-        trackEvent('lead_submit_error', { source: 'quote_form', error: result.error });
-      }
+      trackEvent('lead_submitted', { source: 'quote_form', renovationType, bathroomSize, timeline, country });
+      setSubmitted(true);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Er is iets misgegaan bij het verzenden. Probeer het later opnieuw.';
       setError(errorMessage);

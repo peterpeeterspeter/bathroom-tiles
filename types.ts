@@ -18,14 +18,32 @@ export interface Fixture {
   positionY?: number;
   wallIndex?: number;
   condition?: 'GOOD' | 'WORN' | 'DAMAGED' | 'UNKNOWN';
+  confidence?: number;
 }
 
-export interface WallFeature {
+export interface ShellAnchor {
+  elementType: 'DOOR' | 'WINDOW' | 'NICHE';
+  tl: { x: number; y: number };
+  tr: { x: number; y: number };
+  br: { x: number; y: number };
+  bl: { x: number; y: number };
+  doorHingeSide?: 'LEFT' | 'RIGHT' | 'UNKNOWN';
+  doorSwing?: 'INWARD' | 'OUTWARD' | 'UNKNOWN';
+  confidence: number;
+}
+
+export interface WallSpec {
   wallIndex: number;
-  hasWindow: boolean;
-  hasDoor: boolean;
+  visible: boolean;
+  anchors: ShellAnchor[];
   hasPlumbing: boolean;
   features?: string;
+}
+
+export interface CameraSpec {
+  position: 'EYE_LEVEL' | 'ELEVATED' | 'CORNER' | 'LOW_ANGLE';
+  facingFromWall: number;
+  lensFeel: 'WIDE_ANGLE' | 'NORMAL' | 'TELEPHOTO';
 }
 
 export interface ProjectSpec {
@@ -37,11 +55,11 @@ export interface ProjectSpec {
   totalAreaM2: number;
   existingFixtures: Fixture[];
   constraints: string[];
-  cameraPosition?: 'EYE_LEVEL' | 'ELEVATED' | 'CORNER' | 'LOW_ANGLE';
-  cameraWall?: number;
-  walls?: WallFeature[];
+  camera?: CameraSpec;
+  walls?: WallSpec[];
   primaryLightDirection?: 'LEFT' | 'RIGHT' | 'FRONT' | 'BACK' | 'OVERHEAD' | 'MIXED';
   plumbingWall?: number;
+  occlusions?: string[];
 }
 
 export interface CostItem {
@@ -51,7 +69,6 @@ export interface CostItem {
   unit: string; // m2, hours, pcs
   unitPrice: number;
   totalPrice: number;
-  // New fields for Supplier Integration
   brand?: string;
   productName?: string;
   sku?: string;

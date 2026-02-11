@@ -362,7 +362,6 @@ export default function PlannerPage() {
 
   const handleLeadSubmit = async (data: { name: string; email: string; phone: string; postcode: string; preferredTimeline: string }) => {
     setLeadName(data.name);
-    console.log('[LeadSubmit] Starting submission...');
 
     const spec = projectSpec;
     const totalLow = Math.round((estimate?.grandTotal || 0) * 0.85);
@@ -375,7 +374,6 @@ export default function PlannerPage() {
         new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`${label} timeout`)), timeoutMs)),
       ]);
 
-    console.log('[LeadSubmit] Calling submitLead...');
     const leadResult = await withTimeout(submitLead({
       name: data.name,
       email: data.email,

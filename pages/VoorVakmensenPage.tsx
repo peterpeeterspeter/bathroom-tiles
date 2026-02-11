@@ -60,27 +60,23 @@ const VoorVakmensenPage = () => {
         renovationType: formData.plan,
       });
 
-      if (result.success) {
-        trackEvent('contractor_signup', {
-          plan: formData.plan,
-          specialisatie: formData.specialisatie.join(', '),
-        });
+      trackEvent('contractor_signup', {
+        plan: formData.plan,
+        specialisatie: formData.specialisatie.join(', '),
+      });
 
-        sendLeadNotification({
-          name: `${formData.contactpersoon} (${formData.bedrijfsnaam})`,
-          email: formData.email,
-          phone: formData.telefoon,
-          postcode: formData.werkgebied,
-          leadScore: result.leadScore,
-          styleName: `VAKMAN AANMELDING — Plan: ${formData.plan.toUpperCase()}`,
-          styleSummary: `Bedrijf: ${formData.bedrijfsnaam} | KvK: ${formData.kvk || 'n.v.t.'} | Specialisatie: ${formData.specialisatie.join(', ') || 'Geen geselecteerd'} | Werkgebied: ${formData.werkgebied}`,
-          preferredTimeline: 'direct',
-        });
+      sendLeadNotification({
+        name: `${formData.contactpersoon} (${formData.bedrijfsnaam})`,
+        email: formData.email,
+        phone: formData.telefoon,
+        postcode: formData.werkgebied,
+        leadScore: result.leadScore,
+        styleName: `VAKMAN AANMELDING — Plan: ${formData.plan.toUpperCase()}`,
+        styleSummary: `Bedrijf: ${formData.bedrijfsnaam} | KvK: ${formData.kvk || 'n.v.t.'} | Specialisatie: ${formData.specialisatie.join(', ') || 'Geen geselecteerd'} | Werkgebied: ${formData.werkgebied}`,
+        preferredTimeline: 'direct',
+      });
 
-        setFormSubmitted(true);
-      } else {
-        setFormError(result.error || 'Er is iets misgegaan. Probeer het later opnieuw.');
-      }
+      setFormSubmitted(true);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Er is iets misgegaan. Probeer het later opnieuw.');
     } finally {

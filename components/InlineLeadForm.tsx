@@ -17,7 +17,7 @@ export const InlineLeadForm = () => {
     setSubmitting(true);
     setError(null);
     try {
-      const result = await submitLead({
+      await submitLead({
         name: form.name,
         email: form.email,
         phone: form.phone,
@@ -25,13 +25,8 @@ export const InlineLeadForm = () => {
         source: 'inline_form',
         country,
       });
-      if (result.success) {
-        trackEvent('lead_submitted', { source: 'inline_form', country });
-        setSubmitted(true);
-      } else {
-        setError(result.error || 'Er is iets misgegaan bij het verzenden. Probeer het later opnieuw.');
-        trackEvent('lead_submit_error', { source: 'inline_form', error: result.error });
-      }
+      trackEvent('lead_submitted', { source: 'inline_form', country });
+      setSubmitted(true);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Er is iets misgegaan bij het verzenden. Probeer het later opnieuw.';
       setError(errorMessage);

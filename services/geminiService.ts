@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { ProjectSpec, Estimate, BudgetTier, FixtureType, MaterialConfig, StyleProfile, DatabaseProduct, ProductAction, WallFeature } from "../types";
+import { ProjectSpec, Estimate, BudgetTier, FixtureType, MaterialConfig, StyleProfile, DatabaseProduct, ProductAction, WallSpec, ShellAnchor, CameraSpec } from "../types";
 
 const getApiKey = (): string => {
   const key = process.env.API_KEY || process.env.GEMINI_API_KEY || '';
@@ -88,16 +88,21 @@ const getMimeType = (dataUrl: string): string => {
 export const analyzeBathroomInput = async (base64Image: string, mimeType: string = "image/jpeg"): Promise<ProjectSpec> => {
   const model = "gemini-3-pro-preview";
 
-  const systemInstruction = `You are a bathroom layout analyst for De Badkamer, a renovation company.
+  const systemInstruction = `You are a bathroom layout analyst. Return ONLY valid JSON matching the schema.
+Do NOT invent elements that are not visible. If uncertain, set confidence < 0.6.
 
 TASK:
-1. ANCHOR REFERENCE: Identify a standard object (Door ~210cm tall, ~80cm wide; Toilet ~40cm wide, ~70cm deep; Standard tile 30x30 or 60x60cm) to calibrate spatial scale.
-2. GEOMETRY: Estimate room width and length in meters. Identify layout shape. Determine camera viewpoint (which wall the camera faces FROM, and its angle).
-3. WALLS: For each wall (N=0, E=1, S=2, W=3 clockwise from top), note if it has windows, doors, or visible plumbing indicators (pipes, mounting points).
-4. LIGHTING: Determine the primary natural light direction relative to the camera position (LEFT, RIGHT, FRONT, BACK, OVERHEAD, or MIXED).
-5. INVENTORY: Detect every fixture — type, which wall it is mounted on or nearest to, approximate X/Y position (0-100%), and condition (GOOD, WORN, DAMAGED, or UNKNOWN).
-6. PLUMBING: Identify the wall index with the most plumbing connections (water supply, drain pipes, fixture mounting points).
-7. Any demolition notes — what needs removal or special attention.`;
+1. CALIBRATE: Use a standard reference (door ~80cm wide, ~210cm tall; toilet depth ~70cm; standard tile 30x30 or 60x60) to estimate room scale.
+2. CAMERA: Determine where the camera is positioned (which wall it faces FROM), angle (eye-level/elevated/corner), and lens feel (wide-angle/normal).
+3. WALLS: For each visible wall (0=N, 1=E, 2=S, 3=W):
+   - If it has a door or window: provide corner coordinates (tl, tr, br, bl) as x/y% in the photo frame.
+   - Include door hinge side and swing direction if visible.
+   - Note niches, beams, sloped ceiling areas.
+   - Note visible plumbing indicators (pipes, fixture mounting points).
+4. LIGHTING: Primary natural light direction relative to camera.
+5. FIXTURES: Every fixture — type, which wall, position (x/y%), condition (GOOD/WORN/DAMAGED/UNKNOWN), confidence 0-1.
+6. OCCLUSIONS: List what is NOT visible (e.g., "wall 0 not visible — behind camera").
+7. PLUMBING: Identify the wall index with the most plumbing connections. Any demolition notes.`;
 
   try {
     const response = await withRetry(async (useDirect) => {
@@ -122,19 +127,20 @@ TASK:
               properties: {
                 width_m: { type: Type.NUMBER },
                 length_m: { type: Type.NUMBER },
-                ceiling_height_m: { type: Type.NUMBER }
+                ceiling_height_m: { type: Type.NUMBER },
+                confidence: { type: Type.NUMBER, description: "0-1 confidence in dimension estimate" }
               },
               required: ["width_m", "length_m"]
             },
             layout_type: { type: Type.STRING, enum: ["RECTANGLE", "L_SHAPE", "SQUARE", "SLOPED_CEILING"] },
-            camera_position: {
-              type: Type.STRING,
-              enum: ["EYE_LEVEL", "ELEVATED", "CORNER", "LOW_ANGLE"],
-              description: "Approximate camera viewpoint of the photo"
-            },
-            camera_wall: {
-              type: Type.NUMBER,
-              description: "Which wall the camera is facing FROM (0=N, 1=E, 2=S, 3=W)"
+            camera: {
+              type: Type.OBJECT,
+              properties: {
+                position: { type: Type.STRING, enum: ["EYE_LEVEL", "ELEVATED", "CORNER", "LOW_ANGLE"] },
+                facing_from_wall: { type: Type.NUMBER, description: "Which wall the camera faces FROM (0=N, 1=E, 2=S, 3=W)" },
+                lens_feel: { type: Type.STRING, enum: ["WIDE_ANGLE", "NORMAL", "TELEPHOTO"] }
+              },
+              required: ["position", "facing_from_wall", "lens_feel"]
             },
             walls: {
               type: Type.ARRAY,
@@ -142,12 +148,32 @@ TASK:
                 type: Type.OBJECT,
                 properties: {
                   wall_index: { type: Type.NUMBER, description: "0=N, 1=E, 2=S, 3=W" },
-                  has_window: { type: Type.BOOLEAN },
-                  has_door: { type: Type.BOOLEAN },
+                  visible: { type: Type.BOOLEAN, description: "Whether this wall is visible in the photo" },
+                  anchors: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.OBJECT,
+                      properties: {
+                        element_type: { type: Type.STRING, enum: ["DOOR", "WINDOW", "NICHE"] },
+                        tl_x: { type: Type.NUMBER, description: "Top-left X% in photo frame" },
+                        tl_y: { type: Type.NUMBER, description: "Top-left Y% in photo frame" },
+                        tr_x: { type: Type.NUMBER, description: "Top-right X%" },
+                        tr_y: { type: Type.NUMBER, description: "Top-right Y%" },
+                        br_x: { type: Type.NUMBER, description: "Bottom-right X%" },
+                        br_y: { type: Type.NUMBER, description: "Bottom-right Y%" },
+                        bl_x: { type: Type.NUMBER, description: "Bottom-left X%" },
+                        bl_y: { type: Type.NUMBER, description: "Bottom-left Y%" },
+                        door_hinge_side: { type: Type.STRING, enum: ["LEFT", "RIGHT", "UNKNOWN"] },
+                        door_swing: { type: Type.STRING, enum: ["INWARD", "OUTWARD", "UNKNOWN"] },
+                        confidence: { type: Type.NUMBER, description: "0-1 confidence in this anchor" }
+                      },
+                      required: ["element_type", "tl_x", "tl_y", "tr_x", "tr_y", "br_x", "br_y", "bl_x", "bl_y", "confidence"]
+                    }
+                  },
                   has_plumbing: { type: Type.BOOLEAN, description: "Visible pipes or fixture mounting points" },
                   features: { type: Type.STRING, description: "Beam, niche, sloped ceiling, etc." }
                 },
-                required: ["wall_index"]
+                required: ["wall_index", "visible"]
               }
             },
             primary_light_direction: {
@@ -165,13 +191,19 @@ TASK:
                   position_x_percent: { type: Type.NUMBER, description: "0-100 relative X position" },
                   position_y_percent: { type: Type.NUMBER, description: "0-100 relative Y position" },
                   wall_index: { type: Type.NUMBER, description: "Which wall (0-3) this fixture is on or nearest to" },
-                  condition: { type: Type.STRING, enum: ["GOOD", "WORN", "DAMAGED", "UNKNOWN"] }
+                  condition: { type: Type.STRING, enum: ["GOOD", "WORN", "DAMAGED", "UNKNOWN"] },
+                  confidence: { type: Type.NUMBER, description: "0-1 confidence in this detection" }
                 }
               }
             },
             plumbing_wall: {
               type: Type.NUMBER,
               description: "Primary wall with water supply/drainage (0=N, 1=E, 2=S, 3=W)"
+            },
+            occlusions: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+              description: "List of what is NOT visible in the photo"
             },
             demolition_notes: { type: Type.STRING }
           },
@@ -183,6 +215,30 @@ TASK:
 
     if (response.text) {
       const raw = JSON.parse(cleanJson(response.text));
+
+      const camera: CameraSpec | undefined = raw.camera ? {
+        position: raw.camera.position,
+        facingFromWall: raw.camera.facing_from_wall,
+        lensFeel: raw.camera.lens_feel
+      } : undefined;
+
+      const walls: WallSpec[] | undefined = raw.walls?.map((w: any) => ({
+        wallIndex: w.wall_index,
+        visible: w.visible ?? true,
+        anchors: (w.anchors || []).map((a: any) => ({
+          elementType: a.element_type,
+          tl: { x: a.tl_x, y: a.tl_y },
+          tr: { x: a.tr_x, y: a.tr_y },
+          br: { x: a.br_x, y: a.br_y },
+          bl: { x: a.bl_x, y: a.bl_y },
+          doorHingeSide: a.door_hinge_side,
+          doorSwing: a.door_swing,
+          confidence: a.confidence ?? 0.5
+        } as ShellAnchor)),
+        hasPlumbing: w.has_plumbing ?? false,
+        features: w.features
+      } as WallSpec));
+
       return {
         roomType: "Bathroom",
         layoutShape: raw.layout_type === "SLOPED_CEILING" ? "RECTANGLE" : raw.layout_type,
@@ -197,20 +253,15 @@ TASK:
           positionX: f.position_x_percent,
           positionY: f.position_y_percent,
           wallIndex: f.wall_index,
-          condition: f.condition
+          condition: f.condition,
+          confidence: f.confidence
         })),
         constraints: raw.demolition_notes ? [raw.demolition_notes] : [],
-        cameraPosition: raw.camera_position,
-        cameraWall: raw.camera_wall,
-        walls: raw.walls?.map((w: any) => ({
-          wallIndex: w.wall_index,
-          hasWindow: w.has_window ?? false,
-          hasDoor: w.has_door ?? false,
-          hasPlumbing: w.has_plumbing ?? false,
-          features: w.features
-        })) as WallFeature[] | undefined,
+        camera,
+        walls,
         primaryLightDirection: raw.primary_light_direction,
-        plumbingWall: raw.plumbing_wall
+        plumbingWall: raw.plumbing_wall,
+        occlusions: raw.occlusions
       };
     }
     throw new Error("Analysis failed");
@@ -452,7 +503,7 @@ export const generateRenovation = async (
       }
     }
     parts.push({
-      text: "[INSPIRATIEBEELDEN — dit is de stijl die de klant wil bereiken]"
+      text: "[INSPIRATION IMAGES — target aesthetic]"
     });
   }
 
@@ -460,7 +511,7 @@ export const generateRenovation = async (
     inlineData: { mimeType: bathroomMimeType, data: bathroomBase64 }
   });
   parts.push({
-    text: "[FOTO HUIDIGE BADKAMER — dit is de huidige staat die gerenoveerd moet worden]"
+    text: "[CURRENT BATHROOM — this is the room to renovate]"
   });
 
   let imageIndex = 0;
@@ -475,7 +526,7 @@ export const generateRenovation = async (
       });
       const label = `[PRODUCT ${imageIndex}: ${product.name} (${product.category})]`;
       parts.push({ text: label });
-      imageLabels.push(`Product ${imageIndex}: ${product.name} — categorie: ${product.category}`);
+      imageLabels.push(`Product ${imageIndex}: ${product.name} — category: ${product.category}`);
     }
   }
 
@@ -489,46 +540,69 @@ export const generateRenovation = async (
     const productImg = product ? imageLabels.find(l => l.includes(product.name)) : null;
 
     if (action === 'keep') {
-      scopeLines.push(`${nlLabel} — BEHOUDEN: Bewaar het bestaande element EXACT zoals zichtbaar op de badkamerfoto. Zelfde uiterlijk, zelfde materiaal, zelfde staat. Mag verplaatst worden als de nieuwe indeling dat vereist, maar het uiterlijk blijft identiek.`);
+      scopeLines.push(`${nlLabel} — KEEP: Preserve this element EXACTLY as it appears in image 1. Same appearance, same material, same finish. May be repositioned if the layout requires it, but visual appearance stays identical.`);
     } else if (action === 'remove') {
-      scopeLines.push(`${nlLabel} — VERWIJDEREN: Verwijder dit element volledig. Vul de vrijgekomen ruimte naadloos op met het vloer- en wandmateriaal.`);
+      scopeLines.push(`${nlLabel} — REMOVE: Remove this element completely. Fill the space seamlessly with floor and wall material.`);
     } else if (action === 'add') {
-      scopeLines.push(`${nlLabel} — TOEVOEGEN (${productImg || 'zie referentie'}): Er is momenteel GEEN ${nlLabel.toLowerCase()} in deze badkamer. Installeer het product uit de bijgevoegde referentiefoto op de meest logische plek in de nieuwe indeling.`);
+      scopeLines.push(`${nlLabel} — ADD (${productImg || 'see reference'}): There is currently NO ${nlLabel.toLowerCase()} in this bathroom. Install the product from the reference photo in the most logical position.`);
     } else {
       if (productImg) {
-        scopeLines.push(`${nlLabel} — VERVANGEN (${productImg}): Verwijder het bestaande element en installeer het product uit de bijgevoegde referentiefoto. Match kleur, vorm, materiaal en afwerking EXACT.`);
+        scopeLines.push(`${nlLabel} — REPLACE (${productImg}): Remove existing, install the product from the reference photo. Match color, shape, material, and finish EXACTLY.`);
       } else {
-        scopeLines.push(`${nlLabel} — VERVANGEN: Vervang door een modern, stijlvol alternatief passend bij de ontwerpstijl.`);
+        scopeLines.push(`${nlLabel} — REPLACE: Replace with a modern, stylish alternative matching the design style.`);
       }
     }
   }
 
   const wallLabels = ['North', 'East', 'South', 'West'];
+
+  let anchorLines = '';
+  let occlusionLines: string[] = [];
   let spatialContext = '';
+
   if (spec) {
+    anchorLines = (spec.walls || [])
+      .filter(w => w.visible && w.anchors && w.anchors.length > 0)
+      .flatMap(w => w.anchors.map(a =>
+        `- ${a.elementType} on ${wallLabels[w.wallIndex] || `Wall ${w.wallIndex}`} wall: `
+        + `corners [${a.tl.x}%,${a.tl.y}%] → [${a.br.x}%,${a.br.y}%]`
+        + (a.doorHingeSide && a.doorHingeSide !== 'UNKNOWN' ? `, hinge ${a.doorHingeSide}` : '')
+        + (a.confidence < 0.6 ? ' (low confidence — verify visually)' : '')
+      )).join('\n');
+
+    occlusionLines = spec.occlusions || [];
+
     const wallSummary = (spec.walls || [])
       .map(w => {
-        const parts = [wallLabels[w.wallIndex] || `Wall ${w.wallIndex}`];
-        if (w.hasWindow) parts.push('WINDOW');
-        if (w.hasDoor) parts.push('DOOR');
-        if (w.hasPlumbing) parts.push('plumbing');
-        if (w.features) parts.push(w.features);
-        return parts.join(': ');
+        const wParts = [wallLabels[w.wallIndex] || `Wall ${w.wallIndex}`];
+        if (!w.visible) { wParts.push('NOT VISIBLE'); return wParts.join(': '); }
+        const anchorTypes = (w.anchors || []).map(a => a.elementType);
+        if (anchorTypes.includes('WINDOW')) wParts.push('WINDOW');
+        if (anchorTypes.includes('DOOR')) wParts.push('DOOR');
+        if (anchorTypes.includes('NICHE')) wParts.push('NICHE');
+        if (w.hasPlumbing) wParts.push('plumbing');
+        if (w.features) wParts.push(w.features);
+        return wParts.join(': ');
       }).join(' | ');
 
     const fixtureSummary = spec.existingFixtures
-      .map(f => `${f.type} at X:${f.positionX ?? '?'}% Y:${f.positionY ?? '?'}% (wall ${f.wallIndex ?? '?'}, ${f.condition ?? 'unknown'})`)
+      .map(f => `${f.type} at X:${f.positionX ?? '?'}% Y:${f.positionY ?? '?'}% (wall ${f.wallIndex ?? '?'}, ${f.condition ?? 'unknown'}${f.confidence !== undefined ? `, conf:${f.confidence}` : ''})`)
       .join('; ');
+
+    const cameraDesc = spec.camera
+      ? `${spec.camera.position} from ${wallLabels[spec.camera.facingFromWall] || `wall ${spec.camera.facingFromWall}`}, ${spec.camera.lensFeel} lens`
+      : 'unknown';
 
     spatialContext = `
 SPATIAL CONTEXT (from architectural analysis of this photo):
 - Room: ${spec.estimatedWidthMeters}m x ${spec.estimatedLengthMeters}m, ceiling ${spec.ceilingHeightMeters}m
 - Layout: ${spec.layoutShape}
-- Camera facing from wall ${spec.cameraWall ?? '?'} (${spec.cameraPosition ?? 'unknown angle'})
+- Camera: ${cameraDesc}
 - Primary light: ${spec.primaryLightDirection ?? 'unknown'} direction
-- Plumbing wall: ${spec.plumbingWall ?? '?'}
+- Plumbing wall: ${wallLabels[spec.plumbingWall ?? 0] || '?'}
 - Walls: ${wallSummary || 'not analyzed'}
 - Existing fixtures: ${fixtureSummary || 'not analyzed'}
+${occlusionLines.length > 0 ? `- Occlusions: ${occlusionLines.join('; ')}` : ''}
 
 Use this as a GUIDE — verify against the actual photo. The photo is the ground truth.
 `;
@@ -538,14 +612,19 @@ Use this as a GUIDE — verify against the actual photo. The photo is the ground
 Transform the bathroom in the photo into a fully renovated space.
 You are a senior interior architect with complete creative freedom over the layout and design.
 ${spatialContext}
-STEP 1 — STUDY THE SHELL:
-Analyze the bathroom photo. Identify ONLY the fixed structural elements:
-- Outer walls and their positions
-- Window(s): exact position, size, and how light enters
-- Door(s): exact position and which way they open
-- Ceiling height and any beams or slopes
-- Where existing water supply and drainage likely connect (typically the wall where current fixtures are mounted)
-THESE are your only constraints. Everything else — the interior layout, where fixtures go, the flow of the space — is yours to redesign.
+STEP 1 — STUDY THE EXISTING ROOM:
+Analyze image 1 carefully. The architectural analysis detected these structural elements — verify them against the photo:
+${anchorLines || '(no anchor data available — rely on visual analysis)'}
+${occlusionLines.length > 0 ? `\nNot visible in this photo: ${occlusionLines.join(', ')}` : ''}
+
+Confirm for yourself:
+- The exact camera angle, height, and perspective
+- The vanishing point and how walls recede
+- Where the window(s) are and how light enters
+- Where the door is
+- The room proportions (which walls are longer, which shorter)
+- Any architectural features (beams, niches, alcoves, sloped ceiling)
+ALL of these remain IDENTICAL in the final image.
 
 STEP 2 — DESIGN THE LAYOUT:
 Create the optimal bathroom layout for this space. Place fixtures where they make the most sense based on:
@@ -581,7 +660,7 @@ Finishing:
 - Consistent grout lines if tiles are used
 - NOTHING else: no plants, candles, art, bottles, or decorative objects
 
-FIXED CONSTRAINTS (non-negotiable):
+ABSOLUTE CONSTRAINTS (non-negotiable):
 - Outer walls = IDENTICAL to the bathroom photo
 - Window positions and sizes = IDENTICAL to the bathroom photo
 - Door positions = IDENTICAL to the bathroom photo
@@ -590,6 +669,7 @@ FIXED CONSTRAINTS (non-negotiable):
 - Do NOT add windows or doors not in the original photo
 - KEPT items match their appearance in the original photo
 - REPLACED items match their reference product photos exactly
+${occlusionLines.length > 0 ? `- Occluded zones (${occlusionLines.join('; ')}): do NOT invent or render elements in areas not visible in image 1` : ''}
 - Professional interior magazine photography quality
 `;
 

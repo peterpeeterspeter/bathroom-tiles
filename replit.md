@@ -17,10 +17,12 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
 2. **Dimensions & Photo** — User enters dimensions + uploads bathroom photo
 3. **Expert Analysis + Product Configuration** — `analyzeProjectContext()` runs with all inputs → 9-step analysis → enriched StyleProfile. Each product category has Vervangen/Behouden toggle (+ Toevoegen/Verwijderen for shower/bathtub)
 4. **Processing**:
-   - `analyzeBathroomInput()` runs first (gemini-3-pro-preview, temperature 0.2) — returns enhanced spatial data: camera position/wall, wall-by-wall features (windows/doors/plumbing), fixture conditions, primary light direction, plumbing wall
+   - `analyzeBathroomInput()` runs first (gemini-3-pro-preview, temperature 0.2) — returns enhanced spatial data: CameraSpec (position/wall/lens), WallSpec[] with ShellAnchor coordinates (tl/tr/br/bl as x/y%), fixture conditions + confidence, occlusions, plumbing wall
    - Product images fetched as base64
    - `generateRenovation()` + `calculateRenovationCost()` run in parallel
-   - Render receives full ProjectSpec as SPATIAL CONTEXT preamble (room dims, walls, fixtures, camera, lighting) to prime the model
+   - Render receives full ProjectSpec as SPATIAL CONTEXT preamble + anchor coordinates injected into STEP 1 for model to verify reasoning against hard coordinates
+   - Occlusion map used as negative constraint in ABSOLUTE CONSTRAINTS to prevent hallucination in non-visible areas
+   - All constraint logic in English; Dutch only for product category names
    - Single-shot render: original photo + inspiration images + product reference images → gemini-3-pro-image-preview with thinkingBudget:8192 + 2K output
    - Cost estimate (temperature 0.1) is scope-aware: kept items have zero cost, fixture condition and plumbing wall distance affect labor costs
 5. User dimensions take priority over AI-estimated dimensions
@@ -31,8 +33,8 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
 ### AI API Configuration
 | Function | Model | Temperature | Thinking | Notes |
 |---|---|---|---|---|
-| analyzeBathroomInput | gemini-3-pro-preview | 0.2 | N/A | Enhanced schema: camera, walls, lighting, plumbing, fixture conditions |
-| generateRenovation | gemini-3-pro-image-preview | default | thinkingBudget: 8192 | SPATIAL CONTEXT preamble from analysis, 2K output |
+| analyzeBathroomInput | gemini-3-pro-preview | 0.2 | N/A | Enhanced schema: CameraSpec, WallSpec[] with ShellAnchor[], fixture confidence, occlusions |
+| generateRenovation | gemini-3-pro-image-preview | default | thinkingBudget: 8192 | Anchor coords in STEP 1, occlusion negative constraints, English constraint logic, 2K output |
 | calculateRenovationCost | gemini-3-pro-preview | 0.1 | N/A | Plumbing wall awareness, fixture condition affects labor |
 
 ## Directory Structure
