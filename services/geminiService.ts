@@ -50,11 +50,12 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 async function withRetry<T>(
   fn: (useDirect: boolean) => Promise<T>,
   maxRetries = 2,
-  baseDelay = 3000
+  baseDelay = 3000,
+  proxyOnly = false
 ): Promise<T> {
   let lastError: any;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const useDirect = attempt > 0;
+    const useDirect = proxyOnly ? false : attempt > 0;
     try {
       return await fn(useDirect);
     } catch (err: any) {
@@ -63,7 +64,7 @@ async function withRetry<T>(
       const isRetryable = status === 429 || status === 503 || status === 500;
       if (!isRetryable || attempt === maxRetries) throw err;
       const delay = baseDelay * Math.pow(2, attempt);
-      console.warn(`API call failed (${status}), retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries}, switching to direct API)...`);
+      console.warn(`API call failed (${status}), retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries}${proxyOnly ? '' : ', switching to direct API'})...`);
       await sleep(delay);
     }
   }
@@ -707,15 +708,12 @@ ${occlusionLines.length > 0 ? `- Occluded zones (${occlusionLines.join('; ')}): 
         contents: { parts },
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
-          thinkingConfig: {
-            thinkingBudget: 8192,
-          },
           imageConfig: {
-            imageSize: '2K',
+            imageSize: '4K',
           },
         },
       });
-    }, 1, 8000);
+    }, 2, 8000, true);
 
     for (const part of response.candidates?.[0]?.content?.parts || []) {
       if (part.inlineData) {
