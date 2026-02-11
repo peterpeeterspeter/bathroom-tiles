@@ -1,0 +1,1372 @@
+# Lead Generation System - Replit Implementation Brief
+
+> **Phase:** Lead Generation & Project Dossier
+> **Scope:** Database, storage, project tracking, lead scoring, enhanced PDF
+> **Excludes:** Contractor dashboard (Phase 2)
+> **Builds on:** Existing `leads` table, `leadService.ts`, `pdfService.ts`, `analytics.ts`
+
+---
+
+## Architecture Overview
+
+```
+User completes planner flow
+        │
+        ├─ Step 1: Style selected → tracked
+        ├─ Step 2: Products configured → tracked
+        ├─ Step 3: Photo uploaded → stored in Supabase Storage
+        ├─ Step 4: AI generates render → stored in Supabase Storage
+        │
+        ▼
+Lead form submitted
+        │
+        ├─ Create `project` row (links all data)
+        ├─ Upload images to Storage bucket
+        ├─ Calculate lead score (0-100)
+        ├─ Insert enhanced `lead` row with project_id + score
+        ├─ Generate enhanced PDF (AI Project Dossier)
+        │
+        ▼
+Project stored with full context
+```
+
+The key change: instead of a flat `leads` insert, we create a **project** first that aggregates ALL planner data (style, products, dimensions, photos, AI analysis, render, estimate). The lead row then references this project. This turns a basic contact form into an **AI Project Dossier** — a complete renovation brief that's worth 3-5x more to contractors.
+
+---
+
+## Step 1: Supabase Migration
+
+Create file: `supabase/migrations/20260211_create_projects_and_storage.sql`
+
+```sql
+/*
+  # Create projects system for lead generation
+
+  1. New Tables
+    - `projects` - aggregates all planner session data into a complete renovation brief
+    - `project_images` - tracks images stored in Supabase Storage (original photo, render, references)
+
+  2. Storage
+    - Creates `project-images` bucket for storing original photos and AI renders
+
+  3. Modified Tables
+    - `leads` - adds project_id FK, lead_score, style_profile (jsonb)
+
+  4. Security
+    - RLS enabled on all new tables
+    - Anonymous users can insert (public-facing tool, no auth)
+    - Authenticated users can read (for future admin/contractor dashboard)
+*/
+
+-- ============================================================
+-- PROJECTS TABLE
+-- ============================================================
+CREATE TABLE IF NOT EXISTS projects (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  -- Session tracking
+  session_id uuid NOT NULL,
+
+  -- Status
+  status text NOT NULL DEFAULT 'in_progress',
+  -- Values: 'in_progress', 'completed', 'lead_submitted'
+
+  -- Step 1: Style
+  style_profile jsonb DEFAULT '{}'::jsonb,
+  -- Contains: { tags, summary, source, presetId, presetName, referenceImageUrls }
+
+  -- Step 2: Product selections
+  selected_products jsonb DEFAULT '{}'::jsonb,
+  -- Contains: { "Faucet": "product-uuid", "Toilet": "product-uuid", ... }
+  selected_product_names jsonb DEFAULT '{}'::jsonb,
+  -- Contains: { "Faucet": "Grohe Essence", "Toilet": "Duravit Starck", ... }
+  material_config jsonb DEFAULT '{}'::jsonb,
+  -- Contains: { floorTile, wallTile, vanityType, faucetFinish, ... }
+  selected_product_details jsonb DEFAULT '{}'::jsonb,
+  -- Snapshots full product data at selection time (price-tier aware):
+  -- { "Faucet": { "id": "GROHE-ALLURE-M", "brand": "Grohe", "name": "Allure Brilliant",
+  --               "price_low": 420, "price_high": 480, "price_tier": "premium" },
+  --   "Toilet": { "id": "DURAVIT-STARCK-3", "brand": "Duravit", "name": "Starck 3",
+  --               "price_low": 280, "price_high": 350, "price_tier": "mid" } }
+
+  -- Step 3: Room analysis (from AI + manual input)
+  room_spec jsonb DEFAULT NULL,
+  -- Contains full ProjectSpec: { roomType, layoutShape, estimatedWidthMeters, ... }
+  room_width numeric DEFAULT NULL,
+  room_length numeric DEFAULT NULL,
+  room_area numeric DEFAULT NULL,
+
+  -- Step 4: AI outputs
+  estimate jsonb DEFAULT NULL,
+  -- Contains full Estimate: { lineItems, subtotal, contingency, tax, grandTotal, ... }
+  estimated_total_low numeric DEFAULT NULL,
+  estimated_total_high numeric DEFAULT NULL,
+  render_prompt text DEFAULT NULL,
+
+  -- Image references (paths in Supabase Storage)
+  original_photo_path text DEFAULT NULL,
+  render_image_path text DEFAULT NULL,
+
+  -- Metadata
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can create projects"
+  ON projects FOR INSERT
+  TO anon
+  WITH CHECK (true);
+
+CREATE POLICY "Anyone can update their own project by session"
+  ON projects FOR UPDATE
+  TO anon
+  USING (true)
+  WITH CHECK (true);
+
+CREATE POLICY "Authenticated users can view projects"
+  ON projects FOR SELECT
+  TO authenticated
+  USING (auth.uid() IS NOT NULL);
+
+-- Also allow anon to SELECT their own project (needed for client-side updates)
+CREATE POLICY "Anon can select projects by session"
+  ON projects FOR SELECT
+  TO anon
+  USING (true);
+
+CREATE INDEX IF NOT EXISTS idx_projects_session_id ON projects(session_id);
+CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
+CREATE INDEX IF NOT EXISTS idx_projects_created_at ON projects(created_at);
+
+-- ============================================================
+-- PROJECT IMAGES TABLE
+-- ============================================================
+CREATE TABLE IF NOT EXISTS project_images (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  image_type text NOT NULL,
+  -- Values: 'original_photo', 'ai_render', 'style_reference'
+  storage_path text NOT NULL,
+  -- Path within the project-images bucket
+  mime_type text DEFAULT 'image/jpeg',
+  file_size_bytes integer DEFAULT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE project_images ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can insert project images"
+  ON project_images FOR INSERT
+  TO anon
+  WITH CHECK (true);
+
+CREATE POLICY "Authenticated users can view project images"
+  ON project_images FOR SELECT
+  TO authenticated
+  USING (auth.uid() IS NOT NULL);
+
+CREATE POLICY "Anon can select project images"
+  ON project_images FOR SELECT
+  TO anon
+  USING (true);
+
+CREATE INDEX IF NOT EXISTS idx_project_images_project_id ON project_images(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_images_type ON project_images(image_type);
+
+-- ============================================================
+-- EXTEND LEADS TABLE
+-- ============================================================
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'leads' AND column_name = 'project_id') THEN
+    ALTER TABLE leads ADD COLUMN project_id uuid REFERENCES projects(id);
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'leads' AND column_name = 'lead_score') THEN
+    ALTER TABLE leads ADD COLUMN lead_score integer DEFAULT 0;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'leads' AND column_name = 'style_profile') THEN
+    ALTER TABLE leads ADD COLUMN style_profile jsonb DEFAULT NULL;
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_leads_project_id ON leads(project_id);
+CREATE INDEX IF NOT EXISTS idx_leads_lead_score ON leads(lead_score);
+
+-- ============================================================
+-- SUPABASE STORAGE BUCKET
+-- ============================================================
+-- NOTE: Storage bucket creation must be done via Supabase Dashboard or CLI.
+-- Go to Supabase Dashboard > Storage > Create new bucket:
+--   Name: project-images
+--   Public: false (private bucket, accessed via signed URLs)
+--   File size limit: 10MB
+--   Allowed MIME types: image/jpeg, image/png, image/webp
+--
+-- Then add this Storage policy via SQL Editor:
+
+-- Allow anonymous uploads to the project-images bucket
+INSERT INTO storage.policies (name, bucket_id, operation, definition)
+SELECT
+  'Allow anonymous uploads',
+  'project-images',
+  'INSERT',
+  '(true)'
+WHERE NOT EXISTS (
+  SELECT 1 FROM storage.policies
+  WHERE bucket_id = 'project-images' AND name = 'Allow anonymous uploads'
+);
+
+-- Allow authenticated users to read from project-images bucket
+INSERT INTO storage.policies (name, bucket_id, operation, definition)
+SELECT
+  'Allow authenticated reads',
+  'project-images',
+  'SELECT',
+  '(auth.role() = ''authenticated'')'
+WHERE NOT EXISTS (
+  SELECT 1 FROM storage.policies
+  WHERE bucket_id = 'project-images' AND name = 'Allow authenticated reads'
+);
+
+-- Allow anonymous reads (needed for PDF generation with signed URLs)
+INSERT INTO storage.policies (name, bucket_id, operation, definition)
+SELECT
+  'Allow anon reads for signed URLs',
+  'project-images',
+  'SELECT',
+  '(true)'
+WHERE NOT EXISTS (
+  SELECT 1 FROM storage.policies
+  WHERE bucket_id = 'project-images' AND name = 'Allow anon reads for signed URLs'
+);
+
+-- ============================================================
+-- AUTO-UPDATE updated_at TRIGGER
+-- ============================================================
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+DROP TRIGGER IF EXISTS set_projects_updated_at ON projects;
+CREATE TRIGGER set_projects_updated_at
+  BEFORE UPDATE ON projects
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+```
+
+### Manual Storage Setup
+
+After running the migration, go to **Supabase Dashboard > Storage** and:
+
+1. Click **"New bucket"**
+2. Name: `project-images`
+3. Public: **OFF** (private)
+4. File size limit: `10485760` (10MB)
+5. Allowed MIME types: `image/jpeg, image/png, image/webp`
+
+If the storage policy SQL above doesn't work (Supabase sometimes changes the storage.policies schema), set these policies via the Dashboard:
+- **INSERT**: Allow all (no conditions) — so anonymous planner users can upload
+- **SELECT**: Allow all (no conditions) — needed for signed URL generation
+
+---
+
+## Step 2: New File — `lib/projectService.ts`
+
+Create this new service file that handles project creation, updates, and image uploads.
+
+```typescript
+// lib/projectService.ts
+import { supabase } from './supabase';
+import { getSessionId } from './analytics';
+import { ProjectSpec, Estimate, StyleProfile, MaterialConfig } from '../types';
+
+// ============================================================
+// PROJECT CRUD
+// ============================================================
+
+export async function createProject(): Promise<string | null> {
+  const sessionId = getSessionId();
+
+  const { data, error } = await supabase
+    .from('projects')
+    .insert({ session_id: sessionId, status: 'in_progress' })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error('Failed to create project:', error);
+    return null;
+  }
+
+  return data.id;
+}
+
+export async function updateProjectStyle(
+  projectId: string,
+  styleProfile: StyleProfile
+): Promise<void> {
+  const { error } = await supabase
+    .from('projects')
+    .update({ style_profile: styleProfile })
+    .eq('id', projectId);
+
+  if (error) console.error('Failed to update project style:', error);
+}
+
+export async function updateProjectProducts(
+  projectId: string,
+  selectedProducts: Record<string, string>,
+  selectedProductNames: Record<string, string>,
+  materialConfig: MaterialConfig,
+  selectedProductDetails?: Record<string, {
+    id: string; brand: string; name: string;
+    price_low: number; price_high: number; price_tier: string;
+  }>
+): Promise<void> {
+  const update: Record<string, unknown> = {
+    selected_products: selectedProducts,
+    selected_product_names: selectedProductNames,
+    material_config: materialConfig,
+  };
+  // Snapshot full product pricing data so the project record stays accurate
+  // even if product prices change later in the catalog
+  if (selectedProductDetails) {
+    update.selected_product_details = selectedProductDetails;
+  }
+
+  const { error } = await supabase
+    .from('projects')
+    .update(update)
+    .eq('id', projectId);
+
+  if (error) console.error('Failed to update project products:', error);
+}
+
+export async function updateProjectRoom(
+  projectId: string,
+  spec: ProjectSpec
+): Promise<void> {
+  const { error } = await supabase
+    .from('projects')
+    .update({
+      room_spec: spec,
+      room_width: spec.estimatedWidthMeters,
+      room_length: spec.estimatedLengthMeters,
+      room_area: spec.totalAreaM2,
+    })
+    .eq('id', projectId);
+
+  if (error) console.error('Failed to update project room:', error);
+}
+
+export async function updateProjectResults(
+  projectId: string,
+  estimate: Estimate,
+  renderPrompt?: string
+): Promise<void> {
+  const totalLow = Math.round(estimate.grandTotal * 0.85);
+  const totalHigh = Math.round(estimate.grandTotal * 1.15);
+
+  const { error } = await supabase
+    .from('projects')
+    .update({
+      estimate,
+      estimated_total_low: totalLow,
+      estimated_total_high: totalHigh,
+      render_prompt: renderPrompt || null,
+      status: 'completed',
+    })
+    .eq('id', projectId);
+
+  if (error) console.error('Failed to update project results:', error);
+}
+
+export async function markProjectLeadSubmitted(projectId: string): Promise<void> {
+  const { error } = await supabase
+    .from('projects')
+    .update({ status: 'lead_submitted' })
+    .eq('id', projectId);
+
+  if (error) console.error('Failed to mark project as lead_submitted:', error);
+}
+
+// ============================================================
+// IMAGE UPLOAD TO SUPABASE STORAGE
+// ============================================================
+
+/**
+ * Uploads a base64 data URL image to Supabase Storage.
+ * Returns the storage path (not a public URL).
+ */
+export async function uploadProjectImage(
+  projectId: string,
+  imageType: 'original_photo' | 'ai_render' | 'style_reference',
+  dataUrl: string
+): Promise<string | null> {
+  try {
+    // Parse data URL
+    const mimeMatch = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
+    if (!mimeMatch) {
+      console.error('Invalid data URL format');
+      return null;
+    }
+
+    const mimeType = mimeMatch[1];
+    const base64Data = mimeMatch[2];
+    const extension = mimeType.split('/')[1] === 'png' ? 'png' : 'jpg';
+
+    // Convert base64 to Blob
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: mimeType });
+
+    // Generate storage path: projects/{projectId}/{imageType}_{timestamp}.{ext}
+    const timestamp = Date.now();
+    const storagePath = `projects/${projectId}/${imageType}_${timestamp}.${extension}`;
+
+    // Upload to Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from('project-images')
+      .upload(storagePath, blob, {
+        contentType: mimeType,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error('Storage upload failed:', uploadError);
+      return null;
+    }
+
+    // Record in project_images table
+    await supabase.from('project_images').insert({
+      project_id: projectId,
+      image_type: imageType,
+      storage_path: storagePath,
+      mime_type: mimeType,
+      file_size_bytes: blob.size,
+    });
+
+    // Update the project row with the path
+    if (imageType === 'original_photo') {
+      await supabase
+        .from('projects')
+        .update({ original_photo_path: storagePath })
+        .eq('id', projectId);
+    } else if (imageType === 'ai_render') {
+      await supabase
+        .from('projects')
+        .update({ render_image_path: storagePath })
+        .eq('id', projectId);
+    }
+
+    return storagePath;
+  } catch (err) {
+    console.error('Image upload error:', err);
+    return null;
+  }
+}
+
+/**
+ * Gets a signed URL for a stored image (valid for 1 hour).
+ */
+export async function getSignedImageUrl(storagePath: string): Promise<string | null> {
+  const { data, error } = await supabase.storage
+    .from('project-images')
+    .createSignedUrl(storagePath, 3600); // 1 hour expiry
+
+  if (error) {
+    console.error('Failed to get signed URL:', error);
+    return null;
+  }
+
+  return data.signedUrl;
+}
+```
+
+---
+
+## Step 3: Update `lib/leadService.ts`
+
+Replace the existing file with this enhanced version that links leads to projects and calculates lead scores.
+
+```typescript
+// lib/leadService.ts
+import { supabase } from './supabase';
+import { MaterialConfig, StyleProfile } from '../types';
+
+interface LeadPayload {
+  name: string;
+  email: string;
+  phone: string;
+  postcode: string;
+  projectId?: string;
+  styleProfile?: StyleProfile;
+  materialConfig?: MaterialConfig;
+  selectedProducts?: Record<string, string>;
+  selectedProductDetails?: Record<string, {
+    id: string; brand: string; name: string;
+    price_low: number; price_high: number; price_tier: string;
+  }>;
+  estimatedTotalLow?: number;
+  estimatedTotalHigh?: number;
+  roomWidth?: number;
+  roomLength?: number;
+  roomArea?: number;
+  source?: string;
+  country?: string;
+  renovationType?: string;
+  bathroomSize?: string;
+  preferredTimeline?: string;
+  hasOriginalPhoto?: boolean;
+  hasRender?: boolean;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+}
+
+/**
+ * Lead scoring algorithm (0-100).
+ * Higher scores = more qualified leads = more valuable to contractors.
+ */
+function calculateLeadScore(payload: LeadPayload): number {
+  let score = 0;
+
+  // Contact completeness (max 25)
+  if (payload.name?.trim()) score += 5;
+  if (payload.email?.trim()) score += 5;
+  if (payload.phone?.trim()) score += 10; // Phone = high intent signal
+  if (payload.postcode?.trim()) score += 5;
+
+  // Project completeness (max 35)
+  if (payload.hasOriginalPhoto) score += 15; // Uploaded a real photo = serious
+  if (payload.styleProfile) score += 5;
+  const productCount = Object.keys(payload.selectedProducts || {}).length;
+  if (productCount >= 3) score += 10;
+  else if (productCount >= 1) score += 5;
+  if (payload.roomArea && payload.roomArea > 0) score += 5;
+
+  // Price tier intent signal (max 5)
+  if (payload.selectedProductDetails) {
+    const tiers = Object.values(payload.selectedProductDetails).map(p => p.price_tier);
+    const premiumCount = tiers.filter(t => t === 'premium').length;
+    if (premiumCount >= 3) score += 5;        // Mostly premium = high-value lead
+    else if (premiumCount >= 1) score += 3;   // Some premium selections
+    // Budget-only = no bonus (still a valid lead, just lower value)
+  }
+
+  // AI outputs (max 20)
+  if (payload.hasRender) score += 10; // Waited for AI render = patient & engaged
+  if (payload.estimatedTotalLow && payload.estimatedTotalHigh) score += 10;
+
+  // Budget signals (max 20)
+  const avgEstimate = ((payload.estimatedTotalLow || 0) + (payload.estimatedTotalHigh || 0)) / 2;
+  if (avgEstimate >= 20000) score += 20;
+  else if (avgEstimate >= 12000) score += 15;
+  else if (avgEstimate >= 8000) score += 10;
+  else if (avgEstimate > 0) score += 5;
+
+  return Math.min(100, score);
+}
+
+export async function submitLead(payload: LeadPayload): Promise<{ success: boolean; error?: string; leadId?: string }> {
+  const styleName = payload.styleProfile?.presetName || payload.styleProfile?.summary?.slice(0, 50) || '';
+  const leadScore = calculateLeadScore(payload);
+
+  const row: Record<string, unknown> = {
+    name: payload.name,
+    email: payload.email,
+    phone: payload.phone,
+    postcode: payload.postcode,
+    source: payload.source || 'website',
+    country: payload.country || 'NL',
+    lead_score: leadScore,
+  };
+
+  // Link to project if available
+  if (payload.projectId) row.project_id = payload.projectId;
+
+  // Style data
+  if (styleName) row.selected_style = styleName;
+  if (payload.styleProfile) row.style_profile = payload.styleProfile;
+
+  // Product & material data
+  if (payload.materialConfig) row.material_config = payload.materialConfig;
+  if (payload.selectedProducts) row.selected_products = payload.selectedProducts;
+  if (payload.selectedProductDetails) row.selected_product_details = payload.selectedProductDetails;
+
+  // Dimensions & estimate
+  if (payload.estimatedTotalLow !== undefined) row.estimated_total_low = payload.estimatedTotalLow;
+  if (payload.estimatedTotalHigh !== undefined) row.estimated_total_high = payload.estimatedTotalHigh;
+  if (payload.roomWidth !== undefined) row.room_width = payload.roomWidth;
+  if (payload.roomLength !== undefined) row.room_length = payload.roomLength;
+  if (payload.roomArea !== undefined) row.room_area = payload.roomArea;
+
+  // Reference images
+  if (payload.styleProfile?.referenceImageUrls) row.reference_images = payload.styleProfile.referenceImageUrls;
+
+  // Lead gen fields
+  if (payload.renovationType) row.renovation_type = payload.renovationType;
+  if (payload.bathroomSize) row.bathroom_size = payload.bathroomSize;
+  if (payload.preferredTimeline) row.preferred_timeline = payload.preferredTimeline;
+
+  // UTM tracking
+  if (payload.utmSource) row.utm_source = payload.utmSource;
+  if (payload.utmMedium) row.utm_medium = payload.utmMedium;
+  if (payload.utmCampaign) row.utm_campaign = payload.utmCampaign;
+
+  const { data, error } = await supabase.from('leads').insert(row).select('id').single();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+  return { success: true, leadId: data?.id };
+}
+```
+
+---
+
+## Step 4: Update `pages/PlannerPage.tsx`
+
+Integrate project tracking throughout the planner flow. Here are the specific changes:
+
+### 4a. Add imports
+
+At the top of the file, add:
+
+```typescript
+import {
+  createProject,
+  updateProjectStyle,
+  updateProjectProducts,
+  updateProjectRoom,
+  updateProjectResults,
+  uploadProjectImage,
+  markProjectLeadSubmitted,
+} from '../lib/projectService';
+import { getSelectedProducts, fetchRenderImagesForProducts } from '../lib/productService';
+```
+
+### 4b. Add projectId state
+
+Add this state variable alongside the existing ones (after `const [leadName, setLeadName] = useState('');`):
+
+```typescript
+const [projectId, setProjectId] = useState<string | null>(null);
+```
+
+### 4c. Create project on planner session start
+
+Replace the existing `useEffect` that tracks `planner_session_started`:
+
+```typescript
+useEffect(() => {
+  trackEvent('planner_session_started');
+  // Create a project record to track this session
+  createProject().then(id => {
+    if (id) setProjectId(id);
+  });
+}, []);
+```
+
+### 4d. Update handleStyleResolved
+
+Replace the existing `handleStyleResolved` callback:
+
+```typescript
+const handleStyleResolved = useCallback((profile: StyleProfile) => {
+  setStyleProfile(profile);
+  setStep(2);
+  trackEvent('style_selected', { source: profile.source, tags: profile.tags.length, summary: profile.summary });
+
+  // Save style to project
+  if (projectId) {
+    updateProjectStyle(projectId, profile);
+  }
+}, [projectId]);
+```
+
+### 4e. Update handleProductSelect
+
+After the existing `trackEvent` call inside `handleProductSelect`, add a save to the project. The cleanest way is to add a separate `useEffect` that syncs product state to the project whenever products change:
+
+```typescript
+// Add this useEffect after the handleProductSelect callback
+useEffect(() => {
+  if (projectId && Object.keys(selectedProductIds).length > 0) {
+    updateProjectProducts(projectId, selectedProductIds, selectedProductNames, materialConfig);
+  }
+}, [projectId, selectedProductIds, selectedProductNames, materialConfig]);
+```
+
+### 4f. Update startProcessing
+
+Inside `startProcessing()`, after the spec is analyzed and after the render + estimate are generated, save them to the project. Also upload images to Storage.
+
+Replace the entire `startProcessing` function:
+
+```typescript
+const startProcessing = async () => {
+  if (!imagePreview || !styleProfile) return;
+  setStep(4);
+  setLoading(true);
+  setError(null);
+  abortRef.current = new AbortController();
+
+  trackEvent('generation_started', { source: styleProfile.source });
+  const startTime = Date.now();
+
+  try {
+    if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) await window.aistudio.openSelectKey();
+
+    // Upload original photo to Storage (non-blocking)
+    if (projectId) {
+      uploadProjectImage(projectId, 'original_photo', imagePreview).catch(err =>
+        console.error('Failed to upload original photo:', err)
+      );
+    }
+
+    setLoadingMessage('Ruimte layout analyseren...');
+    const mimeType = imagePreview.match(/^data:(.*);base64,/)?.[1] || 'image/jpeg';
+    const spec = await analyzeBathroomInput(imagePreview.split(',')[1], mimeType);
+    setProjectSpec(spec);
+
+    // Save room analysis to project
+    if (projectId) {
+      updateProjectRoom(projectId, spec);
+    }
+
+    if (abortRef.current?.signal.aborted) throw new Error('timeout');
+
+    setLoadingMessage('Sloopwerkzaamheden simuleren...');
+    const empty = await generateEmptySpace(imagePreview, spec);
+
+    if (abortRef.current?.signal.aborted) throw new Error('timeout');
+
+    setLoadingMessage('Productbeelden voorbereiden...');
+    const products = await fetchAllActiveProducts();
+    const selectedProductsList = await getSelectedProducts(selectedProductIds);
+    const productImages = await fetchRenderImagesForProducts(selectedProductsList);
+
+    setLoadingMessage('Uw nieuwe badkamer renderen...');
+    const [est, url] = await Promise.all([
+      calculateRenovationCost(spec, BudgetTier.STANDARD, styleProfile, materialConfig, products),
+      generateRenovationRender(spec, styleProfile, materialConfig, empty, products, productImages)
+    ]);
+
+    setEstimate(est);
+    setRenderUrl(url);
+
+    // Save AI results to project
+    if (projectId) {
+      updateProjectResults(projectId, est);
+
+      // Upload AI render to Storage (non-blocking)
+      if (url) {
+        uploadProjectImage(projectId, 'ai_render', url).catch(err =>
+          console.error('Failed to upload render:', err)
+        );
+      }
+    }
+
+    const duration = Math.floor((Date.now() - startTime) / 1000);
+    trackEvent('generation_completed', { durationSeconds: duration, total: est.grandTotal });
+  } catch (err: any) {
+    console.error(err);
+    if (err?.message === 'timeout' || abortRef.current?.signal.aborted) {
+      setError('De generatie duurde te lang. Probeer het opnieuw met een andere foto of kleinere afbeelding.');
+      trackEvent('generation_timeout');
+    } else {
+      setError('Er is iets misgegaan bij het genereren van uw voorstel.');
+      trackEvent('generation_error', { error: String(err) });
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+```
+
+### 4g. Update handleLeadSubmit
+
+Replace the existing `handleLeadSubmit` to include `projectId` and new scoring fields:
+
+```typescript
+const handleLeadSubmit = async (data: { name: string; email: string; phone: string; postcode: string }) => {
+  setLeadName(data.name);
+
+  const spec = projectSpec;
+  const totalLow = Math.round((estimate?.grandTotal || 0) * 0.85);
+  const totalHigh = Math.round((estimate?.grandTotal || 0) * 1.15);
+
+  await submitLead({
+    name: data.name,
+    email: data.email,
+    phone: data.phone,
+    postcode: data.postcode,
+    projectId: projectId || undefined,
+    styleProfile: styleProfile!,
+    materialConfig,
+    selectedProducts: selectedProductIds,
+    estimatedTotalLow: totalLow,
+    estimatedTotalHigh: totalHigh,
+    roomWidth: spec?.estimatedWidthMeters || 0,
+    roomLength: spec?.estimatedLengthMeters || 0,
+    roomArea: spec?.totalAreaM2 || 0,
+    source: 'planner',
+    hasOriginalPhoto: !!imagePreview,
+    hasRender: !!renderUrl,
+  });
+
+  // Mark project as lead_submitted
+  if (projectId) {
+    markProjectLeadSubmitted(projectId);
+  }
+
+  trackEvent('lead_submitted', {
+    source: styleProfile?.source,
+    totalLow,
+    totalHigh,
+    postcode: data.postcode,
+    projectId,
+  });
+
+  setLeadSubmitted(true);
+};
+```
+
+### 4h. Update reset function
+
+Add projectId reset and create new project:
+
+```typescript
+const reset = () => {
+  setStep(1);
+  setStyleProfile(null);
+  setSelectedProductIds({});
+  setSelectedProductNames({});
+  setImagePreview(null);
+  setProjectSpec(null);
+  setEstimate(null);
+  setRenderUrl(null);
+  setLeadSubmitted(false);
+  setLeadName('');
+  setError(null);
+  setProjectId(null);
+  trackEvent('session_reset');
+
+  // Create a new project for the new session
+  createProject().then(id => {
+    if (id) setProjectId(id);
+  });
+};
+```
+
+---
+
+## Step 5: Enhanced PDF — Update `lib/pdfService.ts`
+
+Update the PDF to include more project data, creating an "AI Project Dossier" feel.
+
+Replace the existing `PdfPayload` interface and `generateResultPdf` function:
+
+```typescript
+// lib/pdfService.ts
+import jsPDF from 'jspdf';
+
+interface PdfPayload {
+  name: string;
+  selectedStyle: string;
+  styleSummary?: string;
+  estimateLow: number;
+  estimateHigh: number;
+  beforeImage: string;
+  afterImage: string;
+  choices: {
+    category: string;
+    product: string;
+    priceTier?: string;   // 'budget' | 'mid' | 'premium'
+    priceLow?: number;    // Product price range low
+    priceHigh?: number;   // Product price range high
+  }[];
+  roomArea?: number;
+  roomWidth?: number;
+  roomLength?: number;
+  leadScore?: number;
+}
+
+async function loadImageAsDataUrl(src: string): Promise<string> {
+  if (src.startsWith('data:')) return src;
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      canvas.getContext('2d')!.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+export async function generateResultPdf(payload: PdfPayload): Promise<void> {
+  const doc = new jsPDF('p', 'mm', 'a4');
+  const pageWidth = 210;
+  const margin = 20;
+  const contentWidth = pageWidth - margin * 2;
+
+  // === HEADER ===
+  doc.setFillColor(0, 0, 0);
+  doc.rect(0, 0, pageWidth, 50, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(28);
+  doc.setFont('helvetica', 'bold');
+  doc.text('De Badkamer', margin, 30);
+  doc.setFontSize(8);
+  doc.text('VAKMANSCHAP IN RENOVATIE', margin, 38);
+
+  doc.setFontSize(9);
+  doc.setTextColor(12, 45, 72);
+  doc.text('AI PROJECT DOSSIER', pageWidth - margin, 26, { align: 'right' });
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(7);
+  const dateStr = new Date().toLocaleDateString('nl-BE');
+  doc.text(dateStr, pageWidth - margin, 34, { align: 'right' });
+  doc.setFontSize(6);
+  doc.text('INDICATIEF VOORSTEL', pageWidth - margin, 40, { align: 'right' });
+
+  let y = 62;
+
+  // === GREETING ===
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Beste ${payload.name},`, margin, y);
+  y += 10;
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Hieronder vindt u een samenvatting van uw persoonlijke badkamervoorstel,', margin, y);
+  y += 5;
+  doc.text('samengesteld door onze AI-planner op basis van uw voorkeuren.', margin, y);
+  y += 12;
+
+  // === STYLE SECTION ===
+  doc.setFillColor(245, 245, 245);
+  const styleBoxHeight = payload.styleSummary ? 36 : 28;
+  doc.roundedRect(margin, y, contentWidth, styleBoxHeight, 3, 3, 'F');
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  doc.text('GESELECTEERDE STIJL', margin + 6, y + 8);
+  doc.setFontSize(14);
+  doc.setTextColor(0, 0, 0);
+  doc.setFont('helvetica', 'bold');
+  doc.text(payload.selectedStyle, margin + 6, y + 20);
+  if (payload.styleSummary) {
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    const summaryLines = doc.splitTextToSize(payload.styleSummary, contentWidth - 12);
+    doc.text(summaryLines[0] || '', margin + 6, y + 28);
+  }
+  y += styleBoxHeight + 8;
+
+  // === ROOM DIMENSIONS (if available) ===
+  if (payload.roomArea && payload.roomWidth && payload.roomLength) {
+    doc.setFillColor(240, 245, 250);
+    doc.roundedRect(margin, y, contentWidth, 22, 3, 3, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text('RUIMTEAFMETINGEN', margin + 6, y + 8);
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.text(
+      `${payload.roomWidth.toFixed(1)}m x ${payload.roomLength.toFixed(1)}m = ${payload.roomArea.toFixed(1)} m\u00B2`,
+      margin + 6,
+      y + 17
+    );
+    y += 30;
+  }
+
+  // === PRICE ESTIMATE ===
+  doc.setFillColor(12, 45, 72);
+  doc.roundedRect(margin, y, contentWidth, 32, 3, 3, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(8);
+  doc.text('VERWACHTE INVESTERINGSBANDBREEDTE', margin + 6, y + 10);
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  const low = payload.estimateLow.toLocaleString('nl-BE');
+  const high = payload.estimateHigh.toLocaleString('nl-BE');
+  doc.text(`EUR ${low} - EUR ${high}`, margin + 6, y + 24);
+  y += 42;
+
+  // === PRODUCT CHOICES ===
+  if (payload.choices.length > 0) {
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('UW PRODUCTKEUZES', margin, y);
+    y += 6;
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(9);
+    payload.choices.forEach((c) => {
+      doc.setFont('helvetica', 'bold');
+      doc.text(`${c.category}:`, margin, y);
+      doc.setFont('helvetica', 'normal');
+      let productText = c.product;
+      if (c.priceTier) {
+        const tierLabel = c.priceTier === 'premium' ? 'Premium' : c.priceTier === 'mid' ? 'Midden' : 'Budget';
+        productText += ` (${tierLabel})`;
+      }
+      doc.text(productText, margin + 35, y);
+      if (c.priceLow && c.priceHigh) {
+        doc.setFontSize(7);
+        doc.setTextColor(100, 100, 100);
+        doc.text(
+          `EUR ${Math.round(c.priceLow).toLocaleString('nl-BE')} - ${Math.round(c.priceHigh).toLocaleString('nl-BE')}`,
+          margin + 35, y + 4
+        );
+        doc.setFontSize(9);
+        doc.setTextColor(0, 0, 0);
+        y += 4;
+      }
+      y += 6;
+    });
+    y += 6;
+  }
+
+  // === VISUALIZATION IMAGE ===
+  try {
+    const afterData = await loadImageAsDataUrl(payload.afterImage);
+    const imgWidth = contentWidth;
+    const imgHeight = imgWidth * 0.6;
+    if (y + imgHeight > 260) {
+      doc.addPage();
+      y = 20;
+    }
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(8);
+    doc.text('AI VISUALISATIE', margin, y);
+    y += 4;
+    doc.addImage(afterData, 'JPEG', margin, y, imgWidth, imgHeight);
+
+    doc.setFontSize(6);
+    doc.setTextColor(200, 200, 200);
+    doc.text('DE BADKAMER - AI GEGENEREERD - INDICATIEF', margin + imgWidth / 2, y + imgHeight - 4, { align: 'center' });
+    y += imgHeight + 8;
+  } catch {
+    // skip image if it fails
+  }
+
+  // === BEFORE IMAGE (original photo) ===
+  try {
+    const beforeData = await loadImageAsDataUrl(payload.beforeImage);
+    const imgWidth = contentWidth * 0.5;
+    const imgHeight = imgWidth * 0.6;
+    if (y + imgHeight > 260) {
+      doc.addPage();
+      y = 20;
+    }
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(8);
+    doc.text('HUIDIGE SITUATIE', margin, y);
+    y += 4;
+    doc.addImage(beforeData, 'JPEG', margin, y, imgWidth, imgHeight);
+    y += imgHeight + 8;
+  } catch {
+    // skip if fails
+  }
+
+  // === WHAT'S INCLUDED ===
+  if (y > 240) {
+    doc.addPage();
+    y = 20;
+  }
+  doc.setTextColor(100, 100, 100);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text('INBEGREPEN IN DEZE INDICATIE', margin, y);
+  y += 7;
+  const inclusions = ['Materialen & sanitair', 'Professionele installatie', 'Levering & transport', 'Sloopwerken & afvoer'];
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(9);
+  inclusions.forEach(item => {
+    doc.setFont('helvetica', 'normal');
+    doc.text(`  •  ${item}`, margin, y);
+    y += 5;
+  });
+  y += 6;
+
+  // === NEXT STEPS ===
+  doc.setFillColor(245, 250, 245);
+  doc.roundedRect(margin, y, contentWidth, 30, 3, 3, 'F');
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  doc.text('VOLGENDE STAPPEN', margin + 6, y + 8);
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+  doc.setFont('helvetica', 'normal');
+  doc.text('1. Onze experts nemen binnen 24 uur contact met u op.', margin + 6, y + 16);
+  doc.text('2. Gratis opname ter plaatse voor definitieve offerte.', margin + 6, y + 22);
+  y += 38;
+
+  // === DISCLAIMER ===
+  if (y > 250) {
+    doc.addPage();
+    y = 20;
+  }
+  doc.setDrawColor(220, 220, 220);
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 6;
+  doc.setFontSize(6);
+  doc.setTextColor(150, 150, 150);
+  doc.setFont('helvetica', 'normal');
+  const disclaimerLines = [
+    'DISCLAIMER: Dit document is een indicatief voorstel en vormt geen bindende offerte.',
+    'Alle visualisaties zijn AI-generaties en dienen puur ter inspiratie. Afmetingen en productdetails kunnen in de realiteit afwijken.',
+    'Prijzen zijn indicatief en gebaseerd op gemiddelde markttarieven (Q1 2026). Een definitieve opname en offerte volgt na persoonlijk adviesgesprek.',
+    'Definitieve productkeuze gebeurt steeds samen met een De Badkamer-adviseur. Exacte merken, types en afmetingen zijn niet gegarandeerd.',
+    `(C) ${new Date().getFullYear()} DeBadkamer.com. Alle rechten voorbehouden.`,
+  ];
+  disclaimerLines.forEach((line) => {
+    doc.text(line, margin, y);
+    y += 4;
+  });
+
+  doc.save(`DeBadkamer_Dossier_${payload.name.replace(/\s+/g, '_')}.pdf`);
+}
+```
+
+---
+
+## Step 6: Update PDF call in `ResultDisplay.tsx`
+
+Update the `handleDownloadPdf` call to pass additional project data:
+
+```typescript
+// In ResultDisplay.tsx, update the handleDownloadPdf function:
+
+const handleDownloadPdf = async () => {
+  setGeneratingPdf(true);
+  try {
+    await generateResultPdf({
+      name,
+      selectedStyle: styleProfile.presetName || styleProfile.summary.slice(0, 40),
+      styleSummary: styleProfile.summary,
+      estimateLow: totalLow,
+      estimateHigh: totalHigh,
+      beforeImage: imagePreview,
+      afterImage: renderUrl,
+      choices,
+      // These are optional — pass if available from parent via props
+      // roomArea: projectSpec?.totalAreaM2,
+      // roomWidth: projectSpec?.estimatedWidthMeters,
+      // roomLength: projectSpec?.estimatedLengthMeters,
+    });
+  } finally {
+    setGeneratingPdf(false);
+  }
+};
+```
+
+To pass room dimensions to ResultDisplay, add optional props:
+
+```typescript
+// Update ResultDisplayProps interface:
+interface ResultDisplayProps {
+  name: string;
+  styleProfile: StyleProfile;
+  estimate: Estimate;
+  renderUrl: string;
+  imagePreview: string;
+  choices: {
+    category: string;
+    product: string;
+    priceTier?: string;
+    priceLow?: number;
+    priceHigh?: number;
+  }[];
+  roomArea?: number;
+  roomWidth?: number;
+  roomLength?: number;
+}
+```
+
+And in `PlannerPage.tsx`, pass the dimensions when rendering `<ResultDisplay>`:
+
+```tsx
+<ResultDisplay
+  name={leadName}
+  styleProfile={styleProfile!}
+  estimate={estimate}
+  renderUrl={renderUrl}
+  imagePreview={imagePreview!}
+  choices={choices}
+  roomArea={projectSpec?.totalAreaM2}
+  roomWidth={projectSpec?.estimatedWidthMeters}
+  roomLength={projectSpec?.estimatedLengthMeters}
+/>
+```
+
+---
+
+## Step 7: Add `preferred_timeline` to LeadCaptureForm
+
+Add a timeline question to the lead form. This improves lead scoring and helps contractors prioritize.
+
+Update `LeadCaptureForm.tsx`:
+
+### 7a. Update the LeadData interface
+
+```typescript
+interface LeadData {
+  name: string;
+  email: string;
+  phone: string;
+  postcode: string;
+  preferredTimeline: string;
+}
+```
+
+### 7b. Add timeline selector
+
+After the postcode input field, add a timeline dropdown:
+
+```tsx
+{/* Add this after the fields.map() block, inside the <div className="space-y-3 md:space-y-4"> */}
+<div className="relative">
+  <Calendar className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />
+  <select
+    value={leadData.preferredTimeline}
+    onChange={(e) => setLeadData({...leadData, preferredTimeline: e.target.value})}
+    className="w-full bg-neutral-100 border border-neutral-300/50 rounded-xl md:rounded-2xl p-4 md:p-5 pl-12 md:pl-14 font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all appearance-none"
+  >
+    <option value="">Wanneer wilt u renoveren?</option>
+    <option value="1_month">Binnen 1 maand</option>
+    <option value="1_3_months">Binnen 1-3 maanden</option>
+    <option value="3_6_months">Binnen 3-6 maanden</option>
+    <option value="exploring">Aan het verkennen</option>
+  </select>
+</div>
+```
+
+Add `Calendar` to the lucide-react imports at the top:
+
+```typescript
+import { ArrowRight, CheckCircle, User, Mail, Smartphone, MapPin, Calendar, Loader2 } from 'lucide-react';
+```
+
+Update the initial state:
+
+```typescript
+const [leadData, setLeadData] = useState<LeadData>({ name: '', email: '', phone: '', postcode: '', preferredTimeline: '' });
+```
+
+### 7c. Pass timeline to lead submission
+
+In `PlannerPage.tsx`, update `handleLeadSubmit` to forward the timeline:
+
+```typescript
+// The LeadCaptureForm onSubmit signature needs to include preferredTimeline
+// Update the handleLeadSubmit parameter type:
+const handleLeadSubmit = async (data: { name: string; email: string; phone: string; postcode: string; preferredTimeline?: string }) => {
+  // ... existing code ...
+
+  await submitLead({
+    // ... existing fields ...
+    preferredTimeline: data.preferredTimeline,
+    hasOriginalPhoto: !!imagePreview,
+    hasRender: !!renderUrl,
+  });
+
+  // ... rest of function ...
+};
+```
+
+---
+
+## File Change Summary
+
+| File | Action | Description |
+|------|--------|-------------|
+| `supabase/migrations/20260211_create_projects_and_storage.sql` | **NEW** | Projects table, project_images table, Storage bucket, leads extensions |
+| `lib/projectService.ts` | **NEW** | Project CRUD, image upload to Storage, signed URL generation |
+| `lib/leadService.ts` | **REPLACE** | Add lead scoring, project linking, new fields |
+| `pages/PlannerPage.tsx` | **MODIFY** | Integrate project tracking at each planner step |
+| `lib/pdfService.ts` | **REPLACE** | Enhanced "AI Project Dossier" PDF with room dims, style summary, before photo |
+| `components/ResultDisplay.tsx` | **MODIFY** | Pass room dimensions to PDF, add optional props |
+| `components/LeadCaptureForm.tsx` | **MODIFY** | Add preferred timeline dropdown |
+| `lib/productService.ts` | **IMPORT** | Import `getSelectedProducts` and `fetchRenderImagesForProducts` (from Product DB upgrade) |
+
+---
+
+## Testing Checklist
+
+After implementing, verify:
+
+1. **Project creation**: Open planner, check Supabase `projects` table — a new row should appear with `status: 'in_progress'`
+2. **Style tracking**: Select a style preset in Step 1 — the project row should update with `style_profile` data
+3. **Product tracking**: Select products in Step 2 — project row should update with `selected_products` and `selected_product_names`
+4. **Photo upload to Storage**: Upload a photo in Step 3, start processing — check Supabase Storage `project-images` bucket for `projects/{id}/original_photo_*.jpg`
+5. **Room analysis saved**: After AI analyzes the room — project row should update with `room_spec`, `room_width`, `room_length`, `room_area`
+6. **Render upload to Storage**: After AI generates render — check Storage for `projects/{id}/ai_render_*.jpg`
+7. **Results saved**: Project row should update with `estimate`, `estimated_total_low/high`, `status: 'completed'`
+8. **Lead submission**: Fill in lead form — `leads` table should have a row with `project_id`, `lead_score` (0-100), `style_profile`
+9. **Project status update**: After lead submit — project `status` should be `'lead_submitted'`
+10. **PDF generation**: Download PDF — should include style summary, room dimensions (if available), before photo, and "AI PROJECT DOSSIER" header
+11. **Timeline field**: The lead form should show the timeline dropdown, and the value should be saved in `leads.preferred_timeline`
+12. **Lead scoring**: Verify scores in `leads.lead_score`:
+    - Minimal lead (just contact info): ~25
+    - With photo + products: ~50-60
+    - Full flow with render + estimate: ~80-100
+13. **Reset flow**: Click "Terug naar start" — a new project should be created
+14. **Build check**: Run `npm run build` — no TypeScript errors
+15. **Product details snapshot**: Select products in Step 2 — project row should have `selected_product_details` with id, brand, name, price_low, price_high, price_tier per category
+16. **PDF product pricing**: Download PDF — product choices should show tier label (Premium/Midden/Budget) and price range per product
+17. **Lead score with premium products**: Select all premium products — lead score should be ~5 points higher than with all budget products
+
+---
+
+## Environment Variables
+
+No new environment variables needed. The system uses the existing:
+- `VITE_SUPABASE_URL` — Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` — Supabase anonymous key
+
+The Supabase anon key must have permissions for:
+- INSERT on `projects`, `project_images`, `leads`
+- UPDATE on `projects`
+- SELECT on `projects`, `project_images` (for client-side reads)
+- Storage upload to `project-images` bucket
+
+---
+
+## Important Notes
+
+1. **Storage bucket MUST be created manually** via Supabase Dashboard before testing image uploads. The SQL migration creates the tables, but Storage buckets need Dashboard/CLI setup.
+
+2. **Image uploads are non-blocking** — they happen with `.catch()` so they never block the user flow. If Storage upload fails, the planner still works normally. The images just won't be persisted.
+
+3. **Lead scoring is calculated client-side** and stored in the `lead_score` column. This is intentional — it avoids needing a server function while still providing the score for sorting/filtering in the future contractor dashboard.
+
+4. **The `projects` table uses `session_id`** from the existing analytics system (`getSessionId()` in `analytics.ts`). This links projects to their session events automatically.
+
+5. **No authentication required** — the entire flow works with the Supabase `anon` key. RLS policies allow anonymous inserts and updates. Reads of all data are restricted to authenticated users (for the future dashboard), except for the client's own session data needed during the planner flow.
+
+6. **Product Database Upgrade dependency** — This brief assumes the Product Database Upgrade has been applied first (migration `20260211_upgrade_products.sql`). Products now have `price_low`, `price_high`, `price_tier`, `catalog_image_path`, and `render_image_path` columns. The `selected_product_details` jsonb snapshots this pricing data into the project record so it remains accurate even if product prices change later. If implementing without the product DB upgrade, the `selectedProductDetails` parameter can be omitted — all related code is guarded with optional checks.
+
+7. **Two separate Storage buckets** — This brief creates a `project-images` bucket (private, for user photos and AI renders). The Product Database Upgrade creates a separate `product-images` bucket (public, for product catalog and render reference images). These are independent and both are needed.

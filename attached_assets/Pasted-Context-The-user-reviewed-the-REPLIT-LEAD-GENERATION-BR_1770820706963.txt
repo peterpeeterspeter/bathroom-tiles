@@ -1,0 +1,295 @@
+Context
+The user reviewed the REPLIT_LEAD_GENERATION_BRIEF.md and found several discrepancies with the actual codebase. The brief also needs email notification on lead submission (to peterpeeterspeter@gmail.com) and should automatically include all project data (images, style, products, estimate) in the lead.
+Corrections Needed (from user feedback)
+IssueBrief saysActualFixStep orderStyle → Products → Photo → AICorrect: Style(1) → Products(2) → Photo+Dims(3) → Results(4)Step order IS correct in the brief — it matches the codebasestartProcessingUnclearUses generateEmptySpace() + generateRenovationRender()Keep existing generation logic, add project saves around itStorage policiesINSERT INTO storage.policies(...)Supabase uses CREATE POLICY ON storage.objectsFix SQL syntax or note Dashboard-only setupstyle_profile on leadsAdds with DEFAULT NULLMay already existIF NOT EXISTS guard handles it (already safe)Product sync useEffectSyncs on every product changeCould be chattySave only on step transition (when user clicks "Next")Callback naminghandleStyleResolvedConfirmed: handleStyleResolved is correctNo change neededEmail sendingNot includedMust addAdd Supabase Edge Function + Resend
+Key finding: Step order IS correct
+After exploring the codebase, I confirmed the step mapping:
+
+Step 1: <StyleInspiration> (style selection)
+Step 2: <ProductConfiguration> (product selection)
+Step 3: <DimensionsPhoto> (photo upload + dimensions)
+Step 4: Loading → <LeadCaptureForm> → <ResultDisplay>
+
+The brief's step order matches the actual code. The user's correction about "Style → Photo+Dims → Products → AI" may reflect a planned future reorder, but the current code is Style → Products → Photo → AI.
+Key finding: No email exists
+The codebase has zero email functionality. No nodemailer, no resend, no SMTP. Only a mailto: link in ResultDisplay.
+
+Changes to REPLIT_LEAD_GENERATION_BRIEF.md
+1. Fix Storage policy SQL syntax
+Replace the INSERT INTO storage.policies(...) blocks with a note to configure via Dashboard only. The storage.policies table approach is unreliable across Supabase versions.
+2. Fix product sync — save on step transition, not on every change
+Replace the useEffect that watches selectedProductIds with a save call inside the onNext handler (when user clicks "Volgende" to go from Step 2 → Step 3).
+3. Add email notification via Supabase Edge Function + Resend
+New file: supabase/functions/send-lead-notification/index.ts
+
+Triggered from handleLeadSubmit() after successful lead insert
+Calls Resend API to send formatted HTML email to peterpeeterspeter@gmail.com
+Email includes: contact info, style profile, selected products with tiers, room dimensions, estimate range, signed URLs to original photo and AI render
+Non-blocking: email failure doesn't break lead submission
+
+New env var: RESEND_API_KEY (set via supabase secrets set)
+4. Include all data in lead automatically
+Update handleLeadSubmit to pass complete project data including:
+
+Links to images (signed Storage URLs for original photo + render)
+Full style profile summary
+Product details with pricing tiers
+Room dimensions
+Estimate range
+
+5. Add leads.selected_product_details column
+The migration already adds selected_product_details to the projects table, but the leads table also needs it for the email to access enriched product data without joining.
+
+Implementation Details
+Edge Function: send-lead-notification/index.ts
+typescript// supabase/functions/send-lead-notification/index.ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.95.1";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+};
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 200, headers: corsHeaders });
+  }
+
+  try {
+    const payload = await req.json();
+    const resendKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendKey) {
+      return new Response(JSON.stringify({ error: "RESEND_API_KEY not configured" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    // Build product details HTML
+    const productsHtml = payload.products
+      ? Object.entries(payload.products).map(([category, detail]: [string, any]) =>
+          `<tr>
+            <td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold">${category}</td>
+            <td style="padding:8px;border-bottom:1px solid #eee">${detail.brand} ${detail.name}</td>
+            <td style="padding:8px;border-bottom:1px solid #eee">${detail.price_tier || '-'}</td>
+            <td style="padding:8px;border-bottom:1px solid #eee">EUR ${detail.price_low || '?'} - ${detail.price_high || '?'}</td>
+          </tr>`
+        ).join('')
+      : '<tr><td colspan="4">Geen producten geselecteerd</td></tr>';
+
+    // Build image links HTML
+    let imagesHtml = '';
+    if (payload.originalPhotoUrl) {
+      imagesHtml += `<p><a href="${payload.originalPhotoUrl}" style="color:#0066cc">Bekijk originele foto</a></p>`;
+    }
+    if (payload.renderImageUrl) {
+      imagesHtml += `<p><a href="${payload.renderImageUrl}" style="color:#0066cc">Bekijk AI render</a></p>`;
+    }
+
+    const emailHtml = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+        <div style="background:#000;color:#fff;padding:24px;text-align:center">
+          <h1 style="margin:0;font-size:24px">De Badkamer</h1>
+          <p style="margin:4px 0 0;font-size:12px;color:#999">NIEUW LEAD — AI PLANNER</p>
+        </div>
+
+        <div style="padding:24px;background:#f9f9f9">
+          <h2 style="color:#333;font-size:18px;margin:0 0 16px">Contactgegevens</h2>
+          <table style="width:100%;border-collapse:collapse">
+            <tr><td style="padding:6px 0;font-weight:bold;width:120px">Naam:</td><td>${payload.name}</td></tr>
+            <tr><td style="padding:6px 0;font-weight:bold">E-mail:</td><td><a href="mailto:${payload.email}">${payload.email}</a></td></tr>
+            <tr><td style="padding:6px 0;font-weight:bold">Telefoon:</td><td><a href="tel:${payload.phone}">${payload.phone}</a></td></tr>
+            <tr><td style="padding:6px 0;font-weight:bold">Postcode:</td><td>${payload.postcode}</td></tr>
+            ${payload.preferredTimeline ? `<tr><td style="padding:6px 0;font-weight:bold">Timeline:</td><td>${payload.preferredTimeline}</td></tr>` : ''}
+          </table>
+        </div>
+
+        <div style="padding:24px">
+          <h2 style="color:#333;font-size:18px;margin:0 0 16px">Project Details</h2>
+
+          <h3 style="font-size:14px;color:#666;margin:16px 0 8px">Stijl</h3>
+          <p style="margin:0">${payload.styleName || 'Niet geselecteerd'}</p>
+          ${payload.styleSummary ? `<p style="color:#666;font-size:13px;margin:4px 0 0">${payload.styleSummary}</p>` : ''}
+
+          <h3 style="font-size:14px;color:#666;margin:16px 0 8px">Ruimte</h3>
+          <p style="margin:0">${payload.roomWidth || '?'}m x ${payload.roomLength || '?'}m = ${payload.roomArea || '?'} m²</p>
+
+          <h3 style="font-size:14px;color:#666;margin:16px 0 8px">Productkeuzes</h3>
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <tr style="background:#f0f0f0">
+              <th style="padding:8px;text-align:left">Categorie</th>
+              <th style="padding:8px;text-align:left">Product</th>
+              <th style="padding:8px;text-align:left">Tier</th>
+              <th style="padding:8px;text-align:left">Prijs</th>
+            </tr>
+            ${productsHtml}
+          </table>
+
+          <h3 style="font-size:14px;color:#666;margin:16px 0 8px">Investering</h3>
+          <p style="margin:0;font-size:20px;font-weight:bold">EUR ${payload.estimateLow?.toLocaleString('nl-BE') || '?'} — EUR ${payload.estimateHigh?.toLocaleString('nl-BE') || '?'}</p>
+
+          <h3 style="font-size:14px;color:#666;margin:16px 0 8px">Lead Score</h3>
+          <p style="margin:0;font-size:20px;font-weight:bold">${payload.leadScore || 0} / 100</p>
+
+          ${imagesHtml ? `<h3 style="font-size:14px;color:#666;margin:16px 0 8px">Afbeeldingen</h3>${imagesHtml}` : ''}
+        </div>
+
+        <div style="padding:16px 24px;background:#f0f0f0;font-size:11px;color:#999;text-align:center">
+          DeBadkamer.com — Automatische lead notificatie
+        </div>
+      </div>
+    `;
+
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "De Badkamer <noreply@debadkamer.com>",
+        to: ["peterpeeterspeter@gmail.com"],
+        subject: `Nieuw Lead: ${payload.name} — ${payload.postcode} — EUR ${payload.estimateLow?.toLocaleString('nl-BE') || '?'}+`,
+        html: emailHtml,
+      }),
+    });
+
+    const result = await res.json();
+    return new Response(JSON.stringify(result), {
+      status: res.ok ? 200 : 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: String(err) }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
+Updated handleLeadSubmit in PlannerPage.tsx
+After the lead is stored in Supabase, send email notification (non-blocking):
+typescriptconst handleLeadSubmit = async (data: { name: string; email: string; phone: string; postcode: string; preferredTimeline?: string }) => {
+  setLeadName(data.name);
+
+  const spec = projectSpec;
+  const totalLow = Math.round((estimate?.grandTotal || 0) * 0.85);
+  const totalHigh = Math.round((estimate?.grandTotal || 0) * 1.15);
+
+  // 1. Save lead to database
+  const leadResult = await submitLead({
+    name: data.name,
+    email: data.email,
+    phone: data.phone,
+    postcode: data.postcode,
+    projectId: projectId || undefined,
+    styleProfile: styleProfile!,
+    materialConfig,
+    selectedProducts: selectedProductIds,
+    selectedProductDetails: selectedProductDetailsRef.current,
+    estimatedTotalLow: totalLow,
+    estimatedTotalHigh: totalHigh,
+    roomWidth: spec?.estimatedWidthMeters || 0,
+    roomLength: spec?.estimatedLengthMeters || 0,
+    roomArea: spec?.totalAreaM2 || 0,
+    source: 'planner',
+    preferredTimeline: data.preferredTimeline,
+    hasOriginalPhoto: !!imagePreview,
+    hasRender: !!renderUrl,
+  });
+
+  // 2. Mark project as lead_submitted
+  if (projectId) {
+    markProjectLeadSubmitted(projectId);
+  }
+
+  // 3. Send email notification (non-blocking)
+  // Get signed URLs for images so the email includes viewable links
+  const originalPhotoUrl = projectId
+    ? await getSignedImageUrl(`projects/${projectId}/original_photo`)
+    : null;
+  const renderImageUrl = projectId
+    ? await getSignedImageUrl(`projects/${projectId}/ai_render`)
+    : null;
+
+  sendLeadNotification({
+    name: data.name,
+    email: data.email,
+    phone: data.phone,
+    postcode: data.postcode,
+    preferredTimeline: data.preferredTimeline,
+    styleName: styleProfile?.presetName || styleProfile?.summary?.slice(0, 50) || '',
+    styleSummary: styleProfile?.summary || '',
+    products: selectedProductDetailsRef.current || {},
+    roomWidth: spec?.estimatedWidthMeters,
+    roomLength: spec?.estimatedLengthMeters,
+    roomArea: spec?.totalAreaM2,
+    estimateLow: totalLow,
+    estimateHigh: totalHigh,
+    leadScore: leadResult.leadScore,
+    originalPhotoUrl,
+    renderImageUrl,
+  }).catch(err => console.error('Email notification failed (non-blocking):', err));
+
+  trackEvent('lead_submitted', { ... });
+  setLeadSubmitted(true);
+};
+New helper in leadService.ts: sendLeadNotification
+typescriptexport async function sendLeadNotification(payload: Record<string, unknown>): Promise<void> {
+  const { data, error } = await supabase.functions.invoke('send-lead-notification', {
+    body: payload,
+  });
+  if (error) {
+    console.error('Lead notification email failed:', error);
+  }
+}
+Product sync fix — save on step transition only
+Remove the useEffect that watches selectedProductIds and instead save when user clicks "Next" to go from Step 2 → Step 3:
+typescript// In the ProductConfiguration onNext handler:
+onNext={() => {
+  // Save products to project on step transition (not on every change)
+  if (projectId) {
+    updateProjectProducts(
+      projectId,
+      selectedProductIds,
+      selectedProductNames,
+      materialConfig,
+      selectedProductDetailsRef.current
+    );
+  }
+  setStep(3);
+  trackEvent('products_configured', { products: selectedProductIds });
+}}
+```
+
+### Storage policy fix
+
+Remove the `INSERT INTO storage.policies(...)` SQL blocks entirely. Replace with a clear Dashboard-only instruction:
+```
+-- IMPORTANT: Storage policies cannot be reliably set via SQL migration.
+-- Configure these policies via Supabase Dashboard > Storage > project-images > Policies:
+--   1. INSERT: Allow access for all users (anon + authenticated)
+--   2. SELECT: Allow access for all users (needed for signed URL generation)
+--   3. UPDATE: None needed
+--   4. DELETE: Authenticated only (for future admin cleanup)
+
+Files to modify in the brief
+
+Migration SQL — Remove INSERT INTO storage.policies blocks, replace with Dashboard instructions
+projectService.ts — No useEffect for product sync; save on step transition
+leadService.ts — Add sendLeadNotification() function, return leadScore from submitLead
+PlannerPage.tsx handleLeadSubmit — Add email notification call with signed image URLs
+New Edge Function — supabase/functions/send-lead-notification/index.ts
+Environment variables — Add RESEND_API_KEY to the env vars section
+File change summary table — Add Edge Function entry
+Testing checklist — Add email notification test items
+
+
+Verification
+After updating the brief:
+
+All 8 sections are updated consistently
+No references to removed storage policy SQL
+Email notification flow is documented end-to-end
+Product sync uses step transition (not useEffect)
+Commit and push
