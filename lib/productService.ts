@@ -1,5 +1,8 @@
 import { supabase } from './supabase';
-import { StyleProfile, DatabaseProduct, StylePreset } from '../types';
+import { StyleProfile, DatabaseProduct, StylePreset, PriceTier } from '../types';
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+const STORAGE_BUCKET = 'product-images';
 
 let cachedProducts: DatabaseProduct[] | null = null;
 let cachedPresets: StylePreset[] | null = null;
@@ -81,7 +84,7 @@ export async function fetchAllActiveProducts(): Promise<DatabaseProduct[]> {
 
   const { data: products } = await supabase
     .from('products')
-    .select('id, brand, name, category, price, currency, image_url, origin, is_active, display_order')
+    .select('id, brand, name, category, price, currency, image_url, origin, is_active, display_order, price_low, price_high, price_tier, catalog_image_path, render_image_path, description')
     .eq('is_active', true)
     .order('display_order');
 
@@ -141,4 +144,63 @@ export function getProductsByCategory(products: ScoredProduct[]): Record<string,
 export async function fetchProductById(id: string): Promise<DatabaseProduct | null> {
   const products = await fetchAllActiveProducts();
   return products.find(p => p.id === id) || null;
+}
+
+export function getProductCatalogImageUrl(product: DatabaseProduct): string {
+  if (product.catalog_image_path) {
+    return `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${product.catalog_image_path}`;
+  }
+  return product.image_url;
+}
+
+export function getProductRenderImageUrl(product: DatabaseProduct): string {
+  if (product.render_image_path) {
+    return `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${product.render_image_path}`;
+  }
+  return product.image_url;
+}
+
+export async function fetchRenderImageAsBase64(
+  product: DatabaseProduct
+): Promise<{ base64: string; mimeType: string } | null> {
+  const url = getProductRenderImageUrl(product);
+  if (!url) return null;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    const buffer = await blob.arrayBuffer();
+    const base64 = btoa(
+      new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+    );
+    return { base64, mimeType: blob.type || 'image/jpeg' };
+  } catch (err) {
+    console.warn(`Failed to fetch render image for product ${product.id}:`, err);
+    return null;
+  }
+}
+
+export async function fetchRenderImagesForProducts(
+  products: DatabaseProduct[]
+): Promise<Map<string, { base64: string; mimeType: string }>> {
+  const imageMap = new Map<string, { base64: string; mimeType: string }>();
+
+  await Promise.all(
+    products.map(async (product) => {
+      const result = await fetchRenderImageAsBase64(product);
+      if (result) {
+        imageMap.set(product.id, result);
+      }
+    })
+  );
+
+  return imageMap;
+}
+
+export function getProductPriceDisplay(product: DatabaseProduct): string {
+  if (product.price_low && product.price_high) {
+    return `€${Math.round(product.price_low)} – €${Math.round(product.price_high)}`;
+  }
+  return `€${Math.round(product.price)}`;
 }

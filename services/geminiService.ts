@@ -167,7 +167,9 @@ export const calculateRenovationCost = async (
   const styleTags = styleProfile.tags.map(t => `${t.tag} (${t.weight})`).join(', ');
   const catalogForPrompt = products.map(p => ({
     id: p.id, brand: p.brand, name: p.name, category: p.category,
-    price: p.price, currency: p.currency, image_url: p.image_url
+    price_low: p.price_low ?? p.price, price_high: p.price_high ?? p.price,
+    price_tier: p.price_tier ?? 'mid', currency: p.currency,
+    description: p.description || ''
   }));
 
   const tierGuidance = {
@@ -208,7 +210,7 @@ ${['Tile', 'Vanity', 'Toilet', 'Faucet', 'Shower', 'Bathtub', 'Lighting'].map(ca
     ${LABOR_RATE_TABLE}
 
     TASK:
-    1. Select materials from the catalog matching the user's style and budget tier.
+    1. Select materials from the catalog matching the user's style and budget tier. Products have price ranges (price_low to price_high) — use the midpoint for standard estimates, price_low for budget tier, price_high for premium tier.
     2. Calculate material quantities based on room dimensions (tiles in m2, fixtures in pieces).
     3. List all required labor operations using ONLY the rates from the labor table above.
     4. For each material, specify the correct unit (m2 for tiles, pcs for fixtures/faucets/lighting).
@@ -306,33 +308,7 @@ ${['Tile', 'Vanity', 'Toilet', 'Faucet', 'Shower', 'Bathtub', 'Lighting'].map(ca
   }
 };
 
-export const fetchProductImagesAsBase64 = async (
-  products: DatabaseProduct[]
-): Promise<Map<string, { base64: string; mimeType: string }>> => {
-  const imageMap = new Map<string, { base64: string; mimeType: string }>();
-
-  await Promise.all(
-    products.map(async (product) => {
-      try {
-        const response = await fetch(product.image_url);
-        if (!response.ok) return;
-        const blob = await response.blob();
-        const buffer = await blob.arrayBuffer();
-        const base64 = btoa(
-          new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
-        );
-        imageMap.set(product.id, {
-          base64,
-          mimeType: blob.type || 'image/jpeg',
-        });
-      } catch (err) {
-        console.warn(`Failed to fetch image for product ${product.id}:`, err);
-      }
-    })
-  );
-
-  return imageMap;
-};
+export { fetchRenderImagesForProducts as fetchProductImagesAsBase64 } from '../lib/productService';
 
 const CATEGORY_LABELS_NL: Record<string, string> = {
   Tile: 'Vloer & Wanden',

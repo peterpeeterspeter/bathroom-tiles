@@ -80,7 +80,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const header = parseCsvLine(lines[0]).map((h) => h.toLowerCase());
-    const requiredCols = ["id", "brand", "name", "category", "price"];
+    const requiredCols = ["id", "brand", "name", "category"];
     for (const col of requiredCols) {
       if (!header.includes(col)) {
         return errorResponse(`Missing required column: ${col}`, 400);
@@ -122,11 +122,17 @@ Deno.serve(async (req: Request) => {
         continue;
       }
 
-      const price = parseFloat(row.price);
-      if (isNaN(price)) {
-        skipped.push({ row: i + 1, reason: "Invalid price" });
+      const priceLow = parseFloat(row.price_low || "0");
+      const priceHigh = parseFloat(row.price_high || "0");
+      const price = parseFloat(row.price || "0") || (priceLow + priceHigh) / 2;
+
+      if (priceLow === 0 && priceHigh === 0 && price === 0) {
+        skipped.push({ row: i + 1, reason: "No price data (need price, price_low, or price_high)" });
         continue;
       }
+
+      const validTiers = ["budget", "mid", "premium"];
+      const priceTier = validTiers.includes(row.price_tier) ? row.price_tier : "mid";
 
       const { error: upsertError } = await supabase.from("products").upsert(
         {
@@ -134,9 +140,15 @@ Deno.serve(async (req: Request) => {
           brand: row.brand || "",
           name: row.name,
           category: row.category,
-          price,
+          price: price || 0,
+          price_low: priceLow || price * 0.9,
+          price_high: priceHigh || price * 1.1,
+          price_tier: priceTier,
           currency: row.currency || "EUR",
           image_url: row.image_url || "",
+          catalog_image_path: row.catalog_image_path || "",
+          render_image_path: row.render_image_path || "",
+          description: row.description || "",
           origin: row.origin || "",
           is_active: true,
           display_order: parseInt(row.display_order || "0") || 0,

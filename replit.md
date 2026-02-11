@@ -53,6 +53,14 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
 - Do NOT use `typeof process` guards around `process.env.*` — Vite replaces these tokens at build time
 
 ## Recent Changes
+- 2026-02-11: Product system upgrade:
+  - Added price_low, price_high, price_tier, catalog_image_path, render_image_path, description columns to products table
+  - Migration file: supabase/migrations/20260211_upgrade_products.sql (user must run in Supabase SQL editor)
+  - Product images now served from Supabase Storage bucket 'product-images' (user creates + uploads)
+  - productService.ts: getProductCatalogImageUrl(), getProductRenderImageUrl(), fetchRenderImagesForProducts() with fallback to legacy image_url
+  - CategoryProductSelector: shows price tier badges (Budget/Midden/Premium) + price ranges
+  - Cost estimation: uses price_low/price_high ranges instead of single price
+  - CSV import edge function: supports new columns (price_low, price_high, price_tier, catalog_image_path, render_image_path, description)
 - 2026-02-10: Single-shot rendering pipeline:
   - Removed two-step pipeline (generateEmptySpace + generateRenovationRender)
   - Added single-shot generateRenovation() — original photo goes directly to gemini-3-pro-image-preview with Thinking mode + 2K output

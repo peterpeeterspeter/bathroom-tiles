@@ -88,6 +88,18 @@ export interface StyleProfile {
   expertAnalysis?: ExpertAnalysis;
 }
 
+export type PriceTier = 'budget' | 'mid' | 'premium';
+
+export const PRICE_TIER_LABELS: Record<PriceTier, string> = {
+  budget: 'Budget', mid: 'Midden', premium: 'Premium'
+};
+
+export const PRICE_TIER_COLORS: Record<PriceTier, string> = {
+  budget: 'bg-green-100 text-green-700',
+  mid: 'bg-blue-100 text-blue-700',
+  premium: 'bg-amber-100 text-amber-700'
+};
+
 export interface DatabaseProduct {
   id: string;
   brand: string;
@@ -100,6 +112,12 @@ export interface DatabaseProduct {
   is_active: boolean;
   display_order: number;
   tags: string[];
+  price_low?: number;
+  price_high?: number;
+  price_tier?: PriceTier;
+  catalog_image_path?: string;
+  render_image_path?: string;
+  description?: string;
 }
 
 export interface StylePreset {
