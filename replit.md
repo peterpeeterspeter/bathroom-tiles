@@ -20,8 +20,12 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
    - `analyzeBathroomInput()` runs first (gemini-3-pro-preview, temperature 0.2) — returns enhanced spatial data: CameraSpec (position/wall/lens), WallSpec[] with ShellAnchor coordinates (tl/tr/br/bl as x/y%), fixture conditions + confidence, occlusions, plumbing wall
    - Product images fetched as base64
    - `generateRenovation()` + `calculateRenovationCost()` run in parallel
-   - Render receives full ProjectSpec as SPATIAL CONTEXT preamble + anchor coordinates injected into STEP 1 for model to verify reasoning against hard coordinates
-   - Occlusion map used as negative constraint in ABSOLUTE CONSTRAINTS to prevent hallucination in non-visible areas
+   - Render prompt uses FULL analysis data in structured blocks:
+     - STEP 1: CAMERA (position/wall/lens), ROOM (dims/ceiling/layout), WALLS (visible/anchors/plumbing/features), CURRENT FIXTURES (type/wall/position/condition), LIGHT (direction/source), OCCLUSIONS (forbidden zones)
+     - STEP 2: plumbing wall reasoning, fixture condition notes, demolition assessment, room dimensions for layout, door/window positions for flow/privacy
+     - STEP 4: light direction from analysis
+     - ABSOLUTE CONSTRAINTS: occlusion negative constraint
+   - Every analysis field mapped to render prompt (camera, dims, walls, fixtures, light, plumbing, occlusions, demolition)
    - All constraint logic in English; Dutch only for product category names
    - Single-shot render: original photo + inspiration images + product reference images → gemini-3-pro-image-preview with built-in thinking (proxy default HIGH) + 2K output
    - Cost estimate (temperature 0.1) is scope-aware: kept items have zero cost, fixture condition and plumbing wall distance affect labor costs
@@ -34,7 +38,7 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
 | Function | Model | Temperature | Thinking | Notes |
 |---|---|---|---|---|
 | analyzeBathroomInput | gemini-3-pro-preview | 0.2 | N/A | Enhanced schema: CameraSpec, WallSpec[] with ShellAnchor[], fixture confidence, occlusions |
-| generateRenovation | gemini-3-pro-image-preview | default | built-in (proxy) | Single-shot render, anchor coords in STEP 1, occlusion negative constraints, English constraint logic, 2K output, proxy-only (no direct API fallback) |
+| generateRenovation | gemini-3-pro-image-preview | default | built-in (proxy) | Single-shot render, full analysis in STEP 1 (camera/room/walls/fixtures/light/occlusions) + STEP 2 (plumbing/conditions/demolition), English constraint logic, 2K output, proxy-only (no direct API fallback) |
 | calculateRenovationCost | gemini-3-pro-preview | 0.1 | N/A | Plumbing wall awareness, fixture condition affects labor |
 
 ## Directory Structure
@@ -81,11 +85,14 @@ Run `supabase/migrations/20260211_create_projects_and_storage.sql` in Supabase S
 Deploy `supabase/functions/send-lead-notification` and set `RESEND_API_KEY` in Supabase secrets
 
 ## Recent Changes
-- 2026-02-11: Render config cleanup:
+- 2026-02-11: Full analysis→render pipeline:
+  - STEP 1 restructured: dedicated CAMERA, ROOM, WALLS, CURRENT FIXTURES, LIGHT, OCCLUSIONS blocks from analysis
+  - STEP 2 restructured: plumbing wall reasoning, fixture condition notes, demolition assessment, room dims + door/window positions for layout logic
+  - STEP 4: light direction from analysis injected
+  - Every analysis field now mapped to a specific render prompt section
   - Reverted 2x2 grid back to single-image render with BeforeAfterSlider
   - Removed thinkingConfig entirely (proxy has built-in thinking at HIGH by default)
   - imageSize: '2K', proxy-only retry (proxyOnly=true), 2 retries at 8s intervals
-  - Kept 4 enhancements: anchor coords in STEP 1, occlusion map in ABSOLUTE CONSTRAINTS, enhanced analysis schema (ShellAnchor), English constraint logic
 - 2026-02-11: B2B contractor marketing page (`/voor-vakmensen`):
   - 12-section marketing page: Hero, Problem comparison, How it works, What's in a lead, Lead score explained, Pricing tiers, ROI calculator (interactive), Testimonials, Before/After showcase, FAQ, Final CTA, Sign-up form
   - Route added in App.tsx, nav link in Header.tsx, footer link in Footer.tsx

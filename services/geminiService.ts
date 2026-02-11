@@ -556,82 +556,140 @@ export const generateRenovation = async (
   }
 
   const wallLabels = ['North', 'East', 'South', 'West'];
-
-  let anchorLines = '';
   let occlusionLines: string[] = [];
-  let spatialContext = '';
+
+  let cameraBlock = '';
+  let roomBlock = '';
+  let wallsBlock = '';
+  let fixturesBlock = '';
+  let lightBlock = '';
+  let occlusionBlock = '';
+  let step2PlumbingContext = '';
+  let step2ConditionNotes = '';
+  let step2DemolitionNotes = '';
+  let step2RoomContext = '';
+  let step2DoorWindowContext = '';
 
   if (spec) {
-    anchorLines = (spec.walls || [])
-      .filter(w => w.visible && w.anchors && w.anchors.length > 0)
-      .flatMap(w => w.anchors.map(a =>
-        `- ${a.elementType} on ${wallLabels[w.wallIndex] || `Wall ${w.wallIndex}`} wall: `
-        + `corners [${a.tl.x}%,${a.tl.y}%] → [${a.br.x}%,${a.br.y}%]`
-        + (a.doorHingeSide && a.doorHingeSide !== 'UNKNOWN' ? `, hinge ${a.doorHingeSide}` : '')
-        + (a.confidence < 0.6 ? ' (low confidence — verify visually)' : '')
-      )).join('\n');
-
     occlusionLines = spec.occlusions || [];
 
-    const wallSummary = (spec.walls || [])
-      .map(w => {
-        const wParts = [wallLabels[w.wallIndex] || `Wall ${w.wallIndex}`];
-        if (!w.visible) { wParts.push('NOT VISIBLE'); return wParts.join(': '); }
-        const anchorTypes = (w.anchors || []).map(a => a.elementType);
-        if (anchorTypes.includes('WINDOW')) wParts.push('WINDOW');
-        if (anchorTypes.includes('DOOR')) wParts.push('DOOR');
-        if (anchorTypes.includes('NICHE')) wParts.push('NICHE');
-        if (w.hasPlumbing) wParts.push('plumbing');
-        if (w.features) wParts.push(w.features);
-        return wParts.join(': ');
-      }).join(' | ');
-
-    const fixtureSummary = spec.existingFixtures
-      .map(f => `${f.type} at X:${f.positionX ?? '?'}% Y:${f.positionY ?? '?'}% (wall ${f.wallIndex ?? '?'}, ${f.condition ?? 'unknown'}${f.confidence !== undefined ? `, conf:${f.confidence}` : ''})`)
-      .join('; ');
-
-    const cameraDesc = spec.camera
-      ? `${spec.camera.position} from ${wallLabels[spec.camera.facingFromWall] || `wall ${spec.camera.facingFromWall}`}, ${spec.camera.lensFeel} lens`
+    const cameraPos = spec.camera
+      ? spec.camera.position.toLowerCase().replace('_', '-')
+      : 'unknown';
+    const cameraWall = spec.camera
+      ? wallLabels[spec.camera.facingFromWall] || `wall ${spec.camera.facingFromWall}`
+      : 'unknown';
+    const cameraLens = spec.camera
+      ? spec.camera.lensFeel.toLowerCase().replace('_', '-')
       : 'unknown';
 
-    spatialContext = `
-SPATIAL CONTEXT (from architectural analysis of this photo):
-- Room: ${spec.estimatedWidthMeters}m x ${spec.estimatedLengthMeters}m, ceiling ${spec.ceilingHeightMeters}m
-- Layout: ${spec.layoutShape}
-- Camera: ${cameraDesc}
-- Primary light: ${spec.primaryLightDirection ?? 'unknown'} direction
-- Plumbing wall: ${wallLabels[spec.plumbingWall ?? 0] || '?'}
-- Walls: ${wallSummary || 'not analyzed'}
-- Existing fixtures: ${fixtureSummary || 'not analyzed'}
-${occlusionLines.length > 0 ? `- Occlusions: ${occlusionLines.join('; ')}` : ''}
+    cameraBlock = `
+CAMERA:
+- Position: ${cameraPos}, facing from the ${cameraWall} wall
+- Lens: ${cameraLens}
+- This camera angle, height, and perspective must be IDENTICAL in the output`;
 
-Use this as a GUIDE — verify against the actual photo. The photo is the ground truth.
-`;
+    roomBlock = `
+ROOM:
+- Dimensions: approximately ${spec.estimatedWidthMeters}m wide × ${spec.estimatedLengthMeters}m long
+- Ceiling height: approximately ${spec.ceilingHeightMeters}m
+- Layout: ${spec.layoutShape.toLowerCase()}`;
+
+    const wallLines = (spec.walls || []).map(w => {
+      const label = wallLabels[w.wallIndex] || `Wall ${w.wallIndex}`;
+      if (!w.visible) {
+        const plumbingNote = w.hasPlumbing ? ' Has plumbing connections.' : '';
+        return `- ${label} wall: NOT FULLY VISIBLE (behind camera/occluded).${plumbingNote}`;
+      }
+      const parts: string[] = [`- ${label} wall: visible.`];
+      if (w.hasPlumbing) parts.push('Has plumbing connections.');
+      if (w.features) parts.push(w.features + '.');
+      for (const a of (w.anchors || [])) {
+        const anchorDesc = `${a.elementType} at corners [${a.tl.x}%,${a.tl.y}%] → [${a.br.x}%,${a.br.y}%]`;
+        const hingePart = a.doorHingeSide && a.doorHingeSide !== 'UNKNOWN' ? `, hinge ${a.doorHingeSide}` : '';
+        const swingPart = a.doorSwing && a.doorSwing !== 'UNKNOWN' ? `, swings ${a.doorSwing}` : '';
+        const confPart = a.confidence < 0.6 ? ' (low confidence — verify visually)' : ` (confidence ${a.confidence})`;
+        parts.push(`${anchorDesc}${hingePart}${swingPart}${confPart}`);
+      }
+      return parts.join(' ');
+    });
+    wallsBlock = wallLines.length > 0 ? `\nWALLS:\n${wallLines.join('\n')}` : '';
+
+    const fixtureLines = spec.existingFixtures.map(f => {
+      const wallName = f.wallIndex !== undefined ? `${wallLabels[f.wallIndex] || `Wall ${f.wallIndex}`} wall` : 'unknown wall';
+      return `- ${f.type} (${f.description}): ${wallName}, position X:${f.positionX ?? '?'}% Y:${f.positionY ?? '?'}%, condition ${f.condition ?? 'UNKNOWN'}`;
+    });
+    fixturesBlock = fixtureLines.length > 0 ? `\nCURRENT FIXTURES:\n${fixtureLines.join('\n')}` : '';
+
+    const lightDir = spec.primaryLightDirection ?? 'unknown';
+    const windowWalls = (spec.walls || [])
+      .filter(w => w.visible && (w.anchors || []).some(a => a.elementType === 'WINDOW'))
+      .map(w => `${wallLabels[w.wallIndex]} wall window`);
+    lightBlock = `\nLIGHT:\n- Primary natural light enters from the ${lightDir}${windowWalls.length > 0 ? ` (${windowWalls.join(', ')})` : ''}`;
+
+    if (occlusionLines.length > 0) {
+      occlusionBlock = `\nOCCLUSIONS:\n${occlusionLines.map(o => `- ${o}`).join('\n')}\nDo NOT invent or render elements in these occluded zones.`;
+    }
+
+    const plumbingWallName = wallLabels[spec.plumbingWall ?? 0] || 'unknown';
+    const plumbingFixtures = spec.existingFixtures
+      .filter(f => f.wallIndex === spec.plumbingWall)
+      .map(f => f.type.toLowerCase())
+      .join(' and ');
+    step2PlumbingContext = `The plumbing connects on the ${plumbingWallName} wall${plumbingFixtures ? ` (where the current ${plumbingFixtures} ${plumbingFixtures.includes(' and ') ? 'are' : 'is'} mounted)` : ''}. Keep new water-connected fixtures near this wall to minimize plumbing relocation.`;
+
+    const conditionNotes = spec.existingFixtures
+      .filter(f => f.condition === 'WORN' || f.condition === 'DAMAGED')
+      .map(f => `The ${f.type.toLowerCase()} is ${f.condition}`);
+    if (conditionNotes.length > 0) {
+      step2ConditionNotes = conditionNotes.join('. ') + '.';
+    }
+
+    if (spec.constraints && spec.constraints.length > 0) {
+      step2DemolitionNotes = `\nDemolition assessment: ${spec.constraints.join('. ')}`;
+    }
+
+    step2RoomContext = `Based on the room shape (${spec.estimatedWidthMeters}m × ${spec.estimatedLengthMeters}m ${spec.layoutShape.toLowerCase()})`;
+
+    const doorWalls = (spec.walls || [])
+      .filter(w => (w.anchors || []).some(a => a.elementType === 'DOOR'))
+      .map(w => wallLabels[w.wallIndex]);
+    const windowWallNames = (spec.walls || [])
+      .filter(w => (w.anchors || []).some(a => a.elementType === 'WINDOW'))
+      .map(w => wallLabels[w.wallIndex]);
+    if (doorWalls.length > 0 || windowWallNames.length > 0) {
+      const doorPart = doorWalls.length > 0 ? `door (${doorWalls.join(', ')} wall)` : '';
+      const windowPart = windowWallNames.length > 0 ? `window (${windowWallNames.join(', ')} wall)` : '';
+      step2DoorWindowContext = ` and where the ${[doorPart, windowPart].filter(Boolean).join(' and ')} ${doorWalls.length + windowWallNames.length > 1 ? 'are' : 'is'}`;
+    }
   }
 
   const prompt = `
 Transform the bathroom in the photo into a fully renovated space.
 You are a senior interior architect with complete creative freedom over the layout and design.
-${spatialContext}
-STEP 1 — STUDY THE EXISTING ROOM:
-Analyze image 1 carefully. The architectural analysis detected these structural elements — verify them against the photo:
-${anchorLines || '(no anchor data available — rely on visual analysis)'}
-${occlusionLines.length > 0 ? `\nNot visible in this photo: ${occlusionLines.join(', ')}` : ''}
 
-Confirm for yourself:
-- The exact camera angle, height, and perspective
-- The vanishing point and how walls recede
-- Where the window(s) are and how light enters
-- Where the door is
-- The room proportions (which walls are longer, which shorter)
-- Any architectural features (beams, niches, alcoves, sloped ceiling)
-ALL of these remain IDENTICAL in the final image.
+STEP 1 — STUDY THE EXISTING ROOM:
+Analyze image 1 carefully. An architectural analysis has already been performed — use it as your spatial reference:
+${cameraBlock}
+${roomBlock}
+${wallsBlock}
+${fixturesBlock}
+${lightBlock}
+${occlusionBlock}
+
+Verify all of the above against the actual photo. The photo is the ground truth — if the analysis conflicts with what you see, trust the photo.
+
+ALL structural elements (walls, window, door, ceiling) remain IDENTICAL in the final image.
 
 STEP 2 — DESIGN THE LAYOUT:
-Create the optimal bathroom layout for this space. Place fixtures where they make the most sense based on:
-- Plumbing logic: toilets and showers need drainage — keep them near the wall where existing plumbing connects
+${step2PlumbingContext}
+
+${step2ConditionNotes}${step2DemolitionNotes}
+
+${step2RoomContext}${step2DoorWindowContext}, determine the most logical position for each fixture:
+- Plumbing logic: keep toilet and vanity near the plumbing wall
 - Flow: minimum 60cm free passage in front of every fixture
-- Natural light: place the vanity mirror where it catches daylight if possible
+- Natural light: place the vanity mirror to catch daylight if possible
 - Privacy: toilet not directly visible from the door
 - The customer's style preference
 You may completely change the interior layout from the original photo. Move the toilet, swap sides, anything — as long as it makes spatial and plumbing sense.
@@ -649,7 +707,7 @@ Design style: ${presetDesc}
 Qualities: ${topTags}
 
 Light and mood:
-- Natural daylight from existing window(s), same direction as the original photo
+- Natural daylight from existing window(s), entering from the ${spec?.primaryLightDirection ?? 'same direction as in the original photo'}
 - Warm color temperature (3000K)
 - Soft realistic shadows from all fixtures
 - No hard spots or overexposure
