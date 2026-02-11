@@ -66,6 +66,7 @@ function calculateLeadScore(payload: LeadPayload): number {
 }
 
 export async function submitLead(payload: LeadPayload): Promise<{ success: boolean; leadScore: number }> {
+  console.log('[submitLead] Function called');
   const styleName = payload.styleProfile?.presetName || payload.styleProfile?.summary?.slice(0, 50) || '';
   const leadScore = calculateLeadScore(payload);
 
@@ -98,7 +99,9 @@ export async function submitLead(payload: LeadPayload): Promise<{ success: boole
   if (payload.utmMedium) row.utm_medium = payload.utmMedium;
   if (payload.utmCampaign) row.utm_campaign = payload.utmCampaign;
 
+  console.log('[submitLead] Inserting row with keys:', Object.keys(row));
   let result = await supabase.from('leads').insert(row);
+  console.log('[submitLead] Insert result:', result.status, result.error?.message || 'OK');
 
   if (result.error && result.error.message.includes('column')) {
     console.warn('Lead insert failed with column error, retrying with safe columns:', result.error.message);
