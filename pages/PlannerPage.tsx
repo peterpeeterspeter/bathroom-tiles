@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { RefreshCw, AlertCircle, Image as ImageIcon, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { BeforeAfterSlider } from '../components/BeforeAfterSlider';
+import { RenderGrid } from '../components/RenderGrid';
 import { analyzeBathroomInput, calculateRenovationCost, generateRenovation, fetchProductImagesAsBase64 } from '../services/geminiService';
 import { ProjectSpec, Estimate, StyleProfile, StylePreset, BudgetTier, MaterialConfig, DatabaseProduct, ProductAction } from '../types';
 import { Logo } from '../components/Logo';
@@ -572,10 +572,10 @@ export default function PlannerPage() {
                   <div className="max-w-3xl mx-auto space-y-6 md:space-y-8">
                     <div className="flex items-center gap-3 justify-center">
                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary"><ImageIcon size={18} /></div>
-                      <h3 className="font-bold uppercase tracking-widest text-sm text-neutral-500">Interactieve Visualisatie</h3>
+                      <h3 className="font-bold uppercase tracking-widest text-sm text-neutral-500">Renovatie Varianten</h3>
                     </div>
                     <div className="relative">
-                      <BeforeAfterSlider before={imagePreview!} after={renderUrl} />
+                      <RenderGrid renderUrl={renderUrl} beforeUrl={imagePreview!} />
                       <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-primary/20 rounded-full blur-[40px] -z-10" />
                     </div>
                     <div className="bg-surface p-6 md:p-8 rounded-2xl border border-neutral-300/30">

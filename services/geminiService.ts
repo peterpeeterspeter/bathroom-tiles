@@ -611,6 +611,28 @@ Use this as a GUIDE — verify against the actual photo. The photo is the ground
   const prompt = `
 Transform the bathroom in the photo into a fully renovated space.
 You are a senior interior architect with complete creative freedom over the layout and design.
+
+OUTPUT FORMAT:
+Generate a single image containing a 2x2 grid of 4 DIFFERENT renovation variations.
+Each quadrant shows one complete renovation of the same room:
+- Top-left: Variation A
+- Top-right: Variation B
+- Bottom-left: Variation C
+- Bottom-right: Variation D
+
+ALL 4 variations must:
+- Use the SAME camera angle, perspective, and room geometry from image 1
+- Use the SAME products from the reference photos
+- Respect ALL the same structural constraints below
+
+Each variation DIFFERS in:
+- Fixture arrangement within the same plumbing zone (not drastically relocated)
+- Tile laying pattern or grout emphasis
+- Lighting mood (e.g., brighter morning vs softer evening)
+- Spatial composition (how the eye flows through the scene)
+
+Separate quadrants with a thin 4px white border.
+Each quadrant must be a COMPLETE, fully rendered bathroom — not a crop or partial view.
 ${spatialContext}
 STEP 1 — STUDY THE EXISTING ROOM:
 Analyze image 1 carefully. The architectural analysis detected these structural elements — verify them against the photo:
@@ -670,7 +692,9 @@ ABSOLUTE CONSTRAINTS (non-negotiable):
 - KEPT items match their appearance in the original photo
 - REPLACED items match their reference product photos exactly
 ${occlusionLines.length > 0 ? `- Occluded zones (${occlusionLines.join('; ')}): do NOT invent or render elements in areas not visible in image 1` : ''}
-- Professional interior magazine photography quality
+- All 4 grid quadrants share identical room geometry, camera angle, window/door positions, and product selections
+- Each quadrant is a complete, unobstructed view — no overlaps, labels, or text on the image
+- The final image should contain 4 professional interior photographs arranged in a 2x2 grid. Each quadrant should look like it belongs in a high-end design magazine — sharp, well-composed, inviting, and real. All 4 must show the SAME room from the SAME angle with the SAME products, but with meaningfully different layout and atmosphere choices.
 `;
 
   parts.push({ text: prompt });
@@ -684,11 +708,10 @@ ${occlusionLines.length > 0 ? `- Occluded zones (${occlusionLines.join('; ')}): 
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
           thinkingConfig: {
-            thinkingBudget: 8192,
-            includeThoughts: false,
+            thinkingLevel: 'HIGH' as any,
           },
           imageConfig: {
-            imageSize: '2K',
+            imageSize: '4K',
           },
         },
       });
