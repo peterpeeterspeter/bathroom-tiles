@@ -1,0 +1,165 @@
+Approach A: Prompt for a 2x2 grid in one image (recommended)
+Ask the model to render a single 4K image containing 4 variations in a 2x2 collage. This is a documented capability — Gemini 3 Pro Image can compose multi-panel outputs from a single prompt.
+
+How it works:
+
+Add to the render prompt: "Generate 4 different renovation variations arranged in a 2x2 grid on a single image. Each quadrant shows a different interpretation..."
+Output at 4K (4096x4096) → each quadrant is effectively ~2K (2048x2048)
+1 API call — same latency as current, just larger output
+Cost: ~$0.24/render (4K) vs ~$0.134/render (2K current) — 80% increase, but you get 4 variations for the price of ~1.8x
+
+Risk: The model might not maintain consistent structural fidelity across all 4 quadrants. Each variation could drift differently. The anchor/constraint adherence that works for a single focused render may degrade when split across 4.
+
+Approach B: 4 separate API calls
+Call generateRenovation() 4 times (can be parallel via Promise.all).
+
+Cost: ~$0.54 (4x $0.134 at 2K) or ~$0.96 (4x $0.24 at 4K)
+Latency: Same as 1 call if parallelized (~10-15s)
+Quality: Each render gets full attention — better fidelity per image
+
+Approach A is better because:
+1 API call vs 4 (rate limits: 100 RPD cap exists)
+Cost: $0.24 vs $0.54-0.96
+The 4K output with 4 quadrants gives each variation ~2K resolution, which is already the current target
+UI Changes Required
+Currently the BeforeAfterSlider is used in 2 places:
+
+PlannerPage.tsx:266 — shown before lead capture form (pre-submission)
+ResultDisplay.tsx:74 — shown after lead submission
+Both need to be replaced with a 4-render grid + click-to-enlarge lightbox.
+
+What to build:
+┌──────────────┬──────────────┐
+│              │              │
+│  Variant 1   │  Variant 2   │
+│              │              │
+├──────────────┼──────────────┤
+│              │              │
+│  Variant 3   │  Variant 4   │
+│              │              │
+└──────────────┴──────────────┘
+        (click any to enlarge)
+
+Components affected:
+
+BeforeAfterSlider.tsx — remove or keep as optional (before photo is still useful somewhere)
+ResultDisplay.tsx — replace slider with render grid + lightbox
+PlannerPage.tsx — update pre-submission view to show grid instead of slider
+State: renderUrl: string → renderUrls: string[] (or single 4K grid image that gets cropped)
+Two sub-approaches for the grid:
+Option 1: Single 4K image, client-side crop — Model outputs one 4096x4096 image with 4 quadrants. Client crops into 4 thumbnails using canvas. Click opens the relevant quadrant at full size.
+
+Option 2: Single 4K image, displayed as-is — Show the full grid image. Click opens a full-screen lightbox zoomed to the clicked quadrant.
+
+Option 2 is simpler — no canvas cropping needed. The lightbox just zooms/pans to the clicked area.
+
+Impact Summary
+Aspect	Current	Proposed
+Resolution	2K	4K
+Variations	1	4 (in grid)
+API calls	1	1
+Cost per render	$0.134	$0.24 (+80%)
+Latency	~10-15s	~12-18s (4K slightly slower)
+UI	Before/after slider	2x2 grid + click-to-enlarge lightbox
+BeforeAfterSlider	Used	Removed from main results
+State change	renderUrl: string	renderUrl: string (single 4K grid image)
+The main risk is fidelity per quadrant. When the model splits attention across 4 variations, each one may be less precise than a single focused render. This is worth testing before committing to the approach. If quadrant quality is too low, fall back to Approach B (4 parallel calls).
+
+Want me to add this to the implementation brief?
+
+show the exact changes in the prompt for the 2 x2 appraoch
+
+
+
+Let me read the current render prompt from the brief to show the exact diff.
+
+
+Read implementation brief for bathroom renovation prompt
+
+Now let me also read the user's improved prompt (the one they shared earlier) since that's the actual base we're modifying.
+
+Here are the exact prompt changes for the 2x2 approach. I'll show what changes against the user's STEP 1-5 prompt:
+
+Opening line — CHANGED
+Current:
+
+Transform the bathroom in image 1 into a fully renovated
+bathroom. The reference photos (images 2-7) show the EXACT
+products to use — match their color, shape, material, and
+finish precisely.
+
+New:
+
+Transform the bathroom in image 1 into a fully renovated
+bathroom. The reference photos (images 2-7) show the EXACT
+products to use — match their color, shape, material, and
+finish precisely.
+
+OUTPUT FORMAT:
+Generate a single image containing a 2x2 grid of 4 DIFFERENT
+renovation variations. Each quadrant shows one complete
+renovation of the same room:
+- Top-left: Variation A
+- Top-right: Variation B
+- Bottom-left: Variation C
+- Bottom-right: Variation D
+
+ALL 4 variations must:
+- Use the SAME camera angle, perspective, and room geometry
+  from image 1
+- Use the SAME products from the reference photos (images 2-7)
+- Respect ALL the same structural constraints
+
+Each variation DIFFERS in:
+- Interior layout (where fixtures are positioned within the room)
+- Tile laying pattern or grout emphasis
+- Lighting mood (e.g., brighter morning vs softer evening)
+- Spatial composition (how the eye flows through the scene)
+
+Separate quadrants with a thin 4px white border.
+Each quadrant must be a COMPLETE, fully rendered bathroom — not
+a crop or partial view.
+
+STEP 1 through STEP 4 — UNCHANGED
+All of STEP 1 (STUDY THE EXISTING ROOM), STEP 2 (PLAN THE LAYOUT), STEP 3 (APPLY MATERIALS), and STEP 4 (PLACE EACH FIXTURE) stay exactly as-is. The model applies these steps to each of the 4 variations.
+
+STEP 5 — SMALL ADDITION
+Current ending of STEP 5:
+
+The final image should look like a professional interior
+photograph for a high-end design magazine — sharp,
+well-composed, inviting, and real.
+
+New:
+
+The final image should contain 4 professional interior
+photographs arranged in a 2x2 grid. Each quadrant should
+look like it belongs in a high-end design magazine — sharp,
+well-composed, inviting, and real. All 4 must show the
+SAME room from the SAME angle with the SAME products,
+but with meaningfully different layout and atmosphere choices.
+
+ABSOLUTE CONSTRAINTS — ADD ONE LINE
+Add at the end of the existing constraints:
+
+- All 4 grid quadrants share identical room geometry,
+  camera angle, window/door positions, and product selections
+- Each quadrant is a complete, unobstructed view — no overlaps,
+  labels, or text on the image
+
+Config change:
+// BEFORE:
+config: {
+  responseModalities: ['TEXT', 'IMAGE'],
+  thinkingConfig: { thinkingLevel: "high" },
+  imageConfig: { imageSize: '2K' },
+}
+
+// AFTER:
+config: {
+  responseModalities: ['TEXT', 'IMAGE'],
+  thinkingConfig: { thinkingLevel: "high" },
+  imageConfig: { imageSize: '4K' },
+}
+
+That's it — the structural constraint logic (STEP 1-4, ABSOLUTE CONSTRAINTS, anchor injection, occlusion map) all stays identical. The only additions are the OUTPUT FORMAT block at the top, the closing line tweak, and imageSize: '4K'.
