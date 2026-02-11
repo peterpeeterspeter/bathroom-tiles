@@ -1,0 +1,281 @@
+Context
+The user wants to improve the fidelity of the three Gemini AI prompts (analyzeBathroomInput, generateRenovationRender, calculateRenovationCost) in services/geminiService.ts. Research identified 6 critical gaps in the current implementation and 5 API features that aren't being used.
+Note: REPLIT_IMPLEMENTATION_BRIEF.md already covers the single-shot render rewrite (removing generateEmptySpace, sending product images as base64, removing "8K Unreal Engine" terms). This plan focuses on additional fidelity improvements beyond that brief — specifically around the analysis prompt, API configuration, and data flow between prompts.
+
+Critical Gaps Found
+#GapImpactLocation1Analysis detects ALL fixture positions but only sink coords reach the renderRender has no knowledge of toilet, shower, bathtub, window, door positionsgeminiService.ts:311-3122Product images sent as text URLs (Gemini can't fetch them)Model ignores product references entirelygeminiService.ts:314-3163"8K, Unreal Engine 5, Raytraced" — gaming terms meaningless for diffusion modelsWasted prompt tokens, no quality benefitgeminiService.ts:3444No temperature/topP configured on any callUsing Gemini defaults (likely temp=1.0) — too random for spatial tasksAll 4 functions5No thinkingConfig set for image generationMissing explicit HIGH thinking for complex spatial reasoninggeminiService.ts:349-3526Analysis schema too sparse — no wall features, camera angle, lighting direction, plumbing wallRender model must re-derive all spatial context from scratchgeminiService.ts:79-108
+Gaps #2 and #3 are already addressed by REPLIT_IMPLEMENTATION_BRIEF.md. This plan addresses gaps #1, #4, #5, #6 plus additional improvements.
+
+Changes
+1. Enhanced Analysis Schema (analyzeBathroomInput)
+File: services/geminiService.ts — analyzeBathroomInput() (lines 50-140)
+Expand the response schema to capture spatial context that the render and cost prompts need:
+typescriptresponseSchema: {
+  type: Type.OBJECT,
+  properties: {
+    calibration_object: { type: Type.STRING },
+    estimated_dimensions: {
+      type: Type.OBJECT,
+      properties: {
+        width_m: { type: Type.NUMBER },
+        length_m: { type: Type.NUMBER },
+        ceiling_height_m: { type: Type.NUMBER }
+      },
+      required: ["width_m", "length_m"]
+    },
+    layout_type: { type: Type.STRING, enum: ["RECTANGLE", "L_SHAPE", "SQUARE", "SLOPED_CEILING"] },
+
+    // NEW: Camera perspective
+    camera_position: {
+      type: Type.STRING,
+      enum: ["EYE_LEVEL", "ELEVATED", "CORNER", "LOW_ANGLE"],
+      description: "Approximate camera viewpoint of the photo"
+    },
+    camera_wall: {
+      type: Type.NUMBER,
+      description: "Which wall the camera is facing FROM (0=N, 1=E, 2=S, 3=W)"
+    },
+
+    // NEW: Wall-by-wall features
+    walls: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          wall_index: { type: Type.NUMBER, description: "0=N, 1=E, 2=S, 3=W" },
+          has_window: { type: Type.BOOLEAN },
+          has_door: { type: Type.BOOLEAN },
+          has_plumbing: { type: Type.BOOLEAN, description: "Visible pipes or fixture mounting points" },
+          features: { type: Type.STRING, description: "Beam, niche, sloped ceiling, etc." }
+        },
+        required: ["wall_index"]
+      }
+    },
+
+    // NEW: Lighting
+    primary_light_direction: {
+      type: Type.STRING,
+      enum: ["LEFT", "RIGHT", "FRONT", "BACK", "OVERHEAD", "MIXED"],
+      description: "Dominant natural light direction relative to camera"
+    },
+
+    // ENHANCED: Fixtures with wallIndex and condition
+    fixtures: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          item: { type: Type.STRING },
+          type: { type: Type.STRING, enum: Object.values(FixtureType) },
+          position_x_percent: { type: Type.NUMBER },
+          position_y_percent: { type: Type.NUMBER },
+          wall_index: { type: Type.NUMBER, description: "Which wall (0-3)" },
+          condition: { type: Type.STRING, enum: ["GOOD", "WORN", "DAMAGED", "UNKNOWN"] }
+        }
+      }
+    },
+
+    // NEW: Plumbing wall identification
+    plumbing_wall: {
+      type: Type.NUMBER,
+      description: "Primary wall with water supply/drainage (0=N, 1=E, 2=S, 3=W)"
+    },
+
+    demolition_notes: { type: Type.STRING }
+  },
+  required: ["estimated_dimensions", "fixtures", "walls"]
+}
+```
+
+**Update system instruction** to match the expanded schema:
+```
+TASK:
+1. ANCHOR REFERENCE: Identify a standard object (Door ~210cm, Toilet ~40cm, Standard tile 30x30/60x60) to calibrate scale.
+2. GEOMETRY: Construct a wireframe model. Identify the camera viewpoint wall.
+3. WALLS: For each wall (N=0, E=1, S=2, W=3), note windows, doors, and plumbing indicators.
+4. LIGHTING: Determine the primary natural light direction relative to camera.
+5. INVENTORY: Detect every fixture — type, which wall it's on, approximate position, and condition.
+6. PLUMBING: Identify the wall with the most plumbing connections.
+Add generation config:
+typescriptconfig: {
+  systemInstruction,
+  temperature: 0.2,  // Low for analytical precision
+  responseMimeType: "application/json",
+  responseSchema: { ... }
+}
+2. Update types.ts — Extend ProjectSpec and Fixture
+File: types.ts
+Add new fields to existing interfaces:
+typescriptexport interface Fixture {
+  type: FixtureType;
+  description: string;
+  fixed: boolean;
+  positionX?: number;
+  positionY?: number;
+  wallIndex?: number;
+  condition?: 'GOOD' | 'WORN' | 'DAMAGED' | 'UNKNOWN'; // NEW
+}
+
+export interface WallFeature {              // NEW
+  wallIndex: number;
+  hasWindow: boolean;
+  hasDoor: boolean;
+  hasPlumbing: boolean;
+  features?: string;
+}
+
+export interface ProjectSpec {
+  roomType: string;
+  layoutShape: 'RECTANGLE' | 'L_SHAPE' | 'SQUARE';
+  estimatedWidthMeters: number;
+  estimatedLengthMeters: number;
+  ceilingHeightMeters: number;
+  totalAreaM2: number;
+  existingFixtures: Fixture[];
+  constraints: string[];
+  // NEW fields:
+  cameraPosition?: string;
+  cameraWall?: number;
+  walls?: WallFeature[];
+  primaryLightDirection?: string;
+  plumbingWall?: number;
+}
+```
+
+### 3. Pass Full Spatial Context to Render Prompt
+
+**File:** `services/geminiService.ts` — `generateRenovation()` (from IMPLEMENTATION_BRIEF)
+
+The IMPLEMENTATION_BRIEF's `generateRenovation` prompt tells the model to "STUDY THE SHELL" from the photo. This is good — but we can **prime it with the analysis results** as a structured hint so it doesn't have to re-derive everything:
+
+Add a `SPATIAL CONTEXT` section before `STEP 1`:
+```
+SPATIAL CONTEXT (from architectural analysis of this photo):
+- Room: ${spec.estimatedWidthMeters}m x ${spec.estimatedLengthMeters}m, ceiling ${spec.ceilingHeightMeters}m
+- Layout: ${spec.layoutShape}
+- Camera facing from wall ${spec.cameraWall ?? '?'} (${spec.cameraPosition ?? 'unknown angle'})
+- Primary light: ${spec.primaryLightDirection ?? 'unknown'} direction
+- Plumbing wall: ${spec.plumbingWall ?? '?'}
+- Walls: ${wallSummary}
+- Existing fixtures: ${fixtureSummary}
+
+Use this as a GUIDE — verify against the actual photo. The photo is the ground truth.
+Where wallSummary and fixtureSummary are built from the enhanced ProjectSpec:
+typescriptconst wallLabels = ['North', 'East', 'South', 'West'];
+const wallSummary = (spec.walls || [])
+  .map(w => {
+    const parts = [wallLabels[w.wallIndex]];
+    if (w.hasWindow) parts.push('WINDOW');
+    if (w.hasDoor) parts.push('DOOR');
+    if (w.hasPlumbing) parts.push('plumbing');
+    if (w.features) parts.push(w.features);
+    return parts.join(': ');
+  }).join(' | ');
+
+const fixtureSummary = spec.existingFixtures
+  .map(f => `${f.type} at X:${f.positionX}% Y:${f.positionY}% (wall ${f.wallIndex ?? '?'}, ${f.condition ?? 'unknown'})`)
+  .join('; ');
+4. API Configuration for All Functions
+File: services/geminiService.ts
+FunctiontemperaturetopPthinkingConfigmedia_resolutionanalyzeBathroomInput0.20.9N/A (text model)N/AgenerateRenovation— (model default for image gen)—{ thinkingLevel: "high" }HIGH on bathroom photocalculateRenovationCost0.10.8N/A (text model)N/A
+For the render function config:
+typescriptconfig: {
+  responseModalities: ['TEXT', 'IMAGE'],
+  thinkingConfig: {
+    thinkingLevel: "high",
+  },
+  imageConfig: {
+    imageSize: '2K',
+  },
+}
+For input images, set media resolution on the bathroom photo part:
+typescript// Note: media_resolution requires v1alpha API version
+// Only add if SDK version supports it, otherwise omit
+{
+  inlineData: { mimeType: bathroomMimeType, data: bathroomBase64 },
+  // mediaResolution available in @google/genai ^1.34.0 with v1alpha
+}
+5. Enhanced Cost Estimation Prompt
+File: services/geminiService.ts — calculateRenovationCost() (lines 174-298)
+Pass the enhanced analysis data for more accurate labor costing:
+typescriptconst systemInstruction = `
+  You are the De Badkamer Pricing Engine.
+  You do not guess prices. You map requirements to specific Catalog IDs and Labor Operations.
+
+  CONTEXT:
+  - Room: ${spec.estimatedWidthMeters}m x ${spec.estimatedLengthMeters}m = ${spec.totalAreaM2} m²
+  - Ceiling: ${spec.ceilingHeightMeters}m
+  - Layout: ${spec.layoutShape}
+  - Plumbing wall: ${spec.plumbingWall !== undefined ? `Wall ${spec.plumbingWall}` : 'Standard'}
+  - Current fixtures: ${spec.existingFixtures.map(f => `${f.type} (${f.condition || 'unknown'})`).join(', ')}
+  - Demolition scope: ${spec.constraints.join(', ') || 'Standard demolition'}
+  - User Style: ${styleDesc}
+  - Style Tags: ${styleTags}
+  - Catalog: ${JSON.stringify(catalogForPrompt)}
+  - User Material Config: ${JSON.stringify(materials)}
+
+  TASK:
+  1. Select the best SKU from the Catalog matching User Style and Material Config.
+  2. Define labor operations. Consider:
+     - Fixture condition affects demolition complexity
+     - Plumbing relocations needed if fixtures move away from plumbing wall
+     - Wall features (niches, beams) add labor
+  3. Calculate precise line items with quantities based on room dimensions.
+`;
+```
+
+Add `temperature: 0.1` for pricing precision.
+
+### 6. Photographic Quality Terms (Render Prompt)
+
+The IMPLEMENTATION_BRIEF already removes "8K, Unreal Engine 5, Raytraced". Ensure the replacement uses **photographic terminology**:
+```
+Light and mood:
+- Natural daylight from existing window(s), same direction as the original photo
+- Warm color temperature (3000K)
+- Soft realistic shadows from all fixtures
+- No hard spots or overexposure
+
+Photography:
+- Shot on a full-frame camera with a 24mm wide-angle lens
+- f/8 aperture, natural depth of field
+- Professional interior magazine photography
+- Consistent white balance matching the original photo
+
+Files to Modify
+FileChangetypes.tsAdd WallFeature interface, extend ProjectSpec and Fixture with new fieldsservices/geminiService.tsEnhanced analysis schema, API config (temperature, thinkingConfig), spatial context in render prompt, enhanced cost prompt
+Note: These changes are additive to REPLIT_IMPLEMENTATION_BRIEF.md — they apply on top of that brief's changes (single-shot render, base64 product images, behouden/vervangen). The brief should be updated to incorporate these fidelity improvements.
+
+How This Integrates with REPLIT_IMPLEMENTATION_BRIEF.md
+The existing brief already handles:
+
+Single-shot render (removing generateEmptySpace)
+Product images as inline base64 (not text URLs)
+Removing gaming terminology
+responseModalities: ['TEXT', 'IMAGE'] and imageSize: '2K'
+
+This plan adds to that brief:
+
+Richer analysis schema → more spatial data flows to render and cost
+Explicit thinkingConfig: { thinkingLevel: "high" } on render
+temperature tuning per function (0.2 for analysis, 0.1 for cost)
+"SPATIAL CONTEXT" preamble in the render prompt using analysis results
+Photographic lens terminology instead of game engine terms
+Enhanced cost prompt with fixture conditions and plumbing wall awareness
+
+
+Deliverable
+Update REPLIT_IMPLEMENTATION_BRIEF.md to incorporate all fidelity improvements into the existing plan. Specifically:
+
+Update Section 4 (geminiService.ts) with the enhanced analysis schema and config
+Add the SPATIAL CONTEXT block to the generateRenovation prompt
+Update the cost estimation prompt with enhanced analysis data
+Add API configuration table showing temperature/thinkingConfig per function
+Update types.ts section with new interfaces
+
+
+Verification
+After updating the brief, verify:
+
+The analysis schema captures: camera position, wall features, lighting direction, plumbing wall, fixture conditions
+The render prompt receives a SPATIAL CONTEXT preamble from analysis results
