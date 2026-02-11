@@ -715,7 +715,7 @@ ${occlusionLines.length > 0 ? `- Occluded zones (${occlusionLines.join('; ')}): 
           },
         },
       });
-    }, 3, 5000);
+    }, 1, 8000);
 
     for (const part of response.candidates?.[0]?.content?.parts || []) {
       if (part.inlineData) {

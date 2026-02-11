@@ -30,7 +30,7 @@ import {
   getSignedImageUrl,
 } from '../lib/projectService';
 
-const TIMEOUT_MS = 120_000;
+const TIMEOUT_MS = 180_000;
 
 const compressImage = (dataUrl: string, maxDimension: number): Promise<string> => {
   return new Promise((resolve) => {
@@ -317,7 +317,7 @@ export default function PlannerPage() {
 
       if (abortRef.current?.signal.aborted) throw new Error('timeout');
 
-      setLoadingMessage('Uw nieuwe badkamer ontwerpen...');
+      setLoadingMessage('4 renovatievarianten genereren — dit kan 1-2 minuten duren...');
 
       const [render, est] = await Promise.all([
         generateRenovation(
