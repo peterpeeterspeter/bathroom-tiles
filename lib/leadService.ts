@@ -74,13 +74,13 @@ export async function submitLead(payload: LeadPayload): Promise<{ success: boole
     email: payload.email,
     phone: payload.phone,
     postcode: payload.postcode,
+    selected_style: styleName || 'Niet geselecteerd',
     source: payload.source || 'website',
     country: payload.country || 'NL',
     lead_score: leadScore,
   };
 
   if (payload.projectId) row.project_id = payload.projectId;
-  if (styleName) row.selected_style = styleName;
   if (payload.styleProfile) row.style_profile = payload.styleProfile;
   if (payload.materialConfig) row.material_config = payload.materialConfig;
   if (payload.selectedProducts) row.selected_products = payload.selectedProducts;
