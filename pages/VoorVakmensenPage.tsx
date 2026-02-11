@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle, XCircle, ChevronDown, Users, TrendingUp, Mail, Phone, FileText, Camera, Palette, Ruler, Euro, Star, Clock, MapPin, Shield, BarChart3, Zap, Target, Award, Building2 } from 'lucide-react';
+import { ArrowRight, CheckCircle, XCircle, ChevronDown, Users, TrendingUp, Mail, Phone, FileText, Camera, Palette, Ruler, Euro, Star, Clock, MapPin, Shield, BarChart3, Zap, Target, Award, Building2, Loader2, AlertCircle } from 'lucide-react';
 import { useSEO } from '../lib/useSEO';
+import { submitLead, sendLeadNotification } from '../lib/leadService';
+import { trackEvent } from '../lib/analytics';
 
 const VoorVakmensenPage = () => {
   useSEO({
@@ -26,6 +28,8 @@ const VoorVakmensenPage = () => {
     plan: 'premium',
   });
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [formSubmitting, setFormSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const roiLeads = roiValues.leadsPerMonth;
   const roiConversions = (roiLeads * roiValues.conversionRate) / 100;
@@ -42,9 +46,46 @@ const VoorVakmensenPage = () => {
     }));
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormSubmitted(true);
+    setFormSubmitting(true);
+    setFormError(null);
+    try {
+      const result = await submitLead({
+        name: `${formData.contactpersoon} (${formData.bedrijfsnaam})`,
+        email: formData.email,
+        phone: formData.telefoon,
+        postcode: formData.werkgebied,
+        source: 'contractor_signup',
+        renovationType: formData.plan,
+      });
+
+      if (result.success) {
+        trackEvent('contractor_signup', {
+          plan: formData.plan,
+          specialisatie: formData.specialisatie.join(', '),
+        });
+
+        sendLeadNotification({
+          name: `${formData.contactpersoon} (${formData.bedrijfsnaam})`,
+          email: formData.email,
+          phone: formData.telefoon,
+          postcode: formData.werkgebied,
+          leadScore: result.leadScore,
+          styleName: `VAKMAN AANMELDING — Plan: ${formData.plan.toUpperCase()}`,
+          styleSummary: `Bedrijf: ${formData.bedrijfsnaam} | KvK: ${formData.kvk || 'n.v.t.'} | Specialisatie: ${formData.specialisatie.join(', ') || 'Geen geselecteerd'} | Werkgebied: ${formData.werkgebied}`,
+          preferredTimeline: 'direct',
+        });
+
+        setFormSubmitted(true);
+      } else {
+        setFormError(result.error || 'Er is iets misgegaan. Probeer het later opnieuw.');
+      }
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Er is iets misgegaan. Probeer het later opnieuw.');
+    } finally {
+      setFormSubmitting(false);
+    }
   };
 
   const faqs = [
@@ -808,6 +849,12 @@ const VoorVakmensenPage = () => {
             </div>
           ) : (
             <form onSubmit={handleFormSubmit} className="bg-white rounded-2xl border border-neutral-300/30 p-8 md:p-10 shadow-lg">
+              {formError && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+                  <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={18} />
+                  <p className="text-sm text-red-700 font-medium">{formError}</p>
+                </div>
+              )}
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-neutral-700 mb-1.5">Bedrijfsnaam *</label>
@@ -925,9 +972,18 @@ const VoorVakmensenPage = () => {
 
               <button
                 type="submit"
-                className="w-full mt-8 bg-accent hover:bg-accent-hover text-white font-bold text-base py-4 rounded-full transition-all hover:shadow-lg hover:shadow-accent/25 flex items-center justify-center gap-2"
+                disabled={formSubmitting}
+                className="w-full mt-8 bg-accent hover:bg-accent-hover text-white font-bold text-base py-4 rounded-full transition-all hover:shadow-lg hover:shadow-accent/25 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Aanmelding versturen <ArrowRight size={18} />
+                {formSubmitting ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" /> Bezig met verzenden...
+                  </>
+                ) : (
+                  <>
+                    Aanmelding versturen <ArrowRight size={18} />
+                  </>
+                )}
               </button>
 
               <p className="text-xs text-neutral-400 text-center mt-4">
