@@ -14,10 +14,18 @@ export interface Fixture {
   type: FixtureType;
   description: string;
   fixed: boolean; 
-  // Coordinates for Schematic View (0-100 scale)
-  positionX?: number; // 0 = Left, 100 = Right
-  positionY?: number; // 0 = Top (Back wall), 100 = Bottom (Viewer)
-  wallIndex?: number; // 0=North, 1=East, 2=South, 3=West
+  positionX?: number;
+  positionY?: number;
+  wallIndex?: number;
+  condition?: 'GOOD' | 'WORN' | 'DAMAGED' | 'UNKNOWN';
+}
+
+export interface WallFeature {
+  wallIndex: number;
+  hasWindow: boolean;
+  hasDoor: boolean;
+  hasPlumbing: boolean;
+  features?: string;
 }
 
 export interface ProjectSpec {
@@ -28,7 +36,12 @@ export interface ProjectSpec {
   ceilingHeightMeters: number;
   totalAreaM2: number;
   existingFixtures: Fixture[];
-  constraints: string[]; 
+  constraints: string[];
+  cameraPosition?: 'EYE_LEVEL' | 'ELEVATED' | 'CORNER' | 'LOW_ANGLE';
+  cameraWall?: number;
+  walls?: WallFeature[];
+  primaryLightDirection?: 'LEFT' | 'RIGHT' | 'FRONT' | 'BACK' | 'OVERHEAD' | 'MIXED';
+  plumbingWall?: number;
 }
 
 export interface CostItem {

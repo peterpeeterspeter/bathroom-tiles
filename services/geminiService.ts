@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { ProjectSpec, Estimate, BudgetTier, FixtureType, MaterialConfig, StyleProfile, DatabaseProduct, ProductAction } from "../types";
+import { ProjectSpec, Estimate, BudgetTier, FixtureType, MaterialConfig, StyleProfile, DatabaseProduct, ProductAction, WallFeature } from "../types";
 
 const getApiKey = (): string => {
   const key = process.env.API_KEY || process.env.GEMINI_API_KEY || '';
@@ -90,12 +90,14 @@ export const analyzeBathroomInput = async (base64Image: string, mimeType: string
 
   const systemInstruction = `You are a bathroom layout analyst for De Badkamer, a renovation company.
 
-Analyze this bathroom photo and identify:
-1. Room dimensions — estimate width and length in meters using visible reference objects (doors are ~80cm wide, standard toilets are ~70cm deep).
-2. Room shape — rectangle, L-shape, or square.
-3. All fixtures present — toilets, sinks, showers, bathtubs, radiators, windows, doors, and any obstacles.
-4. Their approximate positions as percentages (0-100) of the room's width (X) and depth (Y).
-5. Any demolition notes — what needs removal or special attention.`;
+TASK:
+1. ANCHOR REFERENCE: Identify a standard object (Door ~210cm tall, ~80cm wide; Toilet ~40cm wide, ~70cm deep; Standard tile 30x30 or 60x60cm) to calibrate spatial scale.
+2. GEOMETRY: Estimate room width and length in meters. Identify layout shape. Determine camera viewpoint (which wall the camera faces FROM, and its angle).
+3. WALLS: For each wall (N=0, E=1, S=2, W=3 clockwise from top), note if it has windows, doors, or visible plumbing indicators (pipes, mounting points).
+4. LIGHTING: Determine the primary natural light direction relative to the camera position (LEFT, RIGHT, FRONT, BACK, OVERHEAD, or MIXED).
+5. INVENTORY: Detect every fixture — type, which wall it is mounted on or nearest to, approximate X/Y position (0-100%), and condition (GOOD, WORN, DAMAGED, or UNKNOWN).
+6. PLUMBING: Identify the wall index with the most plumbing connections (water supply, drain pipes, fixture mounting points).
+7. Any demolition notes — what needs removal or special attention.`;
 
   try {
     const response = await withRetry(async (useDirect) => {
@@ -110,6 +112,7 @@ Analyze this bathroom photo and identify:
         },
         config: {
           systemInstruction,
+          temperature: 0.2,
           responseMimeType: "application/json",
           responseSchema: {
           type: Type.OBJECT,
@@ -124,6 +127,34 @@ Analyze this bathroom photo and identify:
               required: ["width_m", "length_m"]
             },
             layout_type: { type: Type.STRING, enum: ["RECTANGLE", "L_SHAPE", "SQUARE", "SLOPED_CEILING"] },
+            camera_position: {
+              type: Type.STRING,
+              enum: ["EYE_LEVEL", "ELEVATED", "CORNER", "LOW_ANGLE"],
+              description: "Approximate camera viewpoint of the photo"
+            },
+            camera_wall: {
+              type: Type.NUMBER,
+              description: "Which wall the camera is facing FROM (0=N, 1=E, 2=S, 3=W)"
+            },
+            walls: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  wall_index: { type: Type.NUMBER, description: "0=N, 1=E, 2=S, 3=W" },
+                  has_window: { type: Type.BOOLEAN },
+                  has_door: { type: Type.BOOLEAN },
+                  has_plumbing: { type: Type.BOOLEAN, description: "Visible pipes or fixture mounting points" },
+                  features: { type: Type.STRING, description: "Beam, niche, sloped ceiling, etc." }
+                },
+                required: ["wall_index"]
+              }
+            },
+            primary_light_direction: {
+              type: Type.STRING,
+              enum: ["LEFT", "RIGHT", "FRONT", "BACK", "OVERHEAD", "MIXED"],
+              description: "Dominant natural light direction relative to camera"
+            },
             fixtures: {
               type: Type.ARRAY,
               items: {
@@ -132,13 +163,19 @@ Analyze this bathroom photo and identify:
                   item: { type: Type.STRING },
                   type: { type: Type.STRING, enum: Object.values(FixtureType) },
                   position_x_percent: { type: Type.NUMBER, description: "0-100 relative X position" },
-                  position_y_percent: { type: Type.NUMBER, description: "0-100 relative Y position" }
+                  position_y_percent: { type: Type.NUMBER, description: "0-100 relative Y position" },
+                  wall_index: { type: Type.NUMBER, description: "Which wall (0-3) this fixture is on or nearest to" },
+                  condition: { type: Type.STRING, enum: ["GOOD", "WORN", "DAMAGED", "UNKNOWN"] }
                 }
               }
             },
+            plumbing_wall: {
+              type: Type.NUMBER,
+              description: "Primary wall with water supply/drainage (0=N, 1=E, 2=S, 3=W)"
+            },
             demolition_notes: { type: Type.STRING }
           },
-          required: ["estimated_dimensions", "fixtures"]
+          required: ["estimated_dimensions", "fixtures", "walls"]
         }
       }
     });
@@ -158,9 +195,22 @@ Analyze this bathroom photo and identify:
           description: f.item,
           fixed: true,
           positionX: f.position_x_percent,
-          positionY: f.position_y_percent
+          positionY: f.position_y_percent,
+          wallIndex: f.wall_index,
+          condition: f.condition
         })),
-        constraints: raw.demolition_notes ? [raw.demolition_notes] : []
+        constraints: raw.demolition_notes ? [raw.demolition_notes] : [],
+        cameraPosition: raw.camera_position,
+        cameraWall: raw.camera_wall,
+        walls: raw.walls?.map((w: any) => ({
+          wallIndex: w.wall_index,
+          hasWindow: w.has_window ?? false,
+          hasDoor: w.has_door ?? false,
+          hasPlumbing: w.has_plumbing ?? false,
+          features: w.features
+        })) as WallFeature[] | undefined,
+        primaryLightDirection: raw.primary_light_direction,
+        plumbingWall: raw.plumbing_wall
       };
     }
     throw new Error("Analysis failed");
@@ -220,6 +270,10 @@ export const calculateRenovationCost = async (
     [BudgetTier.PREMIUM]: 'Premium tier: Select the highest-quality products from the catalog. Include all labor operations plus finishing details (e.g., niche cuts, heated floor prep, premium grouting).',
   };
 
+  const fixtureDetails = spec.existingFixtures
+    .map(f => `${f.type}${f.condition ? ` (${f.condition})` : ''}${f.wallIndex !== undefined ? ` on wall ${f.wallIndex}` : ''}: ${f.description}`)
+    .join(', ') || 'Unknown';
+
   const systemInstruction = `
     You are the De Badkamer Pricing Engine for the Netherlands/Belgium market.
 
@@ -229,8 +283,10 @@ export const calculateRenovationCost = async (
     ROOM DETAILS:
     - Dimensions: ${spec.estimatedWidthMeters}m × ${spec.estimatedLengthMeters}m = ${spec.totalAreaM2} m2
     - Ceiling height: ${spec.ceilingHeightMeters}m
+    - Layout: ${spec.layoutShape}
+    - Plumbing wall: ${spec.plumbingWall !== undefined ? `Wall ${spec.plumbingWall}` : 'Standard'}
     - Current state: ${spec.constraints.join(', ') || 'Standard condition, full demolition needed'}
-    - Existing fixtures: ${spec.existingFixtures.map(f => f.description).join(', ') || 'Unknown'}
+    - Existing fixtures: ${fixtureDetails}
 
     STYLE: ${styleDesc}
     Style tags: ${styleTags}
@@ -254,7 +310,10 @@ ${['Tile', 'Vanity', 'Toilet', 'Faucet', 'Shower', 'Bathtub', 'Lighting'].map(ca
     TASK:
     1. Select materials from the catalog matching the user's style and budget tier. Products have price ranges (price_low to price_high) — use the midpoint for standard estimates, price_low for budget tier, price_high for premium tier.
     2. Calculate material quantities based on room dimensions (tiles in m2, fixtures in pieces).
-    3. List all required labor operations using ONLY the rates from the labor table above.
+    3. List all required labor operations using ONLY the rates from the labor table above. Consider:
+       - Fixture condition affects demolition complexity (DAMAGED items may need extra care)
+       - If fixtures move away from the plumbing wall, add PLUMBING_RELOCATION costs
+       - Wall features (niches, beams) add labor for tiling cuts
     4. For each material, specify the correct unit (m2 for tiles, pcs for fixtures/faucets/lighting).
   `;
 
@@ -266,6 +325,7 @@ ${['Tile', 'Vanity', 'Toilet', 'Faucet', 'Shower', 'Bathtub', 'Lighting'].map(ca
         contents: { parts: [{ text: "Generate the cost estimate JSON." }] },
         config: {
           systemInstruction,
+          temperature: 0.1,
           responseMimeType: "application/json",
           responseSchema: {
           type: Type.OBJECT,
@@ -371,7 +431,8 @@ export const generateRenovation = async (
   styleProfile: StyleProfile,
   productActions: Record<string, string>,
   selectedProducts: DatabaseProduct[],
-  productImages: Map<string, { base64: string; mimeType: string }>
+  productImages: Map<string, { base64: string; mimeType: string }>,
+  spec?: ProjectSpec
 ): Promise<string> => {
   const model = "gemini-3-pro-image-preview";
 
@@ -442,10 +503,41 @@ export const generateRenovation = async (
     }
   }
 
+  const wallLabels = ['North', 'East', 'South', 'West'];
+  let spatialContext = '';
+  if (spec) {
+    const wallSummary = (spec.walls || [])
+      .map(w => {
+        const parts = [wallLabels[w.wallIndex] || `Wall ${w.wallIndex}`];
+        if (w.hasWindow) parts.push('WINDOW');
+        if (w.hasDoor) parts.push('DOOR');
+        if (w.hasPlumbing) parts.push('plumbing');
+        if (w.features) parts.push(w.features);
+        return parts.join(': ');
+      }).join(' | ');
+
+    const fixtureSummary = spec.existingFixtures
+      .map(f => `${f.type} at X:${f.positionX ?? '?'}% Y:${f.positionY ?? '?'}% (wall ${f.wallIndex ?? '?'}, ${f.condition ?? 'unknown'})`)
+      .join('; ');
+
+    spatialContext = `
+SPATIAL CONTEXT (from architectural analysis of this photo):
+- Room: ${spec.estimatedWidthMeters}m x ${spec.estimatedLengthMeters}m, ceiling ${spec.ceilingHeightMeters}m
+- Layout: ${spec.layoutShape}
+- Camera facing from wall ${spec.cameraWall ?? '?'} (${spec.cameraPosition ?? 'unknown angle'})
+- Primary light: ${spec.primaryLightDirection ?? 'unknown'} direction
+- Plumbing wall: ${spec.plumbingWall ?? '?'}
+- Walls: ${wallSummary || 'not analyzed'}
+- Existing fixtures: ${fixtureSummary || 'not analyzed'}
+
+Use this as a GUIDE — verify against the actual photo. The photo is the ground truth.
+`;
+  }
+
   const prompt = `
 Transform the bathroom in the photo into a fully renovated space.
 You are a senior interior architect with complete creative freedom over the layout and design.
-
+${spatialContext}
 STEP 1 — STUDY THE SHELL:
 Analyze the bathroom photo. Identify ONLY the fixed structural elements:
 - Outer walls and their positions
@@ -511,6 +603,10 @@ FIXED CONSTRAINTS (non-negotiable):
         contents: { parts },
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
+          thinkingConfig: {
+            thinkingBudget: 8192,
+            includeThoughts: false,
+          },
           imageConfig: {
             imageSize: '2K',
           },

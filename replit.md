@@ -17,15 +17,23 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
 2. **Dimensions & Photo** — User enters dimensions + uploads bathroom photo
 3. **Expert Analysis + Product Configuration** — `analyzeProjectContext()` runs with all inputs → 9-step analysis → enriched StyleProfile. Each product category has Vervangen/Behouden toggle (+ Toevoegen/Verwijderen for shower/bathtub)
 4. **Processing**:
-   - `analyzeBathroomInput()` runs first (gemini-3-pro-preview)
+   - `analyzeBathroomInput()` runs first (gemini-3-pro-preview, temperature 0.2) — returns enhanced spatial data: camera position/wall, wall-by-wall features (windows/doors/plumbing), fixture conditions, primary light direction, plumbing wall
    - Product images fetched as base64
    - `generateRenovation()` + `calculateRenovationCost()` run in parallel
-   - Single-shot render: original photo + inspiration images + product reference images → gemini-3-pro-image-preview with Thinking mode + 2K output
-   - Cost estimate is scope-aware: kept items have zero cost
+   - Render receives full ProjectSpec as SPATIAL CONTEXT preamble (room dims, walls, fixtures, camera, lighting) to prime the model
+   - Single-shot render: original photo + inspiration images + product reference images → gemini-3-pro-image-preview with thinkingBudget:8192 + 2K output
+   - Cost estimate (temperature 0.1) is scope-aware: kept items have zero cost, fixture condition and plumbing wall distance affect labor costs
 5. User dimensions take priority over AI-estimated dimensions
 6. Photos are compressed to 1500px max before API calls
 7. Product reference images sent as inline base64 parts (up to 14 images supported)
 8. `generateEmptySpace()` removed — no longer needed with single-shot approach
+
+### AI API Configuration
+| Function | Model | Temperature | Thinking | Notes |
+|---|---|---|---|---|
+| analyzeBathroomInput | gemini-3-pro-preview | 0.2 | N/A | Enhanced schema: camera, walls, lighting, plumbing, fixture conditions |
+| generateRenovation | gemini-3-pro-image-preview | default | thinkingBudget: 8192 | SPATIAL CONTEXT preamble from analysis, 2K output |
+| calculateRenovationCost | gemini-3-pro-preview | 0.1 | N/A | Plumbing wall awareness, fixture condition affects labor |
 
 ## Directory Structure
 - `/components` - React UI components

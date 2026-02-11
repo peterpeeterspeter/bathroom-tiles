@@ -326,7 +326,8 @@ export default function PlannerPage() {
           styleProfile,
           productActions,
           selectedProducts,
-          productImageMap
+          productImageMap,
+          mergedSpec
         ),
         calculateRenovationCost(mergedSpec, BudgetTier.STANDARD, styleProfile, materialConfig, allProducts, productActions)
       ]);
