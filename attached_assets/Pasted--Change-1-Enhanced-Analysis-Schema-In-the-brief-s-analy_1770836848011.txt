@@ -1,0 +1,209 @@
+
+Change 1: Enhanced Analysis Schema
+In the brief's analyzeBathroomInput() section — expand the response schema and system instruction.
+Updated system instruction:
+You are a bathroom layout analyst. Return ONLY valid JSON matching the schema.
+Do NOT invent elements that are not visible. If uncertain, set confidence < 0.6.
+
+TASK:
+1. CALIBRATE: Use a standard reference (door ~80cm wide, ~210cm tall; toilet depth ~70cm; standard tile 30x30 or 60x60) to estimate room scale.
+2. CAMERA: Determine where the camera is positioned (which wall it faces FROM), angle (eye-level/elevated/corner), and lens feel (wide-angle/normal).
+3. WALLS: For each visible wall (0=N, 1=E, 2=S, 3=W):
+   - If it has a door or window: provide corner coordinates (tl, tr, br, bl) as x/y% in the photo frame.
+   - Include door hinge side and swing direction if visible.
+   - Note niches, beams, sloped ceiling areas.
+   - Note visible plumbing indicators (pipes, fixture mounting points).
+4. LIGHTING: Primary natural light direction relative to camera.
+5. FIXTURES: Every fixture — type, which wall, position (x/y%), condition (GOOD/WORN/DAMAGED/UNKNOWN).
+6. OCCLUSIONS: List what is NOT visible (e.g., "wall 0 not visible — behind camera").
+Key schema additions (on top of existing fields):
+typescript// Camera specification
+camera: {
+  type: Type.OBJECT,
+  properties: {
+    position: { type: Type.STRING, enum: ["EYE_LEVEL", "ELEVATED", "CORNER", "LOW_ANGLE"] },
+    facing_from_wall: { type: Type.NUMBER, description: "0=N, 1=E, 2=S, 3=W" },
+    lens_feel: { type: Type.STRING, enum: ["WIDE_ANGLE", "NORMAL", "TELEPHOTO"] }
+  }
+},
+
+// Confidence on dimensions
+estimated_dimensions.confidence: { type: Type.NUMBER },
+
+// Walls with anchor rectangles (replaces simple has_window boolean)
+walls: {
+  type: Type.ARRAY,
+  items: {
+    type: Type.OBJECT,
+    properties: {
+      wall_index: { type: Type.NUMBER },
+      visible: { type: Type.BOOLEAN },
+      anchors: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            element_type: { type: Type.STRING, enum: ["DOOR", "WINDOW", "NICHE"] },
+            tl_x: { type: Type.NUMBER }, tl_y: { type: Type.NUMBER },
+            tr_x: { type: Type.NUMBER }, tr_y: { type: Type.NUMBER },
+            br_x: { type: Type.NUMBER }, br_y: { type: Type.NUMBER },
+            bl_x: { type: Type.NUMBER }, bl_y: { type: Type.NUMBER },
+            door_hinge_side: { type: Type.STRING, enum: ["LEFT", "RIGHT", "UNKNOWN"] },
+            door_swing: { type: Type.STRING, enum: ["INWARD", "OUTWARD", "UNKNOWN"] },
+            confidence: { type: Type.NUMBER }
+          }
+        }
+      },
+      has_plumbing: { type: Type.BOOLEAN },
+      features: { type: Type.STRING }
+    },
+    required: ["wall_index", "visible"]
+  }
+},
+
+// Fixtures with condition + confidence
+fixtures[].condition: { type: Type.STRING, enum: ["GOOD", "WORN", "DAMAGED", "UNKNOWN"] },
+fixtures[].confidence: { type: Type.NUMBER },
+
+// Plumbing wall
+plumbing_wall: { type: Type.NUMBER },
+
+// Occlusions — what's NOT visible
+occlusions: { type: Type.ARRAY, items: { type: Type.STRING } },
+Generation config:
+typescriptconfig: {
+  systemInstruction,
+  temperature: 0.2,  // Low for analytical precision
+  responseMimeType: "application/json",
+  responseSchema: { ... }
+}
+
+Change 2: Type Updates
+In the brief's types.ts section — add new interfaces and extend existing ones.
+New interfaces:
+typescriptexport interface ShellAnchor {
+  elementType: 'DOOR' | 'WINDOW' | 'NICHE';
+  tl: { x: number; y: number };  // 0-100% in photo frame
+  tr: { x: number; y: number };
+  br: { x: number; y: number };
+  bl: { x: number; y: number };
+  doorHingeSide?: 'LEFT' | 'RIGHT' | 'UNKNOWN';
+  doorSwing?: 'INWARD' | 'OUTWARD' | 'UNKNOWN';
+  confidence: number;
+}
+
+export interface WallSpec {
+  wallIndex: number;
+  visible: boolean;
+  anchors: ShellAnchor[];
+  hasPlumbing: boolean;
+  features?: string;
+}
+
+export interface CameraSpec {
+  position: 'EYE_LEVEL' | 'ELEVATED' | 'CORNER' | 'LOW_ANGLE';
+  facingFromWall: number;
+  lensFeel: 'WIDE_ANGLE' | 'NORMAL' | 'TELEPHOTO';
+}
+Extended existing interfaces:
+typescriptexport interface Fixture {
+  // ... existing fields ...
+  condition?: 'GOOD' | 'WORN' | 'DAMAGED' | 'UNKNOWN';  // NEW
+  confidence?: number;                                      // NEW
+}
+
+export interface ProjectSpec {
+  // ... existing fields ...
+  camera?: CameraSpec;              // NEW
+  walls?: WallSpec[];               // NEW
+  primaryLightDirection?: string;   // NEW
+  plumbingWall?: number;            // NEW
+  occlusions?: string[];            // NEW
+}
+```
+
+All new fields optional → backward-compatible.
+
+---
+
+## Change 3: Enhanced Render Prompt
+
+**In the brief's `generateRenovation()` section** — keep the existing STEP 1-5 structure, apply 4 enhancements.
+
+### The base prompt (already in the brief, shown by user) stays as-is:
+```
+STEP 1 — STUDY THE EXISTING ROOM (reasoning)
+STEP 2 — PLAN THE LAYOUT
+STEP 3 — APPLY MATERIALS
+STEP 4 — PLACE EACH FIXTURE
+STEP 5 — STYLE AND ATMOSPHERE
+ABSOLUTE CONSTRAINTS
+```
+
+### Enhancement A: Inject anchor coordinates into STEP 1
+
+Replace the current STEP 1 opening with:
+```
+STEP 1 — STUDY THE EXISTING ROOM:
+Analyze image 1 carefully. The architectural analysis detected these
+structural elements — verify them against the photo:
+${anchorLines}
+${occlusionLines.length > 0 ? `\nNot visible in this photo: ${occlusionLines.join(', ')}` : ''}
+
+Confirm for yourself:
+- The exact camera angle, height, and perspective
+- The vanishing point and how walls recede
+- Where the window(s) are and how light enters
+- Where the door is
+- The room proportions (which walls are longer, which shorter)
+- Any architectural features (beams, niches, alcoves, sloped ceiling)
+ALL of these remain IDENTICAL in the final image.
+Where anchorLines is built from the enhanced ProjectSpec:
+typescriptconst wallLabels = ['North', 'East', 'South', 'West'];
+const anchorLines = (spec.walls || [])
+  .filter(w => w.visible && w.anchors.length > 0)
+  .flatMap(w => w.anchors.map(a =>
+    `- ${a.elementType} on ${wallLabels[w.wallIndex]} wall: `
+    + `corners [${a.tl.x}%,${a.tl.y}%] → [${a.br.x}%,${a.br.y}%]`
+    + (a.doorHingeSide && a.doorHingeSide !== 'UNKNOWN' ? `, hinge ${a.doorHingeSide}` : '')
+    + (a.confidence < 0.6 ? ' (low confidence — verify visually)' : '')
+  )).join('\n');
+```
+
+### Enhancement B: Occlusion map as negative constraint in ABSOLUTE CONSTRAINTS
+
+Add to the existing ABSOLUTE CONSTRAINTS section:
+```
+${spec.occlusions && spec.occlusions.length > 0
+  ? `- Occluded zones (${spec.occlusions.join('; ')}): do NOT invent or render elements in areas not visible in image 1`
+  : ''}
+Enhancement C: English for all constraint logic
+The prompt is already in English. Two specific fixes:
+
+Change the image labels from Dutch to English:
+
+"[INSPIRATIEBEELDEN — dit is de stijl...]" → "[INSPIRATION IMAGES — target aesthetic]"
+"[FOTO HUIDIGE BADKAMER — dit is de huidige staat...]" → "[CURRENT BATHROOM — this is the room to renovate]"
+
+
+Change scope lines from Dutch to English:
+
+"BEHOUDEN: Bewaar het bestaande element..." → "KEEP: Preserve this element EXACTLY as it appears in image 1. Same appearance, same material, same finish. May be repositioned if the layout requires it, but visual appearance stays identical."
+"VERVANGEN (Product X): Verwijder het bestaande..." → "REPLACE (Product X): Remove existing, install the product from the reference photo. Match color, shape, material, and finish EXACTLY."
+"VERWIJDEREN: Verwijder dit element..." → "REMOVE: Remove this element completely. Fill the space seamlessly with floor and wall material."
+"TOEVOEGEN: Er is momenteel GEEN..." → "ADD (Product X): There is currently NO [category] in this bathroom. Install the product from the reference photo in the most logical position."
+
+
+
+Enhancement D: Expert analysis block feeds ShellSpec data
+The {{#if expertAnalysis}} block in STEP 2 now receives the enhanced ShellSpec data:
+typescriptconst expertAnalysis = spec.walls ? {
+  layoutAdvice: `Plumbing wall is ${wallLabels[spec.plumbingWall ?? 0]}. `
+    + `Keep fixtures near this wall to minimize plumbing relocation.`,
+  keepElements: (spec.walls || [])
+    .flatMap(w => w.anchors.map(a => `${a.elementType} on ${wallLabels[w.wallIndex]} wall`)),
+  opportunities: spec.existingFixtures
+    .filter(f => f.condition === 'DAMAGED' || f.condition === 'WORN')
+    .map(f => `${f.type} is ${f.condition?.toLowerCase()} — good candidate for replacement`),
+  estimated_complexity: /* derive from fixture count + wall features */,
+} : null;
