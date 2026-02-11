@@ -10,10 +10,19 @@ interface ResultDisplayProps {
   estimate: Estimate;
   renderUrl: string;
   imagePreview: string;
-  choices: { category: string; product: string }[];
+  choices: {
+    category: string;
+    product: string;
+    priceTier?: string;
+    priceLow?: number;
+    priceHigh?: number;
+  }[];
+  roomArea?: number;
+  roomWidth?: number;
+  roomLength?: number;
 }
 
-export const ResultDisplay = ({ name, styleProfile, estimate, renderUrl, imagePreview, choices }: ResultDisplayProps) => {
+export const ResultDisplay = ({ name, styleProfile, estimate, renderUrl, imagePreview, choices, roomArea, roomWidth, roomLength }: ResultDisplayProps) => {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const totalLow = Math.round((estimate.grandTotal) * 0.85);
   const totalHigh = Math.round((estimate.grandTotal) * 1.15);
@@ -24,11 +33,15 @@ export const ResultDisplay = ({ name, styleProfile, estimate, renderUrl, imagePr
       await generateResultPdf({
         name,
         selectedStyle: styleProfile.presetName || styleProfile.summary.slice(0, 40),
+        styleSummary: styleProfile.summary,
         estimateLow: totalLow,
         estimateHigh: totalHigh,
         beforeImage: imagePreview,
         afterImage: renderUrl,
         choices,
+        roomArea,
+        roomWidth,
+        roomLength,
       });
     } finally {
       setGeneratingPdf(false);

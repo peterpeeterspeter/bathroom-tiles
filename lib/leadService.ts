@@ -6,9 +6,14 @@ interface LeadPayload {
   email: string;
   phone: string;
   postcode: string;
+  projectId?: string;
   styleProfile?: StyleProfile;
   materialConfig?: MaterialConfig;
   selectedProducts?: Record<string, string>;
+  selectedProductDetails?: Record<string, {
+    id: string; brand: string; name: string;
+    price_low: number; price_high: number; price_tier: string;
+  }>;
   estimatedTotalLow?: number;
   estimatedTotalHigh?: number;
   roomWidth?: number;
@@ -19,13 +24,50 @@ interface LeadPayload {
   renovationType?: string;
   bathroomSize?: string;
   preferredTimeline?: string;
+  hasOriginalPhoto?: boolean;
+  hasRender?: boolean;
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
 }
 
-export async function submitLead(payload: LeadPayload): Promise<{ success: boolean; error?: string }> {
+function calculateLeadScore(payload: LeadPayload): number {
+  let score = 0;
+
+  if (payload.name?.trim()) score += 5;
+  if (payload.email?.trim()) score += 5;
+  if (payload.phone?.trim()) score += 10;
+  if (payload.postcode?.trim()) score += 5;
+
+  if (payload.hasOriginalPhoto) score += 15;
+  if (payload.styleProfile) score += 5;
+  const productCount = Object.keys(payload.selectedProducts || {}).length;
+  if (productCount >= 3) score += 10;
+  else if (productCount >= 1) score += 5;
+  if (payload.roomArea && payload.roomArea > 0) score += 5;
+
+  if (payload.selectedProductDetails) {
+    const tiers = Object.values(payload.selectedProductDetails).map(p => p.price_tier);
+    const premiumCount = tiers.filter(t => t === 'premium').length;
+    if (premiumCount >= 3) score += 5;
+    else if (premiumCount >= 1) score += 3;
+  }
+
+  if (payload.hasRender) score += 10;
+  if (payload.estimatedTotalLow && payload.estimatedTotalHigh) score += 10;
+
+  const avgEstimate = ((payload.estimatedTotalLow || 0) + (payload.estimatedTotalHigh || 0)) / 2;
+  if (avgEstimate >= 20000) score += 20;
+  else if (avgEstimate >= 12000) score += 15;
+  else if (avgEstimate >= 8000) score += 10;
+  else if (avgEstimate > 0) score += 5;
+
+  return Math.min(100, score);
+}
+
+export async function submitLead(payload: LeadPayload): Promise<{ success: boolean; error?: string; leadId?: string; leadScore: number }> {
   const styleName = payload.styleProfile?.presetName || payload.styleProfile?.summary?.slice(0, 50) || '';
+  const leadScore = calculateLeadScore(payload);
 
   const row: Record<string, unknown> = {
     name: payload.name,
@@ -34,12 +76,15 @@ export async function submitLead(payload: LeadPayload): Promise<{ success: boole
     postcode: payload.postcode,
     source: payload.source || 'website',
     country: payload.country || 'NL',
+    lead_score: leadScore,
   };
 
+  if (payload.projectId) row.project_id = payload.projectId;
   if (styleName) row.selected_style = styleName;
   if (payload.styleProfile) row.style_profile = payload.styleProfile;
   if (payload.materialConfig) row.material_config = payload.materialConfig;
   if (payload.selectedProducts) row.selected_products = payload.selectedProducts;
+  if (payload.selectedProductDetails) row.selected_product_details = payload.selectedProductDetails;
   if (payload.estimatedTotalLow !== undefined) row.estimated_total_low = payload.estimatedTotalLow;
   if (payload.estimatedTotalHigh !== undefined) row.estimated_total_high = payload.estimatedTotalHigh;
   if (payload.roomWidth !== undefined) row.room_width = payload.roomWidth;
@@ -53,10 +98,31 @@ export async function submitLead(payload: LeadPayload): Promise<{ success: boole
   if (payload.utmMedium) row.utm_medium = payload.utmMedium;
   if (payload.utmCampaign) row.utm_campaign = payload.utmCampaign;
 
-  const { error } = await supabase.from('leads').insert(row);
+  let result = await supabase.from('leads').insert(row).select('id').single();
 
-  if (error) {
-    return { success: false, error: error.message };
+  if (result.error && result.error.message.includes('column')) {
+    const safeRow = { ...row };
+    delete safeRow.project_id;
+    delete safeRow.lead_score;
+    delete safeRow.selected_product_details;
+    result = await supabase.from('leads').insert(safeRow).select('id').single();
   }
-  return { success: true };
+
+  if (result.error) {
+    return { success: false, error: result.error.message, leadScore };
+  }
+  return { success: true, leadId: result.data?.id, leadScore };
+}
+
+export async function sendLeadNotification(payload: Record<string, unknown>): Promise<void> {
+  try {
+    const { error } = await supabase.functions.invoke('send-lead-notification', {
+      body: payload,
+    });
+    if (error) {
+      console.error('Lead notification email failed:', error);
+    }
+  } catch (err) {
+    console.error('Lead notification request failed:', err);
+  }
 }

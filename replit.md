@@ -52,7 +52,35 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
 - API keys baked into bundle at build time via Vite `define` config
 - Do NOT use `typeof process` guards around `process.env.*` — Vite replaces these tokens at build time
 
+## Lead Generation System
+- **Project tracking**: `projects` table stores complete project state (style, products, dims, estimates, images)
+- **Lead scoring**: Client-side 0-100 algorithm (contact 25pts, project data 35pts, AI outputs 20pts, budget 20pts)
+- **Image storage**: `project-images` bucket (private) for user photos and AI renders
+- **Email notifications**: `send-lead-notification` Edge Function → Resend → peterpeeterspeter@gmail.com
+- **PDF dossier**: Enhanced PDF with room dimensions, price tier badges, product details
+- **Non-blocking**: Image uploads and email notifications don't break user flow on failure
+- **Graceful degradation**: If `projects` table or new `leads` columns don't exist, planner still works
+
+### Database Migration Required
+Run `supabase/migrations/20260211_create_projects_and_storage.sql` in Supabase SQL Editor to:
+1. Create `projects` table with RLS policies
+2. Add `project_id`, `lead_score`, `selected_product_details` columns to `leads`
+3. Add storage policies for `project-images` bucket
+
+### Edge Function Deployment Required
+Deploy `supabase/functions/send-lead-notification` and set `RESEND_API_KEY` in Supabase secrets
+
 ## Recent Changes
+- 2026-02-11: Lead generation system:
+  - Created `projects` table + migration (supabase/migrations/20260211_create_projects_and_storage.sql)
+  - Built projectService.ts for project CRUD and image uploads to Supabase Storage
+  - Enhanced leadService.ts with 0-100 lead scoring and graceful column fallback
+  - Updated PlannerPage.tsx: creates project on session start, tracks style/products/room/results at each step
+  - Enhanced pdfService.ts: room dimensions, price tier badges, product pricing
+  - Enhanced ResultDisplay.tsx: accepts room/product data for PDF generation
+  - Created send-lead-notification Edge Function for Resend email with project dossier
+  - Created project-images Storage bucket (private, 10MB limit)
+  - LeadCaptureForm enhanced with timeline dropdown
 - 2026-02-11: Product system upgrade:
   - Added price_low, price_high, price_tier, catalog_image_path, render_image_path, description columns to products table
   - Migration file: supabase/migrations/20260211_upgrade_products.sql (user must run in Supabase SQL editor)

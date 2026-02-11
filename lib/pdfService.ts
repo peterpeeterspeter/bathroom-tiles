@@ -3,11 +3,21 @@ import jsPDF from 'jspdf';
 interface PdfPayload {
   name: string;
   selectedStyle: string;
+  styleSummary?: string;
   estimateLow: number;
   estimateHigh: number;
   beforeImage: string;
   afterImage: string;
-  choices: { category: string; product: string }[];
+  choices: {
+    category: string;
+    product: string;
+    priceTier?: string;
+    priceLow?: number;
+    priceHigh?: number;
+  }[];
+  roomArea?: number;
+  roomWidth?: number;
+  roomLength?: number;
 }
 
 async function loadImageAsDataUrl(src: string): Promise<string> {
@@ -38,17 +48,20 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(28);
   doc.setFont('helvetica', 'bold');
-  doc.text('De Badkamer', margin, 30);
+  doc.text('De Badkamer', margin, 28);
   doc.setFontSize(8);
-  doc.text('VAKMANSCHAP IN RENOVATIE', margin, 38);
+  doc.setFont('helvetica', 'normal');
+  doc.text('VAKMANSCHAP IN RENOVATIE', margin, 36);
 
   doc.setFontSize(9);
-  doc.setTextColor(12, 45, 72);
-  doc.text('INDICATIEF VOORSTEL', pageWidth - margin, 30, { align: 'right' });
+  doc.setFont('helvetica', 'bold');
   doc.setTextColor(255, 255, 255);
+  doc.text('AI PROJECT DOSSIER', pageWidth - margin, 28, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
+  doc.setTextColor(200, 200, 200);
   const dateStr = new Date().toLocaleDateString('nl-BE');
-  doc.text(dateStr, pageWidth - margin, 38, { align: 'right' });
+  doc.text(dateStr, pageWidth - margin, 36, { align: 'right' });
 
   let y = 62;
   doc.setTextColor(0, 0, 0);
@@ -70,7 +83,30 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'bold');
   doc.text(payload.selectedStyle, margin + 6, y + 20);
-  y += 36;
+  y += 30;
+
+  if (payload.styleSummary) {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    const summaryLines = doc.splitTextToSize(payload.styleSummary, contentWidth - 12);
+    doc.text(summaryLines.slice(0, 3), margin + 6, y);
+    y += summaryLines.slice(0, 3).length * 5 + 6;
+  }
+
+  if (payload.roomArea || payload.roomWidth) {
+    doc.setFillColor(240, 248, 240);
+    doc.roundedRect(margin, y, contentWidth, 20, 3, 3, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text('RUIMTE', margin + 6, y + 8);
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    const dims = `${payload.roomWidth || '?'}m x ${payload.roomLength || '?'}m = ${payload.roomArea?.toFixed(1) || '?'} m\u00B2`;
+    doc.text(dims, margin + 6, y + 16);
+    y += 26;
+  }
 
   doc.setFillColor(12, 45, 72);
   doc.roundedRect(margin, y, contentWidth, 32, 3, 3, 'F');
@@ -88,7 +124,7 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
     doc.setTextColor(100, 100, 100);
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.text('UW KEUZES', margin, y);
+    doc.text('UW PRODUCTKEUZES', margin, y);
     y += 6;
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(9);
@@ -96,7 +132,23 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
       doc.setFont('helvetica', 'bold');
       doc.text(`${c.category}:`, margin, y);
       doc.setFont('helvetica', 'normal');
-      doc.text(c.product, margin + 30, y);
+      let productText = c.product;
+      if (c.priceTier) {
+        const tierLabel = c.priceTier === 'premium' ? 'Premium' : c.priceTier === 'mid' ? 'Midden' : 'Budget';
+        productText += ` (${tierLabel})`;
+      }
+      doc.text(productText, margin + 35, y);
+      if (c.priceLow && c.priceHigh) {
+        doc.setFontSize(7);
+        doc.setTextColor(100, 100, 100);
+        doc.text(
+          `EUR ${Math.round(c.priceLow).toLocaleString('nl-BE')} - ${Math.round(c.priceHigh).toLocaleString('nl-BE')}`,
+          margin + 35, y + 4
+        );
+        doc.setFontSize(9);
+        doc.setTextColor(0, 0, 0);
+        y += 4;
+      }
       y += 6;
     });
     y += 6;
@@ -112,17 +164,66 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
     }
     doc.setTextColor(100, 100, 100);
     doc.setFontSize(8);
-    doc.text('VISUALISATIE', margin, y);
+    doc.text('AI VISUALISATIE', margin, y);
     y += 4;
     doc.addImage(afterData, 'JPEG', margin, y, imgWidth, imgHeight);
 
     doc.setFontSize(6);
     doc.setTextColor(200, 200, 200);
-    doc.text('DE BADKAMER - INDICATIEF', margin + imgWidth / 2, y + imgHeight - 4, { align: 'center' });
+    doc.text('DE BADKAMER - AI GEGENEREERD - INDICATIEF', margin + imgWidth / 2, y + imgHeight - 4, { align: 'center' });
     y += imgHeight + 8;
   } catch {
     // skip image if it fails
   }
+
+  try {
+    const beforeData = await loadImageAsDataUrl(payload.beforeImage);
+    const imgWidth = contentWidth * 0.5;
+    const imgHeight = imgWidth * 0.6;
+    if (y + imgHeight > 260) {
+      doc.addPage();
+      y = 20;
+    }
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(8);
+    doc.text('HUIDIGE SITUATIE', margin, y);
+    y += 4;
+    doc.addImage(beforeData, 'JPEG', margin, y, imgWidth, imgHeight);
+    y += imgHeight + 8;
+  } catch {
+    // skip if fails
+  }
+
+  if (y > 240) {
+    doc.addPage();
+    y = 20;
+  }
+  doc.setTextColor(100, 100, 100);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text('INBEGREPEN IN DEZE INDICATIE', margin, y);
+  y += 7;
+  const inclusions = ['Materialen & sanitair', 'Professionele installatie', 'Levering & transport', 'Sloopwerken & afvoer'];
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(9);
+  inclusions.forEach(item => {
+    doc.setFont('helvetica', 'normal');
+    doc.text(`  \u2022  ${item}`, margin, y);
+    y += 5;
+  });
+  y += 6;
+
+  doc.setFillColor(245, 250, 245);
+  doc.roundedRect(margin, y, contentWidth, 30, 3, 3, 'F');
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  doc.text('VOLGENDE STAPPEN', margin + 6, y + 8);
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+  doc.setFont('helvetica', 'normal');
+  doc.text('1. Onze experts nemen binnen 24 uur contact met u op.', margin + 6, y + 16);
+  doc.text('2. Gratis opname ter plaatse voor definitieve offerte.', margin + 6, y + 22);
+  y += 38;
 
   if (y > 250) {
     doc.addPage();
@@ -137,7 +238,7 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
   const disclaimerLines = [
     'DISCLAIMER: Dit document is een indicatief voorstel en vormt geen bindende offerte.',
     'Alle visualisaties zijn AI-generaties en dienen puur ter inspiratie. Afmetingen en productdetails kunnen in de realiteit afwijken.',
-    'Prijzen zijn indicatief en gebaseerd op gemiddelde markttarieven. Een definitieve opname en offerte volgt na persoonlijk adviesgesprek.',
+    'Prijzen zijn indicatief en gebaseerd op gemiddelde markttarieven (Q1 2026). Een definitieve opname en offerte volgt na persoonlijk adviesgesprek.',
     'Definitieve productkeuze gebeurt steeds samen met een De Badkamer-adviseur. Exacte merken, types en afmetingen zijn niet gegarandeerd.',
     `(C) ${new Date().getFullYear()} DeBadkamer.com. Alle rechten voorbehouden.`,
   ];
@@ -146,5 +247,5 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
     y += 4;
   });
 
-  doc.save(`DeBadkamer_Voorstel_${payload.name.replace(/\s+/g, '_')}.pdf`);
+  doc.save(`DeBadkamer_Dossier_${payload.name.replace(/\s+/g, '_')}.pdf`);
 }

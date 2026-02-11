@@ -13,11 +13,22 @@ import { LoadingOverlay } from '../components/LoadingOverlay';
 import { LeadCaptureForm } from '../components/LeadCaptureForm';
 import { ResultDisplay } from '../components/ResultDisplay';
 import { LegalModal } from '../components/LegalModal';
-import { submitLead } from '../lib/leadService';
+import { submitLead, sendLeadNotification } from '../lib/leadService';
 import { trackEvent } from '../lib/analytics';
 import { fetchAllActiveProducts, fetchStyleTags } from '../lib/productService';
 import { analyzeProjectContext, presetToProfile } from '../services/styleAnalysis';
 import { useSEO } from '../lib/useSEO';
+import {
+  createProject,
+  updateProjectStyle,
+  updateProjectProducts,
+  updateProjectRoom,
+  updateProjectResults,
+  uploadProjectImage,
+  markProjectLeadSubmitted,
+  getProjectImagePath,
+  getSignedImageUrl,
+} from '../lib/projectService';
 
 const TIMEOUT_MS = 120_000;
 
@@ -68,12 +79,20 @@ export default function PlannerPage() {
   const [renderUrl, setRenderUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [legalModal, setLegalModal] = useState<{ open: boolean; type: 'privacy' | 'terms' | 'cookies'; title: string }>({ open: false, type: 'privacy', title: '' });
+  const [projectId, setProjectId] = useState<string | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const selectedProductDetailsRef = useRef<Record<string, { id: string; brand: string; name: string; price_low: number; price_high: number; price_tier: string }>>({});
 
   useEffect(() => {
     trackEvent('planner_session_started');
+    createProject().then(id => {
+      if (id) {
+        setProjectId(id);
+        trackEvent('project_created', { projectId: id });
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -96,12 +115,20 @@ export default function PlannerPage() {
   const handleStyleSelected = useCallback((result: StyleSelectionResult) => {
     setSelectedPreset(result.preset);
     setReferenceImages(result.referenceImages);
-    if (result.preset && result.referenceImages.length === 0) {
-      setStyleProfile(presetToProfile(result.preset));
+    const profile = result.preset && result.referenceImages.length === 0
+      ? presetToProfile(result.preset) : null;
+    if (profile) setStyleProfile(profile);
+
+    if (projectId) {
+      const styleData = profile || (result.preset ? presetToProfile(result.preset) : null);
+      if (styleData) {
+        updateProjectStyle(projectId, styleData).catch(() => {});
+      }
     }
+
     setStep(2);
     trackEvent('style_selected', { preset: result.preset?.label_nl, refImages: result.referenceImages.length });
-  }, []);
+  }, [projectId]);
 
   const runExpertAnalysis = async () => {
     if (!imagePreview) return;
@@ -147,6 +174,14 @@ export default function PlannerPage() {
       }
 
       setStyleProfile(profile);
+
+      if (projectId) {
+        updateProjectStyle(projectId, profile).catch(() => {});
+        if (projectSpec) {
+          updateProjectRoom(projectId, projectSpec).catch(() => {});
+        }
+      }
+
       setStep(3);
       trackEvent('expert_analysis_completed', { tags: profile.tags.length, hasExpertAdvice: !!profile.expertAnalysis });
     } catch (err: any) {
@@ -154,6 +189,9 @@ export default function PlannerPage() {
       if (selectedPreset) {
         const fallback = presetToProfile(selectedPreset);
         setStyleProfile(fallback);
+        if (projectId) {
+          updateProjectStyle(projectId, fallback).catch(() => {});
+        }
         setStep(3);
         trackEvent('expert_analysis_fallback', { preset: selectedPreset.label_nl });
       } else {
@@ -182,6 +220,14 @@ export default function PlannerPage() {
     if (key) {
       setMaterialConfig(prev => ({ ...prev, [key]: product.name }));
     }
+    selectedProductDetailsRef.current[category] = {
+      id: product.id,
+      brand: product.brand,
+      name: product.name,
+      price_low: product.price_low || product.price * 0.9,
+      price_high: product.price_high || product.price * 1.1,
+      price_tier: product.price_tier || 'mid',
+    };
     trackEvent('product_selected', { category, productId: product.id, productName: product.name });
   }, []);
 
@@ -198,6 +244,7 @@ export default function PlannerPage() {
         delete next[category];
         return next;
       });
+      delete selectedProductDetailsRef.current[category];
     }
     trackEvent('product_action_changed', { category, action });
   }, []);
@@ -213,6 +260,16 @@ export default function PlannerPage() {
     setError(null);
     abortRef.current = new AbortController();
 
+    if (projectId) {
+      updateProjectProducts(
+        projectId,
+        selectedProductIds,
+        selectedProductNames,
+        materialConfig,
+        selectedProductDetailsRef.current
+      ).catch(() => {});
+    }
+
     trackEvent('generation_started', { source: styleProfile.source });
     const startTime = Date.now();
 
@@ -223,6 +280,12 @@ export default function PlannerPage() {
       const compressed = await compressImage(imagePreview, 1500);
       const mimeType = compressed.match(/^data:(.*);base64,/)?.[1] || 'image/jpeg';
       const base64 = compressed.split(',')[1];
+
+      if (projectId) {
+        uploadProjectImage(projectId, 'original_photo', compressed).catch(err =>
+          console.error('Original photo upload failed (non-blocking):', err)
+        );
+      }
 
       const aiSpec = await analyzeBathroomInput(base64, mimeType);
 
@@ -235,6 +298,10 @@ export default function PlannerPage() {
         totalAreaM2: (userDims?.estimatedWidthMeters || aiSpec.estimatedWidthMeters) * (userDims?.estimatedLengthMeters || aiSpec.estimatedLengthMeters),
       };
       setProjectSpec(mergedSpec);
+
+      if (projectId) {
+        updateProjectRoom(projectId, mergedSpec).catch(() => {});
+      }
 
       if (abortRef.current?.signal.aborted) throw new Error('timeout');
 
@@ -267,6 +334,15 @@ export default function PlannerPage() {
       setRenderUrl(render);
       setEstimate(est);
 
+      if (projectId) {
+        updateProjectResults(projectId, est).catch(() => {});
+        if (render) {
+          uploadProjectImage(projectId, 'ai_render', render).catch(err =>
+            console.error('Render upload failed (non-blocking):', err)
+          );
+        }
+      }
+
       const duration = Math.floor((Date.now() - startTime) / 1000);
       trackEvent('generation_completed', { durationSeconds: duration, total: est.grandTotal });
     } catch (err: any) {
@@ -283,34 +359,74 @@ export default function PlannerPage() {
     }
   };
 
-  const handleLeadSubmit = async (data: { name: string; email: string; phone: string; postcode: string }) => {
+  const handleLeadSubmit = async (data: { name: string; email: string; phone: string; postcode: string; preferredTimeline: string }) => {
     setLeadName(data.name);
 
     const spec = projectSpec;
     const totalLow = Math.round((estimate?.grandTotal || 0) * 0.85);
     const totalHigh = Math.round((estimate?.grandTotal || 0) * 1.15);
 
-    await submitLead({
+    const leadResult = await submitLead({
       name: data.name,
       email: data.email,
       phone: data.phone,
       postcode: data.postcode,
+      projectId: projectId || undefined,
       styleProfile: styleProfile!,
       materialConfig,
       selectedProducts: selectedProductIds,
+      selectedProductDetails: selectedProductDetailsRef.current,
       estimatedTotalLow: totalLow,
       estimatedTotalHigh: totalHigh,
       roomWidth: spec?.estimatedWidthMeters || 0,
       roomLength: spec?.estimatedLengthMeters || 0,
       roomArea: spec?.totalAreaM2 || 0,
       source: 'planner',
+      preferredTimeline: data.preferredTimeline,
+      hasOriginalPhoto: !!imagePreview,
+      hasRender: !!renderUrl,
     });
+
+    if (projectId) {
+      markProjectLeadSubmitted(projectId).catch(() => {});
+    }
+
+    let originalPhotoUrl: string | null = null;
+    let renderImageUrl: string | null = null;
+    if (projectId) {
+      const [origPath, renderPath] = await Promise.all([
+        getProjectImagePath(projectId, 'original_photo'),
+        getProjectImagePath(projectId, 'ai_render'),
+      ]);
+      if (origPath) originalPhotoUrl = await getSignedImageUrl(origPath);
+      if (renderPath) renderImageUrl = await getSignedImageUrl(renderPath);
+    }
+
+    sendLeadNotification({
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      postcode: data.postcode,
+      preferredTimeline: data.preferredTimeline,
+      styleName: styleProfile?.presetName || styleProfile?.summary?.slice(0, 50) || '',
+      styleSummary: styleProfile?.summary || '',
+      products: selectedProductDetailsRef.current,
+      roomWidth: spec?.estimatedWidthMeters,
+      roomLength: spec?.estimatedLengthMeters,
+      roomArea: spec?.totalAreaM2,
+      estimateLow: totalLow,
+      estimateHigh: totalHigh,
+      leadScore: leadResult.leadScore,
+      originalPhotoUrl,
+      renderImageUrl,
+    }).catch(err => console.error('Email notification failed (non-blocking):', err));
 
     trackEvent('lead_submitted', {
       source: styleProfile?.source,
       totalLow,
       totalHigh,
       postcode: data.postcode,
+      leadScore: leadResult.leadScore,
     });
 
     setLeadSubmitted(true);
@@ -332,10 +448,26 @@ export default function PlannerPage() {
     setLeadSubmitted(false);
     setLeadName('');
     setError(null);
+    selectedProductDetailsRef.current = {};
     trackEvent('session_reset');
+    createProject().then(id => {
+      if (id) {
+        setProjectId(id);
+        trackEvent('project_created', { projectId: id });
+      }
+    });
   };
 
-  const choices = Object.entries(selectedProductNames).map(([category, product]) => ({ category, product: String(product) }));
+  const choices = Object.entries(selectedProductNames).map(([category, product]) => {
+    const details = selectedProductDetailsRef.current[category];
+    return {
+      category,
+      product: String(product),
+      priceTier: details?.price_tier,
+      priceLow: details?.price_low,
+      priceHigh: details?.price_high,
+    };
+  });
 
   const openLegal = (type: 'privacy' | 'terms' | 'cookies', title: string) => {
     setLegalModal({ open: true, type, title });
@@ -448,6 +580,9 @@ export default function PlannerPage() {
                   renderUrl={renderUrl}
                   imagePreview={imagePreview!}
                   choices={choices}
+                  roomArea={projectSpec?.totalAreaM2}
+                  roomWidth={projectSpec?.estimatedWidthMeters}
+                  roomLength={projectSpec?.estimatedLengthMeters}
                 />
               )}
             </div>

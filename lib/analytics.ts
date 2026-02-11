@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 
+const SESSION_STORAGE_KEY = 'debadkamer_session_id';
 let currentSessionId: string | null = null;
 
 function generateSessionId(): string {
@@ -8,9 +9,28 @@ function generateSessionId(): string {
 
 export function getSessionId(): string {
   if (!currentSessionId) {
-    currentSessionId = generateSessionId();
+    try {
+      const stored = localStorage.getItem(SESSION_STORAGE_KEY);
+      if (stored) {
+        currentSessionId = stored;
+      } else {
+        currentSessionId = generateSessionId();
+        localStorage.setItem(SESSION_STORAGE_KEY, currentSessionId);
+      }
+    } catch {
+      currentSessionId = generateSessionId();
+    }
   }
   return currentSessionId;
+}
+
+export function resetSessionId(): void {
+  currentSessionId = generateSessionId();
+  try {
+    localStorage.setItem(SESSION_STORAGE_KEY, currentSessionId);
+  } catch {
+    // ignore
+  }
 }
 
 export async function trackEvent(eventType: string, eventData: Record<string, unknown> = {}) {

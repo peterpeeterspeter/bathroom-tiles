@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { ArrowRight, CheckCircle, User, Mail, Smartphone, MapPin, Loader2 } from 'lucide-react';
+import { ArrowRight, CheckCircle, User, Mail, Smartphone, MapPin, Calendar, Loader2 } from 'lucide-react';
 
 interface LeadData {
   name: string;
   email: string;
   phone: string;
   postcode: string;
+  preferredTimeline: string;
 }
 
 interface LeadCaptureFormProps {
@@ -19,8 +20,16 @@ const fields = [
   { id: 'postcode' as const, label: 'Postcode', icon: MapPin, type: 'text' },
 ];
 
+const timelineOptions = [
+  { value: '', label: 'Wanneer wilt u renoveren?' },
+  { value: '1_month', label: 'Binnen 1 maand' },
+  { value: '1_3_months', label: 'Binnen 1-3 maanden' },
+  { value: '3_6_months', label: 'Binnen 3-6 maanden' },
+  { value: 'exploring', label: 'Aan het verkennen' },
+];
+
 export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
-  const [leadData, setLeadData] = useState<LeadData>({ name: '', email: '', phone: '', postcode: '' });
+  const [leadData, setLeadData] = useState<LeadData>({ name: '', email: '', phone: '', postcode: '', preferredTimeline: '' });
   const [gdprConsent, setGdprConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -58,6 +67,18 @@ export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
                 />
               </div>
             ))}
+            <div className="relative">
+              <Calendar className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />
+              <select
+                value={leadData.preferredTimeline}
+                onChange={(e) => setLeadData({...leadData, preferredTimeline: e.target.value})}
+                className="w-full bg-neutral-100 border border-neutral-300/50 rounded-xl md:rounded-2xl p-4 md:p-5 pl-12 md:pl-14 font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all appearance-none"
+              >
+                {timelineOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <label className="flex items-start gap-3 cursor-pointer group">
