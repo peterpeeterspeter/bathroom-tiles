@@ -1,0 +1,113 @@
+Context
+The current product system has 29 products with fragile external CDN image URLs, single exact prices (misleading), and images that can't be sent to Gemini for rendering (URLs as text, not inline data). This upgrade adds price ranges, self-hosted images in Supabase Storage (catalog + render reference), price tiers, and scales to ~100 products with hybrid branding (real brands for premium, archetypes for budget/mid).
+User decisions: Hybrid brands, ~100 products, price ranges (low-high), manual curation + Supabase Storage.
+
+Files to Modify
+FileActionWhat Changessupabase/migrations/20260211_upgrade_products.sqlNEWAdd columns: price_low, price_high, price_tier, catalog_image_path, render_image_path, descriptiontypes.tsMODIFYDatabaseProduct gains new fields + PriceTier type + tier label/color mapslib/productService.tsMODIFYUpdate fetch query, add catalog image URL resolver, add base64 render image fetchercomponents/CategoryProductSelector.tsxMODIFYShow price ranges, tier badges, use Storage-backed imagesservices/geminiService.tsMODIFYPass inline base64 product images to render call, use price ranges in cost estimationsupabase/functions/import-products/index.tsMODIFYSupport new CSV columnspages/PlannerPage.tsxMODIFYFetch render images before AI call, pass to generateRenovationRender
+
+Implementation Steps
+Step 1: Database Migration
+Create supabase/migrations/20260211_upgrade_products.sql:
+
+Add columns: price_low (numeric), price_high (numeric), price_tier (text, CHECK budget|mid|premium), catalog_image_path (text), render_image_path (text), description (text)
+Backfill price_low/price_high from existing price (price0.9 / price1.1)
+Infer price_tier from price (>=1500 premium, <=200 budget, else mid)
+Add index on (category, price_tier, is_active)
+Keep old price and image_url columns for backward compatibility
+
+Step 2: Supabase Storage Bucket
+Create product-images bucket via Dashboard:
+
+Public bucket (product images aren't sensitive)
+2MB file size limit
+Allowed: image/jpeg, image/png, image/webp
+
+Folder structure: product-images/{product_id}/catalog.jpg + render.jpg
+Step 3: Type Updates (types.ts)
+typescriptexport type PriceTier = 'budget' | 'mid' | 'premium';
+
+// Add to DatabaseProduct interface:
+price_low: number;
+price_high: number;
+price_tier: PriceTier;
+catalog_image_path: string;  // Supabase Storage path
+render_image_path: string;   // Supabase Storage path
+description: string;         // Short description for AI context
+
+// Add constants:
+export const PRICE_TIER_LABELS: Record<PriceTier, string> = {
+  budget: 'Budget', mid: 'Midden', premium: 'Premium'
+};
+export const PRICE_TIER_COLORS: Record<PriceTier, string> = {
+  budget: 'bg-green-100 text-green-700',
+  mid: 'bg-blue-100 text-blue-700',
+  premium: 'bg-amber-100 text-amber-700'
+};
+```
+
+### Step 4: Product Service (`lib/productService.ts`)
+
+- Update `fetchAllActiveProducts` SELECT query to include new columns
+- Add `getProductCatalogImageUrl(product)` — resolves Storage path to public URL, falls back to legacy `image_url`
+- Add `fetchProductRenderImageAsBase64(product)` — downloads render image from Storage, converts to base64 for Gemini
+- Add `fetchRenderImagesForProducts(products[])` — batch parallel fetch, returns `Map<productId, {base64, mimeType}>`
+- Add `getSelectedProducts(selectedProductIds)` — resolves ID map to full DatabaseProduct objects
+- Optional: update scoring to boost products matching user's preferred price tier
+
+### Step 5: UI Updates (`components/CategoryProductSelector.tsx`)
+
+- Use `getProductCatalogImageUrl(p)` instead of `p.image_url`
+- Add price tier badge (top-left corner of card): colored pill showing "Budget"/"Midden"/"Premium"
+- Add price range below product name: `EUR 350 - 520`
+- Falls back to legacy `price` display if price_low/price_high not set
+
+### Step 6: AI Pipeline Updates (`services/geminiService.ts`)
+
+**Render (generateRenovationRender):**
+- New parameter: `productImages: Map<string, {base64, mimeType}>`
+- Build multi-part content: shell image first, then each product render image as `inlineData`, then text prompt labeling each image
+- Gemini 3 Pro supports up to 14 reference images — we send max 8 (1 shell + 7 products)
+
+**Cost estimation (calculateRenovationCost):**
+- Send price_low, price_high, price_tier instead of single price
+- Update system instruction: "Use midpoint for estimation, or price_low for budget, price_high for premium"
+
+### Step 7: PlannerPage.tsx Integration
+
+In `startProcessing()`, before the render call:
+```
+const selectedProducts = await getSelectedProducts(selectedProductIds);
+const productImages = await fetchRenderImagesForProducts(selectedProducts);
+// Pass productImages to generateRenovationRender
+Step 8: CSV Import Update (import-products/index.ts)
+
+Required columns become: id, brand, name, category, price_low, price_high, price_tier
+New optional columns: catalog_image_path, render_image_path, description
+Legacy price column auto-filled as midpoint of price_low and price_high
+
+Step 9: Product Data Preparation
+Distribution target (~100 products):
+CategoryBudgetMidPremiumTotalFaucet35513Toilet34411Shower35513Vanity35513Tile45514Lighting35513Bathtub35513
+Naming:
+
+Premium: real brands (GROHE-ALLURE-M, DURAVIT-STARCK-3)
+Mid: mix of real brands + generic (GROHE-EUROSMART-M, MID-FAUCET-CHROME-01)
+Budget: generic archetypes (BUDGET-FAUCET-CHROME-01), brand = "Essentials" or "Studio Line"
+
+Image sourcing workflow:
+
+Catalog images (800x800px, white bg) — manufacturer press kits for brands, stock photos for archetypes
+Render reference images (1024x1024px, lifestyle/in-situ) — manufacturer galleries, Unsplash, curated stock
+Upload all to Storage via bulk upload script or Dashboard
+Import product data via CSV to the Edge Function
+
+
+Verification
+
+Run migration — confirm new columns in products table with backfilled data
+Create Storage bucket — upload test image, verify public URL works
+Load planner Step 2 — confirm products show with price ranges and tier badges
+Check image fallback — products without catalog_image_path still show legacy image_url
+Run full planner flow — verify render call receives inline product images (check network tab for request size increase)
+Test CSV import — import a small batch with new columns, verify all fields populate
+npm run build — no TypeScript errors
