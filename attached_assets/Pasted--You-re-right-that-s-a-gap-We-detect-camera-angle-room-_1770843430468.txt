@@ -1,0 +1,126 @@
+
+
+
+You're right — that's a gap. We detect camera angle, room dimensions, every fixture position, wall features, layout type, and then barely use any of it. Let me show what the analysis actually produces vs what we're currently passing:
+
+Analysis output (with our enhanced schema):
+
+{
+  "calibration_object": "Standard door 80cm x 210cm",
+  "calibration_confidence": 0.88,
+  "estimated_dimensions": { "width_m": 2.5, "length_m": 3.2, "ceiling_height_m": 2.4, "confidence": 0.82 },
+  "layout_type": "RECTANGLE",
+  "camera": { "position": "EYE_LEVEL", "facing_from_wall": 2, "lens_feel": "WIDE_ANGLE" },
+  "walls": [
+    { "wall_index": 0, "visible": false, "anchors": [], "has_plumbing": true, "features": null },
+    { "wall_index": 1, "visible": true, "anchors": [{ "element_type": "WINDOW", "tl_x": 62, "tl_y": 8, ... }], "has_plumbing": false },
+    { "wall_index": 2, "visible": false, "anchors": [], "has_plumbing": false, "features": null },
+    { "wall_index": 3, "visible": true, "anchors": [{ "element_type": "DOOR", "tl_x": 15, "tl_y": 72, ... }], "has_plumbing": false }
+  ],
+  "primary_light_direction": "LEFT",
+  "fixtures": [
+    { "type": "TOILET", "item": "Wall-hung WC", "position_x_percent": 25, "position_y_percent": 35, "wall_index": 0, "condition": "WORN", "confidence": 0.94 },
+    { "type": "SINK", "item": "Pedestal basin", "position_x_percent": 55, "position_y_percent": 40, "wall_index": 0, "condition": "DAMAGED", "confidence": 0.91 },
+    { "type": "SHOWER", "item": "Corner shower enclosure", "position_x_percent": 82, "position_y_percent": 20, "wall_index": 1, "condition": "WORN", "confidence": 0.87 },
+    { "type": "RADIATOR", "item": "Panel radiator", "position_x_percent": 40, "position_y_percent": 70, "wall_index": 3, "condition": "GOOD", "confidence": 0.79 }
+  ],
+  "plumbing_wall": 0,
+  "occlusions": ["wall 0 (North) not fully visible — behind camera", "ceiling corners partially occluded"],
+  "demolition_notes": "Pedestal basin has visible cracks. Shower grout is deteriorated."
+}
+
+What we're currently injecting into the render prompt: Only anchors (window/door corners) + occlusions + plumbing wall. That's maybe 15% of the data.
+
+What we should inject — everything:
+
+The updated STEP 1 should look like this:
+
+STEP 1 — STUDY THE EXISTING ROOM:
+Analyze image 1 carefully. An architectural analysis has already
+been performed — use it as your spatial reference:
+
+CAMERA:
+- Position: eye-level, facing from the South wall
+- Lens: wide-angle
+- This camera angle, height, and perspective must be IDENTICAL
+  in the output
+
+ROOM:
+- Dimensions: approximately 2.5m wide × 3.2m long
+- Ceiling height: approximately 2.4m
+- Layout: rectangle
+- Scale reference: standard door (80cm × 210cm)
+
+WALLS:
+- North wall: NOT FULLY VISIBLE (behind camera). Has plumbing connections.
+- East wall: visible. WINDOW at corners [62%,8%] → [85%,42%] (confidence 0.91)
+- South wall: not visible (camera wall)
+- West wall: visible. DOOR at corners [15%,72%] → [58%,98%], hinge LEFT (confidence 0.87)
+
+CURRENT FIXTURES:
+- TOILET (wall-hung WC): North wall, position X:25% Y:35%, condition WORN
+- SINK (pedestal basin): North wall, position X:55% Y:40%, condition DAMAGED
+- SHOWER (corner enclosure): East wall, position X:82% Y:20%, condition WORN
+- RADIATOR (panel): West wall, position X:40% Y:70%, condition GOOD
+
+LIGHT:
+- Primary natural light enters from the LEFT (East wall window)
+
+OCCLUSIONS:
+- Wall 0 (North) not fully visible — behind camera
+- Ceiling corners partially occluded
+Do NOT invent or render elements in these occluded zones.
+
+Verify all of the above against the actual photo. The photo is
+the ground truth — if the analysis conflicts with what you see,
+trust the photo.
+
+ALL structural elements (walls, window, door, ceiling) remain
+IDENTICAL in the final image.
+
+And STEP 2 becomes:
+
+STEP 2 — PLAN THE LAYOUT:
+The plumbing connects on the North wall (where the current
+toilet and sink are mounted). Keep new water-connected fixtures
+near this wall to minimize plumbing relocation.
+
+The current toilet is WORN and the sink is DAMAGED — both are
+being replaced. The radiator on the West wall is in GOOD
+condition.
+
+Notes from demolition assessment: Pedestal basin has visible
+cracks. Shower grout is deteriorated.
+
+Based on the room shape (2.5m × 3.2m rectangle) and where the
+door (West wall) and window (East wall) are, determine the most
+logical position for each fixture:
+- Plumbing logic: keep toilet and vanity near the North wall
+- Flow: minimum 60cm free passage in front of every fixture
+- Natural light: place the vanity mirror to catch daylight
+  from the East window if possible
+- Privacy: toilet not directly visible from the West door
+
+That's the full analysis flowing through. Every field gets used. Let me update the plan.
+
+
+Updated plan file with enhanced architectural analysis instructions
+
+Now every field from the analysis is used in the render prompt:
+
+Analysis field	Where it goes in render
+camera.position + facingFromWall + lensFeel	STEP 1 → CAMERA block
+estimatedWidthMeters × estimatedLengthMeters	STEP 1 → ROOM block + STEP 2 layout reasoning
+ceilingHeightMeters	STEP 1 → ROOM block
+layoutShape	STEP 1 → ROOM block + STEP 2
+calibrationObject	STEP 1 → ROOM block (scale reference)
+walls[].visible	STEP 1 → WALLS block (visible/not visible)
+walls[].anchors[] (tl/tr/br/bl)	STEP 1 → WALLS block (corner coordinates)
+walls[].hasPlumbing	STEP 1 → WALLS block
+walls[].features	STEP 1 → WALLS block (beams, niches)
+existingFixtures[] (all of them)	STEP 1 → CURRENT FIXTURES (type, wall, position, condition)
+primaryLightDirection	STEP 1 → LIGHT + STEP 5 → shadow direction
+plumbingWall	STEP 2 → plumbing reasoning
+fixtures[].condition	STEP 2 → condition notes
+constraints (demolition notes)	STEP 2 → demolition notes
+occlusions[]	STEP 1 → OCCLUSIONS block + ABSOLUTE CONSTRAINTS
