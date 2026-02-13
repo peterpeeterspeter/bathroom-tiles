@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { ArrowRight, Upload, Image as ImageIcon, Ruler, Info, Camera } from 'lucide-react';
+import { ArrowRight, Upload, Image as ImageIcon, Ruler, Info, Camera, PenLine } from 'lucide-react';
 import { ProjectSpec } from '../types';
 
 interface DimensionsPhotoProps {
@@ -7,9 +7,11 @@ interface DimensionsPhotoProps {
   onImageChange: (dataUrl: string) => void;
   onDimensionChange: (field: string, value: number) => void;
   onSubmit: () => void;
+  roomNotes: string;
+  onRoomNotesChange: (notes: string) => void;
 }
 
-export const DimensionsPhoto = ({ imagePreview, onImageChange, onDimensionChange, onSubmit }: DimensionsPhotoProps) => {
+export const DimensionsPhoto = ({ imagePreview, onImageChange, onDimensionChange, onSubmit, roomNotes, onRoomNotesChange }: DimensionsPhotoProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,6 +61,22 @@ export const DimensionsPhoto = ({ imagePreview, onImageChange, onDimensionChange
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] border-2 border-neutral-300/30 shadow-xl">
+            <h3 className="font-black uppercase text-xs tracking-widest text-neutral-500 mb-4 flex items-center gap-2">
+              <PenLine size={16}/> 2. Opmerkingen over de ruimte
+              <span className="text-[10px] font-bold text-neutral-300 ml-auto normal-case tracking-normal">Optioneel</span>
+            </h3>
+            <textarea
+              value={roomNotes}
+              onChange={(e) => onRoomNotesChange(e.target.value)}
+              placeholder="Bijv: De douchecabine is kapot en moet weg. Ik wil graag een inloopdouche. Het raam moet zeker blijven. De vloer is recent gelegd dus die mag behouden blijven."
+              rows={4}
+              maxLength={500}
+              className="w-full bg-surface border-2 border-neutral-300/50 rounded-xl p-4 text-sm font-bold outline-none focus:border-primary transition-all resize-none placeholder:text-neutral-300"
+            />
+            <p className="text-[10px] font-bold text-neutral-300 mt-2 text-right">{roomNotes.length}/500</p>
           </div>
 
           <div className="bg-neutral-900 text-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-2xl relative overflow-hidden">

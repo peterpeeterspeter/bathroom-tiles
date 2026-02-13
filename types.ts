@@ -116,6 +116,7 @@ export interface StyleProfile {
   presetName?: string;
   referenceImageUrls?: string[];
   expertAnalysis?: ExpertAnalysis;
+  moodDescription?: string;
 }
 
 export type PriceTier = 'budget' | 'mid' | 'premium';

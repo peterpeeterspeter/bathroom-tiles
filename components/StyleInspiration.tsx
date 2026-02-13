@@ -16,16 +16,19 @@ export interface ReferenceImage {
 export interface StyleSelectionResult {
   preset: StylePreset | null;
   referenceImages: ReferenceImage[];
+  moodDescription: string;
 }
 
 interface StyleInspirationProps {
   onStyleSelected: (result: StyleSelectionResult) => void;
+  onMoodDescriptionChange?: (value: string) => void;
 }
 
-export const StyleInspiration = ({ onStyleSelected }: StyleInspirationProps) => {
+export const StyleInspiration = ({ onStyleSelected, onMoodDescriptionChange }: StyleInspirationProps) => {
   const [presets, setPresets] = useState<StylePreset[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<StylePreset | null>(null);
   const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
+  const [moodDescription, setMoodDescription] = useState('');
   const [pinterestUrl, setPinterestUrl] = useState('');
   const [fetchingPin, setFetchingPin] = useState(false);
   const [pinError, setPinError] = useState<string | null>(null);
@@ -42,7 +45,7 @@ export const StyleInspiration = ({ onStyleSelected }: StyleInspirationProps) => 
   const handlePresetSelect = (preset: StylePreset) => {
     setSelectedPreset(preset);
     if (referenceImages.length === 0) {
-      onStyleSelected({ preset, referenceImages: [] });
+      onStyleSelected({ preset, referenceImages: [], moodDescription });
     }
   };
 
@@ -110,7 +113,7 @@ export const StyleInspiration = ({ onStyleSelected }: StyleInspirationProps) => 
   };
 
   const handleProceedWithImages = () => {
-    onStyleSelected({ preset: selectedPreset, referenceImages });
+    onStyleSelected({ preset: selectedPreset, referenceImages, moodDescription });
   };
 
   if (loading) {
@@ -272,6 +275,27 @@ export const StyleInspiration = ({ onStyleSelected }: StyleInspirationProps) => 
               )}
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="mt-8 md:mt-12 max-w-6xl mx-auto">
+        <div className="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] border-2 border-neutral-300/30 shadow-xl">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+              <Sparkles size={18} />
+            </div>
+            <h3 className="font-black uppercase tracking-widest text-xs text-neutral-500">Beschrijf uw droomstijl</h3>
+            <span className="text-[10px] font-bold text-neutral-300 ml-auto uppercase">Optioneel</span>
+          </div>
+          <textarea
+            value={moodDescription}
+            onChange={(e) => { setMoodDescription(e.target.value); onMoodDescriptionChange?.(e.target.value); }}
+            placeholder="Bijv: Ik hou van lichte, rustige badkamers met veel hout en natuursteen. Geen koude witte tegels. Liefst een warm Scandinavisch gevoel met een vleugje luxe."
+            rows={3}
+            maxLength={500}
+            className="w-full bg-surface border-2 border-neutral-300/50 rounded-xl p-4 text-sm font-bold outline-none focus:border-primary transition-all resize-none placeholder:text-neutral-300"
+          />
+          <p className="text-[10px] font-bold text-neutral-300 mt-2 text-right">{moodDescription.length}/500</p>
         </div>
       </div>
 

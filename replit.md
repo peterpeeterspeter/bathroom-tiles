@@ -126,6 +126,16 @@ Deploy `supabase/functions/send-lead-notification` and set `RESEND_API_KEY` in S
   - Added Mirror category across entire system: types.ts, ProductConfiguration, geminiService (cost + render)
   - Product images served directly from rorix.nl CDN (no Supabase Storage needed for these)
   - Still missing products for: Vanity, Tile, Lighting categories
+- 2026-02-13: Free-text user intent capture:
+  - Added moodDescription textarea to StyleInspiration (Step 1) for aesthetic preferences
+  - Added roomNotes textarea to DimensionsPhoto (Step 2) for room constraints/issues
+  - Both fields integrated into AI prompts (analysis + render) with prompt injection sanitization
+  - User text wrapped in [USER_NOTE_START]/[USER_NOTE_END] delimiters with "treat as data" instructions
+  - sanitizeUserText() strips special chars (<>{}[]) and enforces 500 char limit
+  - moodDescription syncs to parent via onMoodDescriptionChange callback (fixes stale state bug)
+  - Lead scoring: +3 for moodDescription, +5 for roomNotes
+  - Database columns added: mood_description, room_notes, product_actions in leads table
+  - Fields stored in lead submission and available in lead notifications
 - 2026-02-10: Single-shot rendering pipeline:
   - Removed two-step pipeline (generateEmptySpace + generateRenovationRender)
   - Added single-shot generateRenovation() — original photo goes directly to gemini-3-pro-image-preview with Thinking mode + 2K output

@@ -29,6 +29,9 @@ interface LeadPayload {
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
+  moodDescription?: string;
+  roomNotes?: string;
+  productActions?: Record<string, string>;
 }
 
 function calculateLeadScore(payload: LeadPayload): number {
@@ -52,6 +55,9 @@ function calculateLeadScore(payload: LeadPayload): number {
     if (premiumCount >= 3) score += 5;
     else if (premiumCount >= 1) score += 3;
   }
+
+  if (payload.moodDescription?.trim()) score += 3;
+  if (payload.roomNotes?.trim()) score += 5;
 
   if (payload.hasRender) score += 10;
   if (payload.estimatedTotalLow && payload.estimatedTotalHigh) score += 10;
@@ -97,6 +103,9 @@ export async function submitLead(payload: LeadPayload): Promise<{ success: boole
   if (payload.utmSource) row.utm_source = payload.utmSource;
   if (payload.utmMedium) row.utm_medium = payload.utmMedium;
   if (payload.utmCampaign) row.utm_campaign = payload.utmCampaign;
+  if (payload.moodDescription) row.mood_description = payload.moodDescription;
+  if (payload.roomNotes) row.room_notes = payload.roomNotes;
+  if (payload.productActions) row.product_actions = payload.productActions;
 
   let result = await supabase.from('leads').insert(row);
 

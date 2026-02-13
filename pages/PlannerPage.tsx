@@ -66,6 +66,8 @@ export default function PlannerPage() {
   const [styleProfile, setStyleProfile] = useState<StyleProfile | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<StylePreset | null>(null);
   const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
+  const [moodDescription, setMoodDescription] = useState('');
+  const [roomNotes, setRoomNotes] = useState('');
   const [analyzingStyle, setAnalyzingStyle] = useState(false);
   const [selectedProductIds, setSelectedProductIds] = useState<Record<string, string>>({});
   const [selectedProductNames, setSelectedProductNames] = useState<Record<string, string>>({});
@@ -115,9 +117,13 @@ export default function PlannerPage() {
   const handleStyleSelected = useCallback((result: StyleSelectionResult) => {
     setSelectedPreset(result.preset);
     setReferenceImages(result.referenceImages);
+    setMoodDescription(result.moodDescription || '');
     const profile = result.preset && result.referenceImages.length === 0
       ? presetToProfile(result.preset) : null;
-    if (profile) setStyleProfile(profile);
+    if (profile) {
+      profile.moodDescription = result.moodDescription || undefined;
+      setStyleProfile(profile);
+    }
 
     if (projectId) {
       const styleData = profile || (result.preset ? presetToProfile(result.preset) : null);
@@ -171,6 +177,9 @@ export default function PlannerPage() {
       }
       if (referenceImages.length > 0) {
         profile.referenceImageUrls = referenceImages.map(img => img.thumbnail);
+      }
+      if (moodDescription) {
+        profile.moodDescription = moodDescription;
       }
 
       setStyleProfile(profile);
@@ -287,7 +296,7 @@ export default function PlannerPage() {
         );
       }
 
-      const aiSpec = await analyzeBathroomInput(base64, mimeType);
+      const aiSpec = await analyzeBathroomInput(base64, mimeType, roomNotes || undefined);
 
       const userDims = projectSpec;
       const mergedSpec: ProjectSpec = {
@@ -327,7 +336,8 @@ export default function PlannerPage() {
           productActions,
           selectedProducts,
           productImageMap,
-          mergedSpec
+          mergedSpec,
+          roomNotes || undefined
         ),
         calculateRenovationCost(mergedSpec, BudgetTier.STANDARD, styleProfile, materialConfig, allProducts, productActions)
       ]);
@@ -393,6 +403,9 @@ export default function PlannerPage() {
       preferredTimeline: data.preferredTimeline,
       hasOriginalPhoto: !!imagePreview,
       hasRender: !!renderUrl,
+      moodDescription: moodDescription || undefined,
+      roomNotes: roomNotes || undefined,
+      productActions: productActions as Record<string, string>,
     }), 'submitLead');
 
     if (projectId) {
@@ -521,7 +534,7 @@ export default function PlannerPage() {
             </div>
           )}
 
-          {step === 1 && <StyleInspiration onStyleSelected={handleStyleSelected} />}
+          {step === 1 && <StyleInspiration onStyleSelected={handleStyleSelected} onMoodDescriptionChange={setMoodDescription} />}
 
           {step === 2 && (
             <DimensionsPhoto
@@ -529,6 +542,8 @@ export default function PlannerPage() {
               onImageChange={(url) => { setImagePreview(url); trackEvent('photo_uploaded'); }}
               onDimensionChange={handleDimensionChange}
               onSubmit={() => { runExpertAnalysis(); trackEvent('dimensions_submitted'); }}
+              roomNotes={roomNotes}
+              onRoomNotesChange={setRoomNotes}
             />
           )}
 
