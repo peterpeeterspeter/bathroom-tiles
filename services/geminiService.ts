@@ -47,24 +47,35 @@ const createClient = (useDirect = false) => {
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`)), ms)
+    ),
+  ]);
+}
+
 async function withRetry<T>(
   fn: (useDirect: boolean) => Promise<T>,
   maxRetries = 2,
   baseDelay = 3000,
-  proxyOnly = false
+  proxyOnly = false,
+  perAttemptTimeoutMs = 120000
 ): Promise<T> {
   let lastError: any;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const useDirect = proxyOnly ? false : attempt > 0;
     try {
-      return await fn(useDirect);
+      return await withTimeout(fn(useDirect), perAttemptTimeoutMs, `API attempt ${attempt + 1}`);
     } catch (err: any) {
       lastError = err;
       const status = err?.status || err?.statusCode || 0;
-      const isRetryable = status === 429 || status === 503 || status === 500;
+      const msg = err?.message || '';
+      const isRetryable = status === 429 || status === 503 || status === 500 || msg.includes('timed out');
       if (!isRetryable || attempt === maxRetries) throw err;
       const delay = baseDelay * Math.pow(2, attempt);
-      console.warn(`API call failed (${status}), retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries}${proxyOnly ? '' : ', switching to direct API'})...`);
+      console.warn(`API call failed (${status || msg}), retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries}${proxyOnly ? '' : ', switching to direct API'})...`);
       await sleep(delay);
     }
   }
@@ -120,7 +131,9 @@ TASK:
 7. PLUMBING: Identify the wall index with the most plumbing connections. Any demolition notes.`;
 
   try {
+    console.log('[analyzeBathroomInput] Starting bathroom analysis...');
     const response = await withRetry(async (useDirect) => {
+      console.log(`[analyzeBathroomInput] Calling ${useDirect ? 'direct API' : 'proxy'}...`);
       const ai = createClient(useDirect);
       return ai.models.generateContent({
         model,
@@ -384,7 +397,9 @@ ${['Tile', 'Vanity', 'Toilet', 'Faucet', 'Shower', 'Bathtub', 'Mirror', 'Lightin
   `;
 
   try {
+    console.log('[calculateRenovationCost] Starting cost estimation...');
     const response = await withRetry(async (useDirect) => {
+      console.log(`[calculateRenovationCost] Calling ${useDirect ? 'direct API' : 'proxy'}...`);
       const ai = createClient(useDirect);
       return ai.models.generateContent({
         model,
@@ -770,6 +785,7 @@ ${occlusionLines.length > 0 ? `- Occluded zones (${occlusionLines.join('; ')}): 
   parts.push({ text: prompt });
 
   try {
+    console.log('[generateRenovation] Starting image generation via proxy...');
     const response = await withRetry(async (useDirect) => {
       const ai = createClient(useDirect);
       return ai.models.generateContent({
@@ -782,7 +798,8 @@ ${occlusionLines.length > 0 ? `- Occluded zones (${occlusionLines.join('; ')}): 
           },
         },
       });
-    }, 2, 8000, true);
+    }, 2, 8000, true, 180000);
+    console.log('[generateRenovation] Response received, extracting image...');
 
     for (const part of response.candidates?.[0]?.content?.parts || []) {
       if (part.inlineData) {

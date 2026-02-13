@@ -268,6 +268,10 @@ export default function PlannerPage() {
     setLoading(true);
     setError(null);
     abortRef.current = new AbortController();
+    const overallTimeout = setTimeout(() => {
+      console.warn('[PlannerPage] Overall 5-minute timeout reached, aborting...');
+      abortRef.current?.abort();
+    }, 300000);
 
     if (projectId) {
       updateProjectProducts(
@@ -286,6 +290,7 @@ export default function PlannerPage() {
       if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) await window.aistudio.openSelectKey();
 
       setLoadingMessage('Ruimte analyseren...');
+      console.log('[PlannerPage] Step 1: Compressing image...');
       const compressed = await compressImage(imagePreview, 1500);
       const mimeType = compressed.match(/^data:(.*);base64,/)?.[1] || 'image/jpeg';
       const base64 = compressed.split(',')[1];
@@ -296,7 +301,9 @@ export default function PlannerPage() {
         );
       }
 
+      console.log('[PlannerPage] Step 2: Running analyzeBathroomInput...');
       const aiSpec = await analyzeBathroomInput(base64, mimeType, roomNotes || undefined);
+      console.log('[PlannerPage] Step 2 complete: Analysis done');
 
       const userDims = projectSpec;
       const mergedSpec: ProjectSpec = {
@@ -314,6 +321,7 @@ export default function PlannerPage() {
 
       if (abortRef.current?.signal.aborted) throw new Error('timeout');
 
+      console.log('[PlannerPage] Step 3: Fetching products and images...');
       setLoadingMessage('Producten voorbereiden...');
       const allProducts = await fetchAllActiveProducts();
       const selectedProducts: DatabaseProduct[] = [];
@@ -323,9 +331,11 @@ export default function PlannerPage() {
       }
 
       const productImageMap = await fetchProductImagesAsBase64(selectedProducts);
+      console.log(`[PlannerPage] Step 3 complete: ${selectedProducts.length} products, ${productImageMap.size} images`);
 
       if (abortRef.current?.signal.aborted) throw new Error('timeout');
 
+      console.log('[PlannerPage] Step 4: Starting generation + cost estimation in parallel...');
       setLoadingMessage('Uw renovatieontwerp genereren — dit kan 2-3 minuten duren...');
 
       const [render, est] = await Promise.all([
@@ -342,6 +352,7 @@ export default function PlannerPage() {
         calculateRenovationCost(mergedSpec, BudgetTier.STANDARD, styleProfile, materialConfig, allProducts, productActions)
       ]);
 
+      console.log(`[PlannerPage] Step 4 complete: render=${render ? 'yes' : 'no'}, estimate total=${est?.grandTotal}`);
       setRenderUrl(render);
       setEstimate(est);
 
@@ -358,7 +369,7 @@ export default function PlannerPage() {
       trackEvent('generation_completed', { durationSeconds: duration, total: est.grandTotal });
     } catch (err: any) {
       console.error(err);
-      if (err?.message === 'timeout' || abortRef.current?.signal.aborted) {
+      if (err?.message === 'timeout' || err?.message?.includes('timed out') || abortRef.current?.signal.aborted) {
         setError('De generatie duurde te lang. Probeer het opnieuw met een andere foto of kleinere afbeelding.');
         trackEvent('generation_timeout');
       } else {
@@ -366,6 +377,7 @@ export default function PlannerPage() {
         trackEvent('generation_error', { error: String(err) });
       }
     } finally {
+      clearTimeout(overallTimeout);
       setLoading(false);
     }
   };
