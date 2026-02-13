@@ -120,19 +120,37 @@ Pay special attention to elements they mentioned — if they say something is br
 
 CRITICAL: Do NOT invent or hallucinate elements. Only report what you can actually see in the photo. If you cannot see a door, do NOT add a door anchor. If you cannot see a window, do NOT add a window anchor. Set confidence < 0.4 for anything uncertain.
 
+WALL NUMBERING — use camera-relative directions, NOT compass:
+  0 = FAR WALL (the wall the camera is looking AT — the back of the room)
+  1 = RIGHT WALL (the wall on the right side of the photo)
+  2 = BEHIND CAMERA (the wall the camera is positioned at — usually not visible)
+  3 = LEFT WALL (the wall on the left side of the photo)
+
 TASK:
 1. CALIBRATE: Use visible references to estimate room scale (toilet depth ~70cm; standard tile 30x30 or 60x60; vanity width ~60-120cm). Only use elements you can actually see.
-2. CAMERA: Determine where the camera is positioned (which wall it faces FROM), angle (eye-level/elevated/corner), and lens feel (wide-angle/normal/telephoto).
-3. WALLS: For each wall (0=N, 1=E, 2=S, 3=W):
+2. CAMERA: Position (eye-level/elevated/corner/low-angle), facing_from_wall is always 2 (behind camera), lens feel (wide-angle/normal/telephoto).
+3. WALLS: For each of the 4 walls (0=far, 1=right, 2=behind camera, 3=left):
    - Mark visible=true only if you can see the wall surface in the photo.
-   - ONLY add door/window/niche anchors for elements you can clearly see. Provide corner coordinates (tl, tr, br, bl) as x/y% in the photo frame.
+   - ONLY add door/window/niche anchors for elements you can clearly see. Provide corner coordinates (tl, tr, br, bl) as x/y% in the photo frame (0,0 = top-left corner).
    - Include door hinge side and swing direction ONLY if visible.
    - Note niches, beams, sloped ceiling areas only if visible.
-   - Note visible plumbing indicators (pipes, fixture mounting points).
+   - has_plumbing: set true ONLY if you can see visible pipes, valves, or fixture mounting points on that wall. Most bathrooms have 1 plumbing wall, rarely 2. Do NOT guess.
 4. LIGHTING: Primary natural light direction relative to camera.
-5. FIXTURES: Every fixture you can see — type, which wall, position (x/y%), condition (GOOD/WORN/DAMAGED/UNKNOWN), confidence 0-1. Do NOT invent fixtures.
-6. OCCLUSIONS: List what is NOT visible (e.g., "wall 0 not visible — behind camera").
-7. PLUMBING: Identify the wall index with the most plumbing connections. Any demolition notes.`;
+5. FIXTURES: Every fixture you can see — type, which wall (0-3), position (x/y% in photo frame), condition (GOOD/WORN/DAMAGED/UNKNOWN), confidence 0-1. Do NOT invent fixtures.
+6. OCCLUSIONS: List what is NOT visible (e.g., "wall 2 (behind camera) not visible").
+7. PLUMBING: Identify the single wall index (0-3) with the most plumbing connections.
+8. ROOM DESCRIPTION: Write a detailed, specific natural-language description of this bathroom as if describing it to an interior designer who will recreate it in a render. Include:
+   - Camera position and angle (e.g., "Shot from the doorway looking straight ahead")
+   - Room shape and approximate dimensions
+   - What is on each visible wall: left wall, right wall, far wall — describe from left to right
+   - Window positions, sizes, and frame type
+   - Door positions and which direction they open
+   - Every fixture: type, size, position, material, color
+   - Floor material and color
+   - Ceiling type (flat, sloped, beams)
+   - Lighting sources (natural light direction, artificial fixtures)
+   - Wall finishes (tiles, paint, size, color, pattern)
+   Be obsessively specific. The more detail you provide, the better the renovation render will match the original room.`;
 
   try {
     console.log('[analyzeBathroomInput] Starting bathroom analysis (direct API first)...');
@@ -169,7 +187,7 @@ TASK:
               type: Type.OBJECT,
               properties: {
                 position: { type: Type.STRING, enum: ["EYE_LEVEL", "ELEVATED", "CORNER", "LOW_ANGLE"] },
-                facing_from_wall: { type: Type.NUMBER, description: "Which wall the camera faces FROM (0=N, 1=E, 2=S, 3=W)" },
+                facing_from_wall: { type: Type.NUMBER, description: "Always 2 (camera is at the behind-camera wall). 0=far, 1=right, 2=behind camera, 3=left" },
                 lens_feel: { type: Type.STRING, enum: ["WIDE_ANGLE", "NORMAL", "TELEPHOTO"] }
               },
               required: ["position", "facing_from_wall", "lens_feel"]
@@ -179,7 +197,7 @@ TASK:
               items: {
                 type: Type.OBJECT,
                 properties: {
-                  wall_index: { type: Type.NUMBER, description: "0=N, 1=E, 2=S, 3=W" },
+                  wall_index: { type: Type.NUMBER, description: "0=far wall, 1=right wall, 2=behind camera, 3=left wall" },
                   visible: { type: Type.BOOLEAN, description: "Whether this wall is visible in the photo" },
                   anchors: {
                     type: Type.ARRAY,
@@ -222,7 +240,7 @@ TASK:
                   type: { type: Type.STRING, enum: Object.values(FixtureType) },
                   position_x_percent: { type: Type.NUMBER, description: "0-100 relative X position" },
                   position_y_percent: { type: Type.NUMBER, description: "0-100 relative Y position" },
-                  wall_index: { type: Type.NUMBER, description: "Which wall (0-3) this fixture is on or nearest to" },
+                  wall_index: { type: Type.NUMBER, description: "Which wall (0=far, 1=right, 2=behind camera, 3=left) this fixture is on or nearest to" },
                   condition: { type: Type.STRING, enum: ["GOOD", "WORN", "DAMAGED", "UNKNOWN"] },
                   confidence: { type: Type.NUMBER, description: "0-1 confidence in this detection" }
                 }
@@ -230,16 +248,20 @@ TASK:
             },
             plumbing_wall: {
               type: Type.NUMBER,
-              description: "Primary wall with water supply/drainage (0=N, 1=E, 2=S, 3=W)"
+              description: "Primary wall with water supply/drainage (0=far, 1=right, 2=behind camera, 3=left). Usually only ONE wall."
             },
             occlusions: {
               type: Type.ARRAY,
               items: { type: Type.STRING },
               description: "List of what is NOT visible in the photo"
             },
-            demolition_notes: { type: Type.STRING }
+            demolition_notes: { type: Type.STRING },
+            room_description_natural: {
+              type: Type.STRING,
+              description: "Detailed natural-language description of the bathroom for an interior designer. Describe camera angle, room shape, dimensions, what is on each wall (left, right, far), window/door positions and sizes, every fixture with type/size/position/material/color, floor material, ceiling type, lighting, wall finishes. Be obsessively specific — as if someone must recreate this exact room from your description alone."
+            }
           },
-          required: ["estimated_dimensions", "fixtures", "walls"]
+          required: ["estimated_dimensions", "fixtures", "walls", "room_description_natural"]
         }
       }
     });
@@ -293,7 +315,8 @@ TASK:
         walls,
         primaryLightDirection: raw.primary_light_direction,
         plumbingWall: raw.plumbing_wall,
-        occlusions: raw.occlusions
+        occlusions: raw.occlusions,
+        naturalDescription: raw.room_description_natural
       };
 
       console.log('[analyzeBathroomInput] Analysis result:', JSON.stringify({
@@ -305,7 +328,8 @@ TASK:
         fixtures: result.existingFixtures.map(f => ({ type: f.type, wall: f.wallIndex, x: f.positionX, condition: f.condition, confidence: f.confidence })),
         plumbingWall: result.plumbingWall,
         occlusions: result.occlusions,
-        dims: `${result.estimatedWidthMeters}x${result.estimatedLengthMeters}x${result.ceilingHeightMeters}`
+        dims: `${result.estimatedWidthMeters}x${result.estimatedLengthMeters}x${result.ceilingHeightMeters}`,
+        naturalDescription: result.naturalDescription
       }, null, 2));
 
       return result;
@@ -604,15 +628,11 @@ export const generateRenovation = async (
     }
   }
 
-  const wallLabels = ['North', 'East', 'South', 'West'];
+  const wallLabels = ['far', 'right', 'behind camera', 'left'];
   const oppositeWall = [2, 3, 0, 1];
   let occlusionLines: string[] = [];
 
   function buildPerspectiveLock(s: ProjectSpec): string {
-    const cameraWallIndex = s.camera?.facingFromWall ?? 0;
-    const cameraWall = wallLabels[cameraWallIndex];
-    const lookingToward = wallLabels[oppositeWall[cameraWallIndex]];
-
     const height: Record<string, string> = {
       'EYE_LEVEL': 'at chest height, approximately 1.4m',
       'ELEVATED': 'from a slightly elevated position, approximately 1.8m',
@@ -628,21 +648,16 @@ export const generateRenovation = async (
     };
     const lens = lensDesc[s.camera?.lensFeel ?? ''] || '';
 
-    const leftWallIndex = (cameraWallIndex + 1) % 4;
-    const rightWallIndex = (cameraWallIndex + 3) % 4;
-    const leftWall = wallLabels[leftWallIndex];
-    const rightWall = wallLabels[rightWallIndex];
-
-    const leftVisible = s.walls?.find(w => w.wallIndex === leftWallIndex);
-    const rightVisible = s.walls?.find(w => w.wallIndex === rightWallIndex);
-    const farVisible = s.walls?.find(w => w.wallIndex === oppositeWall[cameraWallIndex]);
+    const farVisible = s.walls?.find(w => w.wallIndex === 0);
+    const rightVisible = s.walls?.find(w => w.wallIndex === 1);
+    const leftVisible = s.walls?.find(w => w.wallIndex === 3);
 
     const visibilityParts: string[] = [];
-    if (farVisible?.visible) visibilityParts.push(`The ${lookingToward} wall (far wall) is fully visible`);
-    if (leftVisible?.visible) visibilityParts.push(`the ${leftWall} wall (left side) is visible`);
-    else visibilityParts.push(`the ${leftWall} wall (left side) is partially visible or cut off`);
-    if (rightVisible?.visible) visibilityParts.push(`the ${rightWall} wall (right side) is visible`);
-    else visibilityParts.push(`the ${rightWall} wall (right side) is partially visible or cut off`);
+    if (farVisible?.visible) visibilityParts.push('The far wall is fully visible');
+    if (leftVisible?.visible) visibilityParts.push('the left wall is visible');
+    else visibilityParts.push('the left wall is partially visible or cut off');
+    if (rightVisible?.visible) visibilityParts.push('the right wall is visible');
+    else visibilityParts.push('the right wall is partially visible or cut off');
 
     const featureParts: string[] = [];
     for (const wall of (s.walls || [])) {
@@ -674,7 +689,7 @@ export const generateRenovation = async (
       : '';
 
     return `PERSPECTIVE LOCK — The output image MUST match this exact viewpoint:
-The camera is positioned at the ${cameraWall} wall, ${heightDesc}, looking straight toward the ${lookingToward} wall. ${lens}
+The camera is positioned ${heightDesc}, looking straight toward the far wall. ${lens}
 ${visibilityParts.join(', ')}.
 ${featureParts.length > 0 ? `Visible architectural features: ${featureParts.join(', ')}.` : ''}
 ${fixtureParts.length > 0 ? `Current fixtures in frame: ${fixtureParts.join(', ')}.` : ''}
@@ -699,7 +714,8 @@ The perspective in the output must be IDENTICAL to the original photo.`;
       for (const anchor of wall.anchors) {
         if (anchor.confidence < 0.5) continue;
         if (anchor.elementType === 'WINDOW') {
-          const widthPct = Math.round(anchor.br.x - anchor.tl.x);
+          const rawWidth = anchor.br.x - anchor.tl.x;
+          const widthPct = Math.round(rawWidth > 1 ? rawWidth : rawWidth * 100);
           parts.push(`has a window (approximately ${widthPct}% of wall width) at frame coordinates [${anchor.tl.x}%,${anchor.tl.y}%] → [${anchor.br.x}%,${anchor.br.y}%]`);
         } else if (anchor.elementType === 'DOOR') {
           const hingePart = anchor.doorHingeSide && anchor.doorHingeSide !== 'UNKNOWN' ? `, hinge on ${anchor.doorHingeSide.toLowerCase()}` : '';
@@ -758,11 +774,10 @@ All walls, windows, doors, and ceiling features must remain IDENTICAL in the out
   if (spec) {
     occlusionLines = spec.occlusions || [];
     perspectiveLock = buildPerspectiveLock(spec);
-    roomDescription = buildRoomDescription(spec);
+    roomDescription = spec.naturalDescription
+      ? `ROOM DESCRIPTION — This is the exact room being renovated:\n${spec.naturalDescription}`
+      : buildRoomDescription(spec);
 
-    const cameraWallIndex = spec.camera?.facingFromWall ?? 0;
-    const cameraWall = wallLabels[cameraWallIndex];
-    const lookingToward = wallLabels[oppositeWall[cameraWallIndex]];
     const heightLabel: Record<string, string> = {
       'EYE_LEVEL': 'chest height (~1.4m)',
       'ELEVATED': 'elevated (~1.8m)',
@@ -770,7 +785,7 @@ All walls, windows, doors, and ceiling features must remain IDENTICAL in the out
       'LOW_ANGLE': 'low angle (~0.8m)',
     };
     const camHeight = heightLabel[spec.camera?.position ?? ''] || 'chest height';
-    cameraConstraintReinforcement = `Camera is at the ${cameraWall} wall, ${camHeight}, looking toward the ${lookingToward} wall. This viewpoint must NOT shift, rotate, or change height.`;
+    cameraConstraintReinforcement = `Camera is at ${camHeight}, looking toward the far wall. This viewpoint must NOT shift, rotate, or change height.`;
 
     const plumbingWallName = wallLabels[spec.plumbingWall ?? 0] || 'unknown';
     const plumbingFixtures = spec.existingFixtures

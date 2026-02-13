@@ -30,8 +30,8 @@ The AI planner workflow involves:
 2.  **Dimensions & Photo**: Users provide bathroom dimensions and upload a photo.
 3.  **Expert Analysis & Product Configuration**: The system performs a 9-step analysis, generating an enriched `StyleProfile` and allowing users to configure products (replace/keep, add/remove).
 4.  **Processing**:
-    -   `analyzeBathroomInput()` enhances spatial data (CameraSpec, WallSpec, fixture conditions).
-    -   `generateRenovation()` creates a single-shot render using the original photo, inspiration, and product reference images. Prompt structure: task instruction + room fidelity constraints FIRST, then Perspective Lock and Room Description inside STEP 1 (verification), spatial/layout data in STEP 2, product scope in STEP 3, style in STEP 4, and final constraints at the end (bookend pattern).
+    -   `analyzeBathroomInput()` enhances spatial data (CameraSpec, WallSpec, fixture conditions) AND generates a `naturalDescription` — a detailed, obsessively-specific plain-English room description written by the analysis model. Walls use camera-relative labeling (0=far, 1=right, 2=behind camera, 3=left) instead of compass directions.
+    -   `generateRenovation()` creates a single-shot render. Prompt structure: task instruction + room fidelity constraints FIRST, then Perspective Lock and natural Room Description inside STEP 1 (verification), spatial/layout data in STEP 2, product scope in STEP 3, style in STEP 4, and final constraints at the end (bookend pattern). The natural description (from analysis) replaces the machine-assembled buildRoomDescription() for more accurate room locking.
     -   `calculateRenovationCost()` provides a scope-aware cost estimate, considering kept items and plumbing wall distance.
     -   User-provided dimensions take precedence over AI estimates.
     -   Photos are compressed to 1500px before API calls.

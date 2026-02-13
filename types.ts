@@ -60,6 +60,7 @@ export interface ProjectSpec {
   primaryLightDirection?: 'LEFT' | 'RIGHT' | 'FRONT' | 'BACK' | 'OVERHEAD' | 'MIXED';
   plumbingWall?: number;
   occlusions?: string[];
+  naturalDescription?: string;
 }
 
 export interface CostItem {
