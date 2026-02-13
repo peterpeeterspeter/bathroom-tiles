@@ -1,0 +1,508 @@
+server connection lost. Polling for restart...
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev/__replco/static/devtools/injected.js:37 [vite] connecting...
+f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev/__replco/static/devtools/injected.js:37 [vite] connected.
+16[Violation] 'setInterval' handler took <N>ms
+67ccafcbe3345c19.js:2 [Violation] 'visibilitychange' handler took 192ms
+aa7781e715f74eb4.js:14 [Violation] 'visibilitychange' handler took 274ms
+f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev/__replco/static/devtools/injected.js:37 [vite] server connection lost. Polling for restart...
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev/__replco/static/devtools/injected.js:37 [vite] connecting...
+f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev/__replco/static/devtools/injected.js:37 [vite] connected.
+8[Violation] 'message' handler took <N>ms
+67ccafcbe3345c19.js:2 [Violation] 'scroll' handler took 155ms
+f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev/__replco/static/devtools/injected.js:37 [vite] server connection lost. Polling for restart...
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+aa7781e715f74eb4.js:14 [Violation] 'setTimeout' handler took 120ms
+67ccafcbe3345c19.js:2 [Violation] 'scroll' handler took 282ms
+shared-9d7763893ae52fad7fc6317a7db7c9f8.js:1 [Violation] 'setTimeout' handler took 64ms
+aa7781e715f74eb4.js:14 [Violation] 'setTimeout' handler took 103ms
+injected.js:37 [vite] server connection lost. Polling for restart...
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+67ccafcbe3345c19.js:2 [Violation] 'visibilitychange' handler took 573ms
+injected.js:37 [vite] server connection lost. Polling for restart...
+injected.js:37 Failed to create project: {message: 'TypeError: Failed to fetch', details: 'TypeError: Failed to fetch\n    at Object.apply (ht…v5t8.riker.replit.dev/lib/projectService.ts:5:27)', hint: '', code: ''}
+(anonymous) @ injected.js:37
+createProject @ projectService.ts:7
+await in createProject
+(anonymous) @ PlannerPage.tsx:96
+react_stack_bottom_frame @ react-dom_client.js?v=a8b54839:18567
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:997
+commitHookEffectListMount @ react-dom_client.js?v=a8b54839:9411
+commitHookPassiveMountEffects @ react-dom_client.js?v=a8b54839:9465
+reconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11273
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11240
+reconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11292
+doubleInvokeEffectsOnFiber @ react-dom_client.js?v=a8b54839:13339
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:999
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13321
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+commitDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13347
+flushPassiveEffects @ react-dom_client.js?v=a8b54839:13157
+(anonymous) @ react-dom_client.js?v=a8b54839:12776
+performWorkUntilDeadline @ react-dom_client.js?v=a8b54839:36
+<...>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=a8b54839:247
+App @ App.tsx:47
+react_stack_bottom_frame @ react-dom_client.js?v=a8b54839:18509
+renderWithHooksAgain @ react-dom_client.js?v=a8b54839:5729
+renderWithHooks @ react-dom_client.js?v=a8b54839:5665
+updateFunctionComponent @ react-dom_client.js?v=a8b54839:7475
+beginWork @ react-dom_client.js?v=a8b54839:8525
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:997
+performUnitOfWork @ react-dom_client.js?v=a8b54839:12561
+workLoopSync @ react-dom_client.js?v=a8b54839:12424
+renderRootSync @ react-dom_client.js?v=a8b54839:12408
+performWorkOnRoot @ react-dom_client.js?v=a8b54839:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=a8b54839:13505
+performWorkUntilDeadline @ react-dom_client.js?v=a8b54839:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=a8b54839:247
+(anonymous) @ f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev/index.tsx?t=1771015824570:21Understand this error
+injected.js:37 Failed to create project: {message: 'TypeError: Failed to fetch', details: 'TypeError: Failed to fetch\n    at Object.apply (ht…v5t8.riker.replit.dev/lib/projectService.ts:5:27)', hint: '', code: ''}
+(anonymous) @ injected.js:37
+createProject @ projectService.ts:7
+await in createProject
+(anonymous) @ PlannerPage.tsx:96
+react_stack_bottom_frame @ react-dom_client.js?v=a8b54839:18567
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:997
+commitHookEffectListMount @ react-dom_client.js?v=a8b54839:9411
+commitHookPassiveMountEffects @ react-dom_client.js?v=a8b54839:9465
+reconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11273
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11240
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11173
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11141
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11055
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11066
+flushPassiveEffects @ react-dom_client.js?v=a8b54839:13150
+(anonymous) @ react-dom_client.js?v=a8b54839:12776
+performWorkUntilDeadline @ react-dom_client.js?v=a8b54839:36
+<...>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=a8b54839:247
+App @ App.tsx:47
+react_stack_bottom_frame @ react-dom_client.js?v=a8b54839:18509
+renderWithHooksAgain @ react-dom_client.js?v=a8b54839:5729
+renderWithHooks @ react-dom_client.js?v=a8b54839:5665
+updateFunctionComponent @ react-dom_client.js?v=a8b54839:7475
+beginWork @ react-dom_client.js?v=a8b54839:8525
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:997
+performUnitOfWork @ react-dom_client.js?v=a8b54839:12561
+workLoopSync @ react-dom_client.js?v=a8b54839:12424
+renderRootSync @ react-dom_client.js?v=a8b54839:12408
+performWorkOnRoot @ react-dom_client.js?v=a8b54839:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=a8b54839:13505
+performWorkUntilDeadline @ react-dom_client.js?v=a8b54839:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=a8b54839:247
+(anonymous) @ f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev/index.tsx?t=1771015824570:21Understand this error
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] server connection lost. Polling for restart...
+9954129c7dd6dc22.js:2 [Violation] 'close' handler took 199ms
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+injected.js:37 [vite] server connection lost. Polling for restart...
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+injected.js:37 [vite] server connection lost. Polling for restart...
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+11De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+injected.js:37 [vite] server connection lost. Polling for restart...
+9954129c7dd6dc22.js:2 [Violation] 'close' handler took 179ms
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+injected.js:37 Failed to create project: {message: 'TypeError: Failed to fetch', details: 'TypeError: Failed to fetch\n    at Object.apply (ht…v5t8.riker.replit.dev/lib/projectService.ts:5:27)', hint: '', code: ''}
+(anonymous) @ injected.js:37
+createProject @ projectService.ts:7
+await in createProject
+(anonymous) @ PlannerPage.tsx:96
+react_stack_bottom_frame @ react-dom_client.js?v=a8b54839:18567
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:997
+commitHookEffectListMount @ react-dom_client.js?v=a8b54839:9411
+commitHookPassiveMountEffects @ react-dom_client.js?v=a8b54839:9465
+reconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11273
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11240
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11173
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11141
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11055
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11066
+flushPassiveEffects @ react-dom_client.js?v=a8b54839:13150
+(anonymous) @ react-dom_client.js?v=a8b54839:12776
+performWorkUntilDeadline @ react-dom_client.js?v=a8b54839:36
+<...>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=a8b54839:247
+App @ App.tsx:47
+react_stack_bottom_frame @ react-dom_client.js?v=a8b54839:18509
+renderWithHooksAgain @ react-dom_client.js?v=a8b54839:5729
+renderWithHooks @ react-dom_client.js?v=a8b54839:5665
+updateFunctionComponent @ react-dom_client.js?v=a8b54839:7475
+beginWork @ react-dom_client.js?v=a8b54839:8525
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:997
+performUnitOfWork @ react-dom_client.js?v=a8b54839:12561
+workLoopSync @ react-dom_client.js?v=a8b54839:12424
+renderRootSync @ react-dom_client.js?v=a8b54839:12408
+performWorkOnRoot @ react-dom_client.js?v=a8b54839:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=a8b54839:13505
+performWorkUntilDeadline @ react-dom_client.js?v=a8b54839:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=a8b54839:247
+(anonymous) @ index.tsx?t=1771016775105:21Understand this error
+injected.js:37 Failed to create project: {message: 'TypeError: Failed to fetch', details: 'TypeError: Failed to fetch\n    at Object.apply (ht…v5t8.riker.replit.dev/lib/projectService.ts:5:27)', hint: '', code: ''}
+(anonymous) @ injected.js:37
+createProject @ projectService.ts:7
+await in createProject
+(anonymous) @ PlannerPage.tsx:96
+react_stack_bottom_frame @ react-dom_client.js?v=a8b54839:18567
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:997
+commitHookEffectListMount @ react-dom_client.js?v=a8b54839:9411
+commitHookPassiveMountEffects @ react-dom_client.js?v=a8b54839:9465
+reconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11273
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11240
+reconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11292
+doubleInvokeEffectsOnFiber @ react-dom_client.js?v=a8b54839:13339
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:999
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13321
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+commitDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13347
+flushPassiveEffects @ react-dom_client.js?v=a8b54839:13157
+(anonymous) @ react-dom_client.js?v=a8b54839:12776
+performWorkUntilDeadline @ react-dom_client.js?v=a8b54839:36
+<...>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=a8b54839:247
+App @ App.tsx:47
+react_stack_bottom_frame @ react-dom_client.js?v=a8b54839:18509
+renderWithHooksAgain @ react-dom_client.js?v=a8b54839:5729
+renderWithHooks @ react-dom_client.js?v=a8b54839:5665
+updateFunctionComponent @ react-dom_client.js?v=a8b54839:7475
+beginWork @ react-dom_client.js?v=a8b54839:8525
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:997
+performUnitOfWork @ react-dom_client.js?v=a8b54839:12561
+workLoopSync @ react-dom_client.js?v=a8b54839:12424
+renderRootSync @ react-dom_client.js?v=a8b54839:12408
+performWorkOnRoot @ react-dom_client.js?v=a8b54839:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=a8b54839:13505
+performWorkUntilDeadline @ react-dom_client.js?v=a8b54839:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=a8b54839:247
+(anonymous) @ index.tsx?t=1771016775105:21Understand this error
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+injected.js:37 [vite] hot updated: /styles.css
+injected.js:37 [vite] hot updated: /pages/PlannerPage.tsx
+injected.js:37 [vite] hot updated: /styles.css
+injected.js:37 [vite] hot updated: /pages/PlannerPage.tsx
+injected.js:37 [vite] hot updated: /styles.css
+injected.js:37 [vite] hot updated: /pages/PlannerPage.tsx
+injected.js:37 [vite] hot updated: /styles.css
+injected.js:37 [vite] hot updated: /pages/PlannerPage.tsx
+injected.js:37 [vite] hot updated: /styles.css
+injected.js:37 [vite] hot updated: /pages/PlannerPage.tsx
+injected.js:37 [vite] server connection lost. Polling for restart...
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+injected.js:37 [vite] hot updated: /styles.css
+injected.js:37 [vite] hot updated: /pages/PlannerPage.tsx
+injected.js:37 [vite] server connection lost. Polling for restart...
+client:1035 WebSocket connection to 'wss://f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev:3000/' failed: 
+ping @ client:1035
+waitForSuccessfulPing @ client:1054
+handleMessage @ client:968Understand this error
+client:1035 WebSocket connection to 'wss://f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev:3000/' failed: 
+ping @ client:1035
+waitForSuccessfulPing @ client:1054
+handleMessage @ client:968Understand this error
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+injected.js:37 [vite] server connection lost. Polling for restart...
+client:1035 WebSocket connection to 'wss://f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev/' failed: 
+ping @ VM296 client:1035
+waitForSuccessfulPing @ VM296 client:1054
+handleMessage @ VM296 client:968Understand this error
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [PlannerPage] Step 1: Compressing image...
+injected.js:37 [PlannerPage] Step 2: Running analyzeBathroomInput...
+injected.js:37 [analyzeBathroomInput] Starting bathroom analysis...
+injected.js:37 [analyzeBathroomInput] Calling proxy...
+injected.js:214  POST https://api.laozhang.ai/v1beta/models/gemini-3-pro-preview:generateContent 503 (Service Unavailable)
+apply @ VM357 injected.js:214
+apiCall @ VM388 @google_genai.js:10393
+unaryApiCall @ VM388 @google_genai.js:10288
+request @ VM388 @google_genai.js:10236
+await in request
+generateContentInternal @ VM388 @google_genai.js:11743
+Models.generateContent @ VM388 @google_genai.js:11388
+await in Models.generateContent
+(anonymous) @ VM385 geminiService.ts:122
+withRetry @ VM385 geminiService.ts:60
+analyzeBathroomInput @ VM385 geminiService.ts:119
+startProcessing @ VM383 PlannerPage.tsx:290
+await in startProcessing
+onNext @ VM383 PlannerPage.tsx:649
+executeDispatch @ VM364 react-dom_client.js:13622
+runWithFiberInDEV @ VM364 react-dom_client.js:997
+processDispatchQueue @ VM364 react-dom_client.js:13658
+(anonymous) @ VM364 react-dom_client.js:14071
+batchedUpdates$1 @ VM364 react-dom_client.js:2626
+dispatchEventForPluginEventSystem @ VM364 react-dom_client.js:13763
+dispatchEvent @ VM364 react-dom_client.js:16784
+dispatchDiscreteEvent @ VM364 react-dom_client.js:16765Understand this error
+injected.js:37 API call failed (503), retrying in 3000ms (attempt 1/2, switching to direct API)...
+(anonymous) @ VM357 injected.js:37
+withRetry @ VM385 geminiService.ts:68
+await in withRetry
+analyzeBathroomInput @ VM385 geminiService.ts:119
+startProcessing @ VM383 PlannerPage.tsx:290
+await in startProcessing
+onNext @ VM383 PlannerPage.tsx:649
+executeDispatch @ VM364 react-dom_client.js:13622
+runWithFiberInDEV @ VM364 react-dom_client.js:997
+processDispatchQueue @ VM364 react-dom_client.js:13658
+(anonymous) @ VM364 react-dom_client.js:14071
+batchedUpdates$1 @ VM364 react-dom_client.js:2626
+dispatchEventForPluginEventSystem @ VM364 react-dom_client.js:13763
+dispatchEvent @ VM364 react-dom_client.js:16784
+dispatchDiscreteEvent @ VM364 react-dom_client.js:16765Understand this warning
+injected.js:37 [analyzeBathroomInput] Calling direct API...
+injected.js:37 [analyzeBathroomInput] Analysis result: {
+  "camera": {
+    "position": "EYE_LEVEL",
+    "facingFromWall": 2,
+    "lensFeel": "WIDE_ANGLE"
+  },
+  "walls": [
+    {
+      "wallIndex": 0,
+      "visible": true,
+      "hasPlumbing": true,
+      "anchors": [
+        {
+          "type": "WINDOW",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "wallIndex": 1,
+      "visible": true,
+      "hasPlumbing": true,
+      "anchors": []
+    },
+    {
+      "wallIndex": 2,
+      "visible": false,
+      "hasPlumbing": false,
+      "anchors": []
+    },
+    {
+      "wallIndex": 3,
+      "visible": true,
+      "hasPlumbing": true,
+      "anchors": []
+    }
+  ],
+  "fixtures": [
+    {
+      "type": "SINK",
+      "wall": 3,
+      "x": 15,
+      "condition": "GOOD",
+      "confidence": 0.95
+    },
+    {
+      "type": "SHOWER",
+      "wall": 3,
+      "x": 25,
+      "condition": "GOOD",
+      "confidence": 0.95
+    },
+    {
+      "type": "WINDOW",
+      "wall": 0,
+      "x": 65,
+      "condition": "GOOD",
+      "confidence": 0.98
+    },
+    {
+      "type": "RADIATOR",
+      "wall": 0,
+      "x": 65,
+      "condition": "GOOD",
+      "confidence": 0.95
+    },
+    {
+      "type": "TOILET",
+      "wall": 1,
+      "x": 85,
+      "condition": "GOOD",
+      "confidence": 0.95
+    }
+  ],
+  "plumbingWall": 3,
+  "occlusions": [
+    "wall 2 not visible — behind camera",
+    "door not visible"
+  ],
+  "dims": "2.8x3.5x2.6"
+}
+injected.js:37 [PlannerPage] Step 2 complete: Analysis done
+injected.js:37 [PlannerPage] Step 3: Fetching products and images...
+injected.js:37 [PlannerPage] Step 3 complete: 2 products, 2 images
+injected.js:37 [PlannerPage] Step 4: Starting generation + cost estimation in parallel...
+injected.js:37 [generateRenovation] PERSPECTIVE LOCK: PERSPECTIVE LOCK — The output image MUST match this exact viewpoint:
+The camera is positioned at the South wall, at chest height, approximately 1.4m, looking straight toward the North wall. Wide-angle lens — edges of the frame show slight barrel distortion.
+The North wall (far wall) is fully visible, the West wall (left side) is visible, the East wall (right side) is visible.
+Visible architectural features: Window on the North wall.
+Current fixtures in frame: double vanity unit on the West wall (left side of frame), walk-in shower enclosure on the West wall (left side of frame), wall-hung toilet on the East wall (right side of frame).
+Room dimensions: approximately 2.8m wide × 3.5m long, 2.6m ceiling.
+Not visible from this viewpoint: wall 2 not visible — behind camera; door not visible.
+
+DO NOT change the camera position, height, angle, or viewing direction.
+The perspective in the output must be IDENTICAL to the original photo.
+injected.js:37 [generateRenovation] ROOM DESCRIPTION: ROOM DESCRIPTION — This is the exact room being renovated:
+A rectangle bathroom, approximately 2.8m wide × 3.5m long, 2.6m ceiling height.
+Walls: North wall: visible — has a window (approximately 0% of wall width) at frame coordinates [0.5%,0.28%] → [0.82%,0.62%] — has plumbing connections — Large exterior wall with window. East wall: visible — has plumbing connections — Painted white wall. South wall: NOT FULLY VISIBLE (behind camera/occluded).. West wall: visible — has plumbing connections — Black tiled shower area.
+Current fixtures: double vanity unit on the West wall at X:15% Y:80% (left third) (good condition). walk-in shower enclosure on the West wall at X:25% Y:50% (left third) (good condition). wall-hung toilet on the East wall at X:85% Y:90% (right third) (good condition). Notable: User requested removal of radiator on wall 0 ('radiator weg')..
+Primary plumbing connections are on the West wall.
+Primary natural light enters from the FRONT (North wall).
+All walls, windows, doors, and ceiling features must remain IDENTICAL in the output — only fixtures, materials, and finishes change.
+injected.js:37 [generateRenovation] Starting image generation via proxy...
+injected.js:37 [calculateRenovationCost] Starting cost estimation...
+injected.js:37 [calculateRenovationCost] Calling proxy...
+injected.js:214  POST https://api.laozhang.ai/v1beta/models/gemini-3-pro-preview:generateContent 503 (Service Unavailable)
+apply @ VM357 injected.js:214
+apiCall @ VM388 @google_genai.js:10393
+unaryApiCall @ VM388 @google_genai.js:10288
+request @ VM388 @google_genai.js:10236
+await in request
+generateContentInternal @ VM388 @google_genai.js:11743
+Models.generateContent @ VM388 @google_genai.js:11388
+await in Models.generateContent
+(anonymous) @ VM385 geminiService.ts:392
+withRetry @ VM385 geminiService.ts:60
+calculateRenovationCost @ VM385 geminiService.ts:389
+startProcessing @ VM383 PlannerPage.tsx:331Understand this error
+injected.js:37 API call failed (503), retrying in 3000ms (attempt 1/2, switching to direct API)...
+(anonymous) @ VM357 injected.js:37
+withRetry @ VM385 geminiService.ts:68
+await in withRetry
+calculateRenovationCost @ VM385 geminiService.ts:389
+startProcessing @ VM383 PlannerPage.tsx:331Understand this warning
+injected.js:37 [calculateRenovationCost] Calling direct API...
+injected.js:37 [generateRenovation] Response received, extracting image...
+injected.js:37 [PlannerPage] Step 4 complete: render=yes, estimate total=15045.7692
+injected.js:37 [vite] hot updated: /styles.css
+injected.js:37 [vite] hot updated: /pages/PlannerPage.tsx
+injected.js:37 [vite] hot updated: /styles.css
+injected.js:37 [vite] hot updated: /pages/PlannerPage.tsx
+injected.js:37 [vite] hot updated: /styles.css
+injected.js:37 [vite] hot updated: /pages/PlannerPage.tsx
+injected.js:37 [vite] hot updated: /styles.css
+injected.js:37 [vite] hot updated: /pages/PlannerPage.tsx
+injected.js:37 [vite] server connection lost. Polling for restart...
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+VM49 lockdown-install.js:1 SES Removing unpermitted intrinsics
+VM58 injected.js:37 [vite] connecting...
+VM58 injected.js:37 [vite] connected.
+VM123 lockdown-install.js:1 SES Removing unpermitted intrinsics
+VM129 injected.js:37 [vite] connecting...
+VM129 injected.js:37 [vite] connected.
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
