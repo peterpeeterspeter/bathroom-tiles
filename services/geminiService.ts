@@ -657,8 +657,10 @@ export const generateRenovation = async (
       }
     }
 
+    const NON_FIXTURE_TYPES = new Set(['WINDOW', 'DOOR', 'RADIATOR', 'OBSTACLE']);
     const fixtureParts: string[] = [];
     for (const f of s.existingFixtures) {
+      if (NON_FIXTURE_TYPES.has(f.type)) continue;
       const wall = wallLabels[f.wallIndex ?? 0];
       const side = f.positionX != null
         ? f.positionX < 40 ? 'left side of frame' : f.positionX > 60 ? 'right side of frame' : 'center of frame'
@@ -711,15 +713,18 @@ The perspective in the output must be IDENTICAL to the original photo.`;
       wallDescriptions.push(parts.join(' — '));
     }
 
-    const fixtureDescriptions = s.existingFixtures.map(f => {
-      const wall = wallLabels[f.wallIndex ?? 0];
-      const position = f.positionX != null
-        ? `at X:${f.positionX}% Y:${f.positionY ?? '?'}% (${f.positionX < 33 ? 'left third' : f.positionX > 66 ? 'right third' : 'center'})`
-        : '';
-      const condition = f.condition && f.condition !== 'UNKNOWN'
-        ? ` (${f.condition.toLowerCase()} condition)` : '';
-      return `${f.description || f.type} on the ${wall} wall ${position}${condition}`;
-    });
+    const NON_FIXTURE_TYPES_RD = new Set(['WINDOW', 'DOOR', 'RADIATOR', 'OBSTACLE']);
+    const fixtureDescriptions = s.existingFixtures
+      .filter(f => !NON_FIXTURE_TYPES_RD.has(f.type))
+      .map(f => {
+        const wall = wallLabels[f.wallIndex ?? 0];
+        const position = f.positionX != null
+          ? `at X:${f.positionX}% Y:${f.positionY ?? '?'}% (${f.positionX < 33 ? 'left third' : f.positionX > 66 ? 'right third' : 'center'})`
+          : '';
+        const condition = f.condition && f.condition !== 'UNKNOWN'
+          ? ` (${f.condition.toLowerCase()} condition)` : '';
+        return `${f.description || f.type} on the ${wall} wall ${position}${condition}`;
+      });
 
     const constraintNote = s.constraints && s.constraints.length > 0
       ? ` Notable: ${s.constraints.join('. ')}.`
@@ -884,8 +889,8 @@ ${occlusionLines.length > 0 ? `- Occluded zones (${occlusionLines.join('; ')}): 
 
   parts.push({ text: prompt });
 
-  console.log('[generateRenovation] PERSPECTIVE LOCK:', perspectiveLock.substring(0, 500));
-  console.log('[generateRenovation] ROOM DESCRIPTION:', roomDescription.substring(0, 500));
+  console.log('[generateRenovation] PERSPECTIVE LOCK:', perspectiveLock);
+  console.log('[generateRenovation] ROOM DESCRIPTION:', roomDescription);
 
   try {
     console.log('[generateRenovation] Starting image generation via proxy...');

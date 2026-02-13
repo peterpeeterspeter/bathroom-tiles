@@ -7,28 +7,40 @@ import { ProjectSpec, Estimate, StyleProfile, MaterialConfig } from '../types';
 // ============================================================
 
 export async function createProject(): Promise<string | null> {
-  const sessionId = getSessionId();
-  const { data, error } = await supabase
-    .from('projects')
-    .insert({ session_id: sessionId, status: 'in_progress' })
-    .select('id')
-    .single();
-  if (error) {
-    console.error('Failed to create project:', error);
+  try {
+    const sessionId = getSessionId();
+    const { data, error } = await supabase
+      .from('projects')
+      .insert({ session_id: sessionId, status: 'in_progress' })
+      .select('id')
+      .single();
+    if (error) {
+      console.warn('[projectService] createProject failed (non-blocking):', error.message);
+      return null;
+    }
+    return data.id;
+  } catch (e: any) {
+    console.warn('[projectService] createProject network error (non-blocking):', e?.message || e);
     return null;
   }
-  return data.id;
+}
+
+async function safeProjectUpdate(label: string, fn: () => PromiseLike<{ error: any }>): Promise<void> {
+  try {
+    const { error } = await fn();
+    if (error) console.warn(`[projectService] ${label} (non-blocking):`, error.message);
+  } catch (e: any) {
+    console.warn(`[projectService] ${label} network error (non-blocking):`, e?.message || e);
+  }
 }
 
 export async function updateProjectStyle(
   projectId: string,
   styleProfile: StyleProfile
 ): Promise<void> {
-  const { error } = await supabase
-    .from('projects')
-    .update({ style_profile: styleProfile })
-    .eq('id', projectId);
-  if (error) console.error('Failed to update project style:', error);
+  await safeProjectUpdate('updateProjectStyle', () =>
+    supabase.from('projects').update({ style_profile: styleProfile }).eq('id', projectId)
+  );
 }
 
 export async function updateProjectProducts(
@@ -49,27 +61,23 @@ export async function updateProjectProducts(
   if (selectedProductDetails) {
     update.selected_product_details = selectedProductDetails;
   }
-  const { error } = await supabase
-    .from('projects')
-    .update(update)
-    .eq('id', projectId);
-  if (error) console.error('Failed to update project products:', error);
+  await safeProjectUpdate('updateProjectProducts', () =>
+    supabase.from('projects').update(update).eq('id', projectId)
+  );
 }
 
 export async function updateProjectRoom(
   projectId: string,
   spec: ProjectSpec
 ): Promise<void> {
-  const { error } = await supabase
-    .from('projects')
-    .update({
+  await safeProjectUpdate('updateProjectRoom', () =>
+    supabase.from('projects').update({
       room_spec: spec,
       room_width: spec.estimatedWidthMeters,
       room_length: spec.estimatedLengthMeters,
       room_area: spec.totalAreaM2,
-    })
-    .eq('id', projectId);
-  if (error) console.error('Failed to update project room:', error);
+    }).eq('id', projectId)
+  );
 }
 
 export async function updateProjectResults(
@@ -79,25 +87,21 @@ export async function updateProjectResults(
 ): Promise<void> {
   const totalLow = Math.round(estimate.grandTotal * 0.85);
   const totalHigh = Math.round(estimate.grandTotal * 1.15);
-  const { error } = await supabase
-    .from('projects')
-    .update({
+  await safeProjectUpdate('updateProjectResults', () =>
+    supabase.from('projects').update({
       estimate,
       estimated_total_low: totalLow,
       estimated_total_high: totalHigh,
       render_prompt: renderPrompt || null,
       status: 'completed',
-    })
-    .eq('id', projectId);
-  if (error) console.error('Failed to update project results:', error);
+    }).eq('id', projectId)
+  );
 }
 
 export async function markProjectLeadSubmitted(projectId: string): Promise<void> {
-  const { error } = await supabase
-    .from('projects')
-    .update({ status: 'lead_submitted' })
-    .eq('id', projectId);
-  if (error) console.error('Failed to mark project as lead_submitted:', error);
+  await safeProjectUpdate('markProjectLeadSubmitted', () =>
+    supabase.from('projects').update({ status: 'lead_submitted' }).eq('id', projectId)
+  );
 }
 
 // ============================================================
