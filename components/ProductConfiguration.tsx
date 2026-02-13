@@ -4,7 +4,7 @@ import { StyleProfile, DatabaseProduct, ProductAction } from '../types';
 import { ScoredProduct, fetchProductsForProfile, getProductsByCategory } from '../lib/productService';
 import { CategoryProductSelector } from './CategoryProductSelector';
 
-const CATEGORIES: DatabaseProduct['category'][] = ['Bathtub', 'Shower', 'Vanity', 'Toilet', 'Faucet', 'Lighting', 'Tile'];
+const CATEGORIES: DatabaseProduct['category'][] = ['Bathtub', 'Shower', 'Vanity', 'Toilet', 'Faucet', 'Mirror', 'Lighting', 'Tile'];
 
 const CATEGORY_LABELS: Record<string, string> = {
   Bathtub: 'Bad',
@@ -12,6 +12,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   Vanity: 'Wastafelmeubel',
   Toilet: 'Toilet',
   Faucet: 'Kraanwerk',
+  Mirror: 'Spiegel',
   Lighting: 'Verlichting',
   Tile: 'Tegels & Afwerking',
 };

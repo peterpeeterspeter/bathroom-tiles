@@ -84,7 +84,7 @@ export async function fetchAllActiveProducts(): Promise<DatabaseProduct[]> {
 
   const { data: products } = await supabase
     .from('products')
-    .select('id, brand, name, category, price, currency, image_url, origin, is_active, display_order, price_low, price_high, price_tier, catalog_image_path, render_image_path, description')
+    .select('id, brand, name, category, price, currency, image_url, images, origin, is_active, display_order, price_low, price_high, price_tier, catalog_image_path, render_image_path, description')
     .eq('is_active', true)
     .order('display_order');
 

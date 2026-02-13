@@ -354,7 +354,7 @@ export const calculateRenovationCost = async (
     Only include costs for items marked REPLACE or ADD. Items marked KEEP cost nothing (no material, no labor).
     Items marked REMOVE only incur demolition/removal labor cost.
     Categories not listed default to REPLACE.
-${['Tile', 'Vanity', 'Toilet', 'Faucet', 'Shower', 'Bathtub', 'Lighting'].map(cat => `    - ${cat}: ${(productActions[cat] || 'replace').toUpperCase()}`).join('\n')}
+${['Tile', 'Vanity', 'Toilet', 'Faucet', 'Shower', 'Bathtub', 'Mirror', 'Lighting'].map(cat => `    - ${cat}: ${(productActions[cat] || 'replace').toUpperCase()}`).join('\n')}
     ` : ''}
 
     ${LABOR_RATE_TABLE}
@@ -474,6 +474,7 @@ const CATEGORY_LABELS_NL: Record<string, string> = {
   Faucet: 'Kranen',
   Shower: 'Douche',
   Bathtub: 'Bad',
+  Mirror: 'Spiegel',
   Lighting: 'Verlichting',
 };
 
@@ -532,7 +533,7 @@ export const generateRenovation = async (
   }
 
   const scopeLines: string[] = [];
-  const categories = ['Tile', 'Vanity', 'Toilet', 'Faucet', 'Shower', 'Bathtub', 'Lighting'];
+  const categories = ['Tile', 'Vanity', 'Toilet', 'Faucet', 'Shower', 'Bathtub', 'Mirror', 'Lighting'];
 
   for (const cat of categories) {
     const action = productActions[cat] || 'replace';

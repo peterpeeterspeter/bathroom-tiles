@@ -134,10 +134,11 @@ export interface DatabaseProduct {
   id: string;
   brand: string;
   name: string;
-  category: 'Faucet' | 'Toilet' | 'Shower' | 'Vanity' | 'Tile' | 'Lighting' | 'Bathtub';
+  category: 'Faucet' | 'Toilet' | 'Shower' | 'Vanity' | 'Tile' | 'Lighting' | 'Bathtub' | 'Mirror';
   price: number;
   currency: string;
   image_url: string;
+  images?: string[];
   origin: string;
   is_active: boolean;
   display_order: number;
