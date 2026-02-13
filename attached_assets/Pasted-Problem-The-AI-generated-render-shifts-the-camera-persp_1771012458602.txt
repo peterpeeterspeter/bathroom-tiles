@@ -1,0 +1,164 @@
+Problem
+The AI-generated render shifts the camera perspective compared to the original photo. The before/after comparison breaks because the room looks like it was photographed from a different position. This is the primary quality issue.
+Root cause: The analysis captures detailed camera data (camera.position, camera.facingFromWall, camera.lensFeel) but the render prompt NEVER uses it. The current generateRenovationRender() only extracts the sink position from the analysis. The render model receives the original photo as a visual reference but no explicit text description of the viewpoint — so it drifts.
+From Snugly's research: Being obsessively specific about the camera position and room architecture in text forces the model to maintain perspective consistency. Even with a reference photo, the text description acts as an additional anchor.
+
+Solution: Perspective Lock Paragraph
+Add a dedicated paragraph at the TOP of the render prompt that describes the exact camera position, viewing direction, and what's visible in the frame — built from the analysis data.
+This paragraph goes FIRST in the prompt (before any renovation instructions) to get maximum attention from the model.
+
+Changes
+1. New helper: buildPerspectiveLock(spec)
+File: services/geminiService.ts
+typescriptfunction buildPerspectiveLock(spec: ProjectSpec): string {
+  const wallLabels = ['north', 'east', 'south', 'west'];
+  const oppositeWall = [2, 3, 0, 1]; // north→south, east→west, etc.
+
+  // Camera position
+  const cameraWallIndex = spec.camera?.facingFromWall ?? 0;
+  const cameraWall = wallLabels[cameraWallIndex];
+  const lookingToward = wallLabels[oppositeWall[cameraWallIndex]];
+
+  const height = {
+    'EYE_LEVEL': 'at chest height, approximately 1.4m',
+    'ELEVATED': 'from a slightly elevated position, approximately 1.8m',
+    'CORNER': 'from the corner of the room',
+    'LOW_ANGLE': 'from a low angle, approximately 0.8m',
+  }[spec.camera?.position ?? ''] || 'at chest height';
+
+  const lens = {
+    'WIDE_ANGLE': 'Wide-angle lens — edges of the frame show slight distortion.',
+    'NORMAL': 'Normal lens — no visible distortion.',
+    'TELEPHOTO': 'Telephoto compression — walls appear closer together.',
+  }[spec.camera?.lensFeel ?? ''] || '';
+
+  // What's visible in the frame
+  const leftWallIndex = (cameraWallIndex + 1) % 4;  // wall to the left when facing in
+  const rightWallIndex = (cameraWallIndex + 3) % 4;  // wall to the right
+  const leftWall = wallLabels[leftWallIndex];
+  const rightWall = wallLabels[rightWallIndex];
+
+  const leftVisible = spec.walls?.find(w => w.wallIndex === leftWallIndex);
+  const rightVisible = spec.walls?.find(w => w.wallIndex === rightWallIndex);
+  const farVisible = spec.walls?.find(w => w.wallIndex === oppositeWall[cameraWallIndex]);
+
+  const visibilityParts: string[] = [];
+  if (farVisible?.visible) visibilityParts.push(`The ${lookingToward} wall (far wall) is fully visible`);
+  if (leftVisible?.visible) visibilityParts.push(`the ${leftWall} wall (left side) is visible`);
+  else visibilityParts.push(`the ${leftWall} wall (left side) is partially visible or cut off`);
+  if (rightVisible?.visible) visibilityParts.push(`the ${rightWall} wall (right side) is visible`);
+  else visibilityParts.push(`the ${rightWall} wall (right side) is partially visible or cut off`);
+
+  // Wall features visible in frame
+  const featureParts: string[] = [];
+  for (const wall of (spec.walls || [])) {
+    if (!wall.visible) continue;
+    const label = wallLabels[wall.wallIndex];
+    for (const anchor of wall.anchors) {
+      if (anchor.elementType === 'WINDOW') {
+        featureParts.push(`Window on the ${label} wall`);
+      } else if (anchor.elementType === 'DOOR') {
+        featureParts.push(`Door on the ${label} wall`);
+      }
+    }
+  }
+
+  // Fixture positions in frame
+  const fixtureParts: string[] = [];
+  for (const f of spec.existingFixtures) {
+    const wall = wallLabels[f.wallIndex ?? 0];
+    const side = f.positionX != null
+      ? f.positionX < 40 ? 'left side of frame' : f.positionX > 60 ? 'right side of frame' : 'center of frame'
+      : '';
+    fixtureParts.push(`${f.description || f.type} on the ${wall} wall${side ? ` (${side})` : ''}`);
+  }
+
+  // Occlusions
+  const occlusionPart = spec.occlusions && spec.occlusions.length > 0
+    ? `\nNot visible from this viewpoint: ${spec.occlusions.join('; ')}.`
+    : '';
+
+  return `PERSPECTIVE LOCK — The output image MUST match this exact viewpoint:
+The camera is positioned at the ${cameraWall} wall, ${height}, looking straight toward the ${lookingToward} wall. ${lens}
+${visibilityParts.join(', ')}.
+${featureParts.length > 0 ? `Visible architectural features: ${featureParts.join(', ')}.` : ''}
+${fixtureParts.length > 0 ? `Current fixtures in frame: ${fixtureParts.join(', ')}.` : ''}
+Room dimensions: approximately ${spec.estimatedWidthMeters}m wide × ${spec.estimatedLengthMeters}m long, ${spec.ceilingHeightMeters}m ceiling.${occlusionPart}
+
+DO NOT change the camera position, height, angle, or viewing direction.
+The perspective in the output must be IDENTICAL to the original photo.`;
+}
+```
+
+**Example output:**
+```
+PERSPECTIVE LOCK — The output image MUST match this exact viewpoint:
+The camera is positioned at the north wall, at chest height, approximately 1.4m, looking straight toward the south wall. Wide-angle lens — edges of the frame show slight distortion.
+The south wall (far wall) is fully visible, the east wall (left side) is visible, the west wall (right side) is partially visible or cut off.
+Visible architectural features: Window on the east wall, Door on the north wall.
+Current fixtures in frame: Toilet on the south wall (left side of frame), Vanity with sink on the east wall (center of frame), Shower cabin on the south wall (right side of frame).
+Room dimensions: approximately 2.5m wide × 3.0m long, 2.4m ceiling.
+
+DO NOT change the camera position, height, angle, or viewing direction.
+The perspective in the output must be IDENTICAL to the original photo.
+2. Inject into render prompt — at the TOP
+File: services/geminiService.ts (in the generateRenovation() function)
+The perspective lock paragraph goes FIRST in the prompt, before any STEP or renovation instructions. This ensures maximum model attention (primacy effect).
+typescriptconst perspectiveLock = buildPerspectiveLock(spec);
+
+const prompt = `
+${perspectiveLock}
+
+STEP 1 — STUDY THE EXISTING ROOM:
+... (rest of existing prompt unchanged)
+`;
+```
+
+The existing prompt structure (STEP 1-5 + FIXED CONSTRAINTS) stays as-is. We're only ADDING the perspective lock at the top.
+
+### 3. Strengthen FIXED CONSTRAINTS
+
+**File:** `services/geminiService.ts` or `REPLIT_IMPLEMENTATION_BRIEF.md`
+
+In the FIXED CONSTRAINTS section, reinforce the perspective rule with the specific camera data:
+
+Current:
+```
+- Camera angle and perspective = IDENTICAL to the bathroom photo
+```
+
+Updated:
+```
+- Camera angle and perspective = IDENTICAL to the bathroom photo.
+  The camera is at the ${cameraWall} wall, ${height}, looking toward the ${lookingToward} wall.
+  This viewpoint must NOT shift, rotate, or change height.
+4. Analysis schema — ensure camera data is captured
+File: services/geminiService.ts (in analyzeBathroomInput())
+The analysis already captures camera data per the fidelity plan. Verify these fields are in the response schema:
+typescriptcamera: {
+  type: Type.OBJECT,
+  properties: {
+    position: { type: Type.STRING, enum: ["EYE_LEVEL", "ELEVATED", "CORNER", "LOW_ANGLE"] },
+    facing_from_wall: { type: Type.NUMBER, description: "0=N, 1=E, 2=S, 3=W" },
+    lens_feel: { type: Type.STRING, enum: ["WIDE_ANGLE", "NORMAL", "TELEPHOTO"] }
+  }
+}
+If these fields are not yet in the production analysis schema, add them. The perspective lock depends on this data.
+
+Why This Fixes the Problem
+
+The model currently receives no text about the viewpoint. It gets the photo as visual reference, but without explicit text describing WHERE the camera is, the model interprets "same perspective" loosely. Adding the text anchor forces the model to reason about the perspective.
+Placement at the top of the prompt exploits primacy bias. The very first thing the model reads is "PERSPECTIVE LOCK" with the exact camera description. This sets the spatial framework before any renovation instructions.
+Redundancy is intentional. The perspective is locked in THREE places:
+
+At the top: PERSPECTIVE LOCK paragraph
+In STEP 1: as part of studying the room
+In FIXED CONSTRAINTS: reinforced with specific camera data
+
+This redundancy ensures the model can't miss it.
+Describing what's visible and where (left wall, right wall, far wall, fixture positions in frame) gives the model a spatial map. If it knows "the toilet is in the left side of the frame", it can verify its output matches.
+Occlusions prevent hallucination. If the analysis says "west wall not visible from this viewpoint", the model knows not to invent content for that area.
+
+
+Files to Modify
+FileChangeservices/geminiService.tsAdd buildPerspectiveLock(spec). Inject at top of render prompt. Reinforce in FIXED CONSTRAINTS.REPLIT_IMPLEMENTATION_BRIEF.mdUpdate prompt in section 4 — add perspective lock paragraph at top, update FIXED CONSTRAINTS with camera data.
