@@ -7,6 +7,7 @@ const navLinks = [
   { to: '/', label: 'Home' },
   { to: '/badkamer-inspiratie', label: 'Inspiratie' },
   { to: '/badkamer-renovatie-kosten', label: 'Kosten' },
+  { to: '/offerte-aanvragen', label: 'Gratis Offerte' },
 ];
 
 export const Header = () => {
