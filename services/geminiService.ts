@@ -628,264 +628,69 @@ export const generateRenovation = async (
     }
   }
 
-  const wallLabels = ['far', 'right', 'behind camera', 'left'];
-  const oppositeWall = [2, 3, 0, 1];
-  let occlusionLines: string[] = [];
-
-  function buildPerspectiveLock(s: ProjectSpec): string {
-    const height: Record<string, string> = {
-      'EYE_LEVEL': 'at chest height, approximately 1.4m',
-      'ELEVATED': 'from a slightly elevated position, approximately 1.8m',
-      'CORNER': 'from the corner of the room',
-      'LOW_ANGLE': 'from a low angle, approximately 0.8m',
-    };
-    const heightDesc = height[s.camera?.position ?? ''] || 'at chest height';
-
-    const lensDesc: Record<string, string> = {
-      'WIDE_ANGLE': 'Wide-angle lens — edges of the frame show slight barrel distortion.',
-      'NORMAL': 'Normal lens — no visible distortion.',
-      'TELEPHOTO': 'Telephoto compression — walls appear closer together than they are.',
-    };
-    const lens = lensDesc[s.camera?.lensFeel ?? ''] || '';
-
-    const farVisible = s.walls?.find(w => w.wallIndex === 0);
-    const rightVisible = s.walls?.find(w => w.wallIndex === 1);
-    const leftVisible = s.walls?.find(w => w.wallIndex === 3);
-
-    const visibilityParts: string[] = [];
-    if (farVisible?.visible) visibilityParts.push('The far wall is fully visible');
-    if (leftVisible?.visible) visibilityParts.push('the left wall is visible');
-    else visibilityParts.push('the left wall is partially visible or cut off');
-    if (rightVisible?.visible) visibilityParts.push('the right wall is visible');
-    else visibilityParts.push('the right wall is partially visible or cut off');
-
-    const featureParts: string[] = [];
-    for (const wall of (s.walls || [])) {
-      if (!wall.visible) continue;
-      const label = wallLabels[wall.wallIndex];
-      for (const anchor of wall.anchors) {
-        if (anchor.confidence < 0.5) continue;
-        if (anchor.elementType === 'WINDOW') {
-          featureParts.push(`Window on the ${label} wall`);
-        } else if (anchor.elementType === 'DOOR') {
-          featureParts.push(`Door on the ${label} wall`);
-        }
-      }
-    }
-
-    const NON_FIXTURE_TYPES = new Set(['WINDOW', 'DOOR', 'RADIATOR', 'OBSTACLE']);
-    const fixtureParts: string[] = [];
-    for (const f of s.existingFixtures) {
-      if (NON_FIXTURE_TYPES.has(f.type)) continue;
-      const wall = wallLabels[f.wallIndex ?? 0];
-      const side = f.positionX != null
-        ? f.positionX < 40 ? 'left side of frame' : f.positionX > 60 ? 'right side of frame' : 'center of frame'
-        : '';
-      fixtureParts.push(`${f.description || f.type} on the ${wall} wall${side ? ` (${side})` : ''}`);
-    }
-
-    const occlusionPart = s.occlusions && s.occlusions.length > 0
-      ? `\nNot visible from this viewpoint: ${s.occlusions.join('; ')}.`
-      : '';
-
-    return `PERSPECTIVE LOCK — The output image MUST match this exact viewpoint:
-The camera is positioned ${heightDesc}, looking straight toward the far wall. ${lens}
-${visibilityParts.join(', ')}.
-${featureParts.length > 0 ? `Visible architectural features: ${featureParts.join(', ')}.` : ''}
-${fixtureParts.length > 0 ? `Current fixtures in frame: ${fixtureParts.join(', ')}.` : ''}
-Room dimensions: approximately ${s.estimatedWidthMeters}m wide × ${s.estimatedLengthMeters}m long, ${s.ceilingHeightMeters}m ceiling.${occlusionPart}
-
-DO NOT change the camera position, height, angle, or viewing direction.
-The perspective in the output must be IDENTICAL to IMAGE 1.`;
-  }
-
-  function buildRoomDescription(s: ProjectSpec): string {
-    const shape = s.layoutShape === 'L_SHAPE' ? 'L-shaped' : s.layoutShape.toLowerCase();
-
-    const wallDescriptions: string[] = [];
-    for (const wall of (s.walls || [])) {
-      const label = wallLabels[wall.wallIndex];
-      if (!wall.visible) {
-        const plumbingNote = wall.hasPlumbing ? ' Has plumbing connections.' : '';
-        wallDescriptions.push(`${label} wall: NOT FULLY VISIBLE (behind camera/occluded).${plumbingNote}`);
-        continue;
-      }
-      const parts: string[] = [`${label} wall: visible`];
-      for (const anchor of wall.anchors) {
-        if (anchor.confidence < 0.5) continue;
-        if (anchor.elementType === 'WINDOW') {
-          const rawWidth = anchor.br.x - anchor.tl.x;
-          const widthPct = Math.round(rawWidth > 1 ? rawWidth : rawWidth * 100);
-          parts.push(`has a window (approximately ${widthPct}% of wall width) at frame coordinates [${anchor.tl.x}%,${anchor.tl.y}%] → [${anchor.br.x}%,${anchor.br.y}%]`);
-        } else if (anchor.elementType === 'DOOR') {
-          const hingePart = anchor.doorHingeSide && anchor.doorHingeSide !== 'UNKNOWN' ? `, hinge on ${anchor.doorHingeSide.toLowerCase()}` : '';
-          const swingPart = anchor.doorSwing && anchor.doorSwing !== 'UNKNOWN' ? `, opens ${anchor.doorSwing.toLowerCase()}` : '';
-          parts.push(`has a door at [${anchor.tl.x}%,${anchor.tl.y}%] → [${anchor.br.x}%,${anchor.br.y}%]${hingePart}${swingPart}`);
-        } else if (anchor.elementType === 'NICHE') {
-          parts.push(`has a niche at [${anchor.tl.x}%,${anchor.tl.y}%] → [${anchor.br.x}%,${anchor.br.y}%]`);
-        }
-      }
-      if (wall.hasPlumbing) parts.push('has plumbing connections');
-      if (wall.features) parts.push(wall.features);
-      wallDescriptions.push(parts.join(' — '));
-    }
-
-    const NON_FIXTURE_TYPES_RD = new Set(['WINDOW', 'DOOR', 'RADIATOR', 'OBSTACLE']);
-    const fixtureDescriptions = s.existingFixtures
-      .filter(f => !NON_FIXTURE_TYPES_RD.has(f.type))
-      .map(f => {
-        const wall = wallLabels[f.wallIndex ?? 0];
-        const position = f.positionX != null
-          ? `at X:${f.positionX}% Y:${f.positionY ?? '?'}% (${f.positionX < 33 ? 'left third' : f.positionX > 66 ? 'right third' : 'center'})`
-          : '';
-        const condition = f.condition && f.condition !== 'UNKNOWN'
-          ? ` (${f.condition.toLowerCase()} condition)` : '';
-        return `${f.description || f.type} on the ${wall} wall ${position}${condition}`;
-      });
-
-    const constraintNote = s.constraints && s.constraints.length > 0
-      ? ` Notable: ${s.constraints.join('. ')}.`
-      : '';
-
-    const lightDir = s.primaryLightDirection ?? 'unknown';
-    const windowWalls = (s.walls || [])
-      .filter(w => w.visible && (w.anchors || []).some(a => a.elementType === 'WINDOW'))
-      .map(w => `${wallLabels[w.wallIndex]} wall`);
-    const lightLine = `Primary natural light enters from the ${lightDir}${windowWalls.length > 0 ? ` (${windowWalls.join(', ')})` : ''}.`;
-
-    return `ROOM DESCRIPTION — This is the exact room being renovated:
-A ${shape} bathroom, approximately ${s.estimatedWidthMeters}m wide × ${s.estimatedLengthMeters}m long, ${s.ceilingHeightMeters}m ceiling height.
-Walls: ${wallDescriptions.join('. ')}.
-Current fixtures: ${fixtureDescriptions.join('. ')}.${constraintNote}
-${s.plumbingWall != null ? `Primary plumbing connections are on the ${wallLabels[s.plumbingWall]} wall.` : ''}
-${lightLine}
-All walls, windows, doors, and ceiling features must remain IDENTICAL in the output — only fixtures, materials, and finishes change.`;
-  }
-
-  let perspectiveLock = '';
-  let roomDescription = '';
-  let step2PlumbingContext = '';
-  let step2ConditionNotes = '';
-  let step2DemolitionNotes = '';
-  let step2RoomContext = '';
-  let step2DoorWindowContext = '';
-  let cameraConstraintReinforcement = '';
-
-  if (spec) {
-    occlusionLines = spec.occlusions || [];
-    perspectiveLock = buildPerspectiveLock(spec);
-    roomDescription = spec.naturalDescription
-      ? `ROOM DESCRIPTION — This is the exact room being renovated:\n${spec.naturalDescription}`
-      : buildRoomDescription(spec);
-
-    const heightLabel: Record<string, string> = {
-      'EYE_LEVEL': 'chest height (~1.4m)',
-      'ELEVATED': 'elevated (~1.8m)',
-      'CORNER': 'corner position',
-      'LOW_ANGLE': 'low angle (~0.8m)',
-    };
-    const camHeight = heightLabel[spec.camera?.position ?? ''] || 'chest height';
-    cameraConstraintReinforcement = `Camera is at ${camHeight}, looking toward the far wall. This viewpoint must NOT shift, rotate, or change height.`;
-
-    const plumbingWallName = wallLabels[spec.plumbingWall ?? 0] || 'unknown';
-    const plumbingFixtures = spec.existingFixtures
-      .filter(f => f.wallIndex === spec.plumbingWall)
-      .map(f => f.type.toLowerCase())
-      .join(' and ');
-    step2PlumbingContext = `The plumbing connects on the ${plumbingWallName} wall${plumbingFixtures ? ` (where the current ${plumbingFixtures} ${plumbingFixtures.includes(' and ') ? 'are' : 'is'} mounted)` : ''}. Keep new water-connected fixtures near this wall to minimize plumbing relocation.`;
-
-    const conditionNotes = spec.existingFixtures
-      .filter(f => f.condition === 'WORN' || f.condition === 'DAMAGED')
-      .map(f => `The ${f.type.toLowerCase()} is ${f.condition}`);
-    if (conditionNotes.length > 0) {
-      step2ConditionNotes = conditionNotes.join('. ') + '.';
-    }
-
-    if (spec.constraints && spec.constraints.length > 0) {
-      step2DemolitionNotes = `\nDemolition assessment: ${spec.constraints.join('. ')}`;
-    }
-
-    step2RoomContext = `Based on the room shape (${spec.estimatedWidthMeters}m × ${spec.estimatedLengthMeters}m ${spec.layoutShape.toLowerCase()})`;
-
-    const doorWalls = (spec.walls || [])
-      .filter(w => (w.anchors || []).some(a => a.elementType === 'DOOR'))
-      .map(w => wallLabels[w.wallIndex]);
-    const windowWallNames = (spec.walls || [])
-      .filter(w => (w.anchors || []).some(a => a.elementType === 'WINDOW'))
-      .map(w => wallLabels[w.wallIndex]);
-    if (doorWalls.length > 0 || windowWallNames.length > 0) {
-      const doorPart = doorWalls.length > 0 ? `door (${doorWalls.join(', ')} wall)` : '';
-      const windowPart = windowWallNames.length > 0 ? `window (${windowWallNames.join(', ')} wall)` : '';
-      step2DoorWindowContext = ` and where the ${[doorPart, windowPart].filter(Boolean).join(' and ')} ${doorWalls.length + windowWallNames.length > 1 ? 'are' : 'is'}`;
-    }
+  let plumbingHint = '';
+  if (spec && spec.plumbingWall != null) {
+    const wallLabels = ['far', 'right', 'behind camera', 'left'];
+    plumbingHint = `Hint: the existing plumbing connections are on the ${wallLabels[spec.plumbingWall]} wall. Keep water-connected fixtures near that wall to minimize plumbing relocation.`;
   }
 
   const prompt = `
-IMAGE 1 IS YOUR GROUND TRUTH. You must generate a renovated version of THIS EXACT room.
-The output must be immediately recognizable as the same bathroom from IMAGE 1.
+IMAGE 1 IS YOUR GROUND TRUTH.
+Generate a renovated version of THIS EXACT bathroom. The output must be immediately recognizable as the same room.
 
-Think step by step. Follow these stages in order:
-
-STAGE 1 — STUDY THE ROOM:
-Examine IMAGE 1 carefully. Identify and memorize every structural detail:
-${perspectiveLock}
-
-${roomDescription}
-
-IMAGE 1 overrides everything. If any detail below conflicts with what you see in IMAGE 1, trust the photo.
+STEP 1 — STUDY THE ROOM:
+Analyze the room geometry, camera position, angle, and lens distortion in IMAGE 1.
+Identify every wall, window, door, ceiling feature, and fixture visible in the frame.
+Note the exact perspective — this is your spatial anchor. The output viewpoint must be IDENTICAL.
 ${roomNotes ? `The homeowner notes: "${sanitizeUserText(roomNotes)}"` : ''}
 
-STAGE 2 — STRIP THE ROOM:
-Mentally remove ALL existing fixtures, tiles, and finishes from the room. What remains is:
-- The bare walls, floor, and ceiling exactly as they appear in IMAGE 1
-- The window(s) and door(s) in their exact positions from IMAGE 1
-- The camera angle, perspective, and lens distortion from IMAGE 1
-- The room shape and dimensions
-This empty shell IS your canvas. Nothing else carries over.
+STEP 2 — STRIP TO EMPTY SHELL:
+Mentally remove ALL fixtures, tiles, and finishes from the room.
+What remains is ONLY the bare architectural shell:
+- Walls, floor, ceiling (with any beams or slopes) exactly as in IMAGE 1
+- Windows and doors in their exact positions and sizes from IMAGE 1
+- The same camera angle, perspective, and lens characteristics
+This empty shell is your canvas. Start building from here.
 
-STAGE 3 — PLACE FIXTURES ONE BY ONE:
-Starting from the empty room, place each fixture individually:
-${step2PlumbingContext}
-${step2ConditionNotes}${step2DemolitionNotes}
+STEP 3 — PLACE FIXTURES:
+Into the empty room, place each fixture one by one:
 
 ${scopeLines.join('\n\n')}
 
-Placement rules:
-${step2RoomContext}${step2DoorWindowContext}
-- Water-connected fixtures near the plumbing wall
-- Minimum 60cm clearance in front of each fixture
-- Toilet not directly visible from door if possible
-- Only reposition from original locations if spatially necessary
+${plumbingHint}
+Placement logic:
+- Minimum 60cm free passage in front of every fixture
+- Toilet not directly visible from the door if possible
+- Only reposition fixtures from their original locations if spatially necessary
 
-For REPLACED items: match the product reference photo exactly — color, shape, material, finish.
-For KEPT items: preserve their appearance exactly as they look in IMAGE 1.
+For REPLACED items: match the product reference photo EXACTLY — color, shape, material, finish.
+For KEPT items: preserve their appearance EXACTLY as they look in IMAGE 1.
 
-STAGE 4 — APPLY FINISHES AND STYLE:
-Now dress the room:
+STEP 4 — APPLY FINISHES AND STYLE:
 Style: ${presetDesc}
 Tags: ${topTags}
 ${styleProfile.moodDescription ? `Homeowner's vision: "${sanitizeUserText(styleProfile.moodDescription)}"` : ''}
-- Apply wall and floor materials consistent with the style
-- Light: natural daylight from ${spec?.primaryLightDirection ?? 'the same direction as IMAGE 1'}, warm (3000K), soft shadows
-- Add: 1-2 neutral towels on a rail. Realistic textures and reflections
-- Do NOT add: plants, candles, art, bottles, or decorative objects
+Apply wall and floor materials consistent with the style.
+Lighting: warm natural daylight (3000K), soft realistic shadows. No hard spots or overexposure.
+Add 1-2 neutral towels on a rail. Realistic material textures and reflections.
+Do NOT add plants, candles, art, bottles, or decorative objects.
 
-STAGE 5 — FINAL VERIFICATION:
-Before generating, verify:
-- Camera position, angle, lens = IDENTICAL to IMAGE 1. ${cameraConstraintReinforcement}
-- Walls, ceiling, beams, slopes = IDENTICAL to IMAGE 1
-- Windows and doors = IDENTICAL positions and sizes as IMAGE 1
+STEP 5 — VERIFY BEFORE GENERATING:
+Check your result against IMAGE 1:
+- Camera angle and perspective = IDENTICAL to IMAGE 1
+- All walls, ceiling, beams, slopes = IDENTICAL to IMAGE 1
+- All windows and doors = IDENTICAL positions and sizes as IMAGE 1
 - No architectural features added or removed
-${occlusionLines.length > 0 ? `- Occluded zones (${occlusionLines.join('; ')}): do NOT invent content in areas not visible in IMAGE 1` : ''}
-- The result is a photorealistic, magazine-quality photograph of IMAGE 1's bathroom after renovation
+- KEPT items match IMAGE 1 exactly
+- REPLACED items match their reference photos exactly
+- The result is a photorealistic, magazine-quality interior photograph
 
-Now generate the final image.
+Generate the final image.
 `;
 
   parts.push({ text: prompt });
 
-  console.log('[generateRenovation] PERSPECTIVE LOCK:', perspectiveLock);
-  console.log('[generateRenovation] ROOM DESCRIPTION:', roomDescription);
+  console.log('[generateRenovation] Prompt length:', prompt.length, 'chars');
 
   try {
     console.log('[generateRenovation] Starting image generation via proxy...');
