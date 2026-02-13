@@ -821,55 +821,65 @@ All walls, windows, doors, and ceiling features must remain IDENTICAL in the out
   }
 
   const prompt = `
-IMAGE 1 IS YOUR GROUND TRUTH. Generate a renovated version of THIS EXACT bathroom.
-Your output MUST be immediately recognizable as the same room from IMAGE 1 — same walls, same camera angle, same architecture.
+IMAGE 1 IS YOUR GROUND TRUTH. You must generate a renovated version of THIS EXACT room.
+The output must be immediately recognizable as the same bathroom from IMAGE 1.
 
-ROOM FIDELITY (non-negotiable):
-These elements must be PIXEL-IDENTICAL to IMAGE 1:
-- Camera position, angle, lens perspective
-- All outer walls, ceiling height, beams, slopes
-- Window positions, sizes, and shapes
-- Door positions and frames
-Do NOT add or remove any architectural features.
+Think step by step. Follow these stages in order:
 
-STEP 1 — LOCK THE ROOM:
-Look at IMAGE 1. Memorize:
+STAGE 1 — STUDY THE ROOM:
+Examine IMAGE 1 carefully. Identify and memorize every structural detail:
 ${perspectiveLock}
 
 ${roomDescription}
 
-IMAGE 1 is always right. If any analysis detail conflicts with what you see, trust IMAGE 1.
-${roomNotes ? `
-The homeowner notes: "${sanitizeUserText(roomNotes)}"
-` : ''}
+IMAGE 1 overrides everything. If any detail below conflicts with what you see in IMAGE 1, trust the photo.
+${roomNotes ? `The homeowner notes: "${sanitizeUserText(roomNotes)}"` : ''}
 
-STEP 2 — FIXTURE LAYOUT:
+STAGE 2 — STRIP THE ROOM:
+Mentally remove ALL existing fixtures, tiles, and finishes from the room. What remains is:
+- The bare walls, floor, and ceiling exactly as they appear in IMAGE 1
+- The window(s) and door(s) in their exact positions from IMAGE 1
+- The camera angle, perspective, and lens distortion from IMAGE 1
+- The room shape and dimensions
+This empty shell IS your canvas. Nothing else carries over.
+
+STAGE 3 — PLACE FIXTURES ONE BY ONE:
+Starting from the empty room, place each fixture individually:
 ${step2PlumbingContext}
 ${step2ConditionNotes}${step2DemolitionNotes}
-${step2RoomContext}${step2DoorWindowContext}, position fixtures logically:
-- Water-connected fixtures stay near the plumbing wall
-- Minimum 60cm clearance in front of each fixture
-- Toilet not directly visible from door if possible
-Fixtures may be repositioned within the room only if spatially necessary. Do not rearrange for novelty.
 
-STEP 3 — APPLY PRODUCT CHANGES:
 ${scopeLines.join('\n\n')}
 
-REPLACED items: match the reference product photo exactly — color, shape, material, finish.
-KEPT items: preserve their appearance exactly as in IMAGE 1.
+Placement rules:
+${step2RoomContext}${step2DoorWindowContext}
+- Water-connected fixtures near the plumbing wall
+- Minimum 60cm clearance in front of each fixture
+- Toilet not directly visible from door if possible
+- Only reposition from original locations if spatially necessary
 
-STEP 4 — STYLE:
+For REPLACED items: match the product reference photo exactly — color, shape, material, finish.
+For KEPT items: preserve their appearance exactly as they look in IMAGE 1.
+
+STAGE 4 — APPLY FINISHES AND STYLE:
+Now dress the room:
 Style: ${presetDesc}
 Tags: ${topTags}
 ${styleProfile.moodDescription ? `Homeowner's vision: "${sanitizeUserText(styleProfile.moodDescription)}"` : ''}
-Light: natural daylight from ${spec?.primaryLightDirection ?? 'the same direction as IMAGE 1'}, warm (3000K), soft shadows.
-Add: 1-2 neutral towels on a rail. Realistic textures and reflections.
-Do NOT add: plants, candles, art, bottles, or decorative objects.
+- Apply wall and floor materials consistent with the style
+- Light: natural daylight from ${spec?.primaryLightDirection ?? 'the same direction as IMAGE 1'}, warm (3000K), soft shadows
+- Add: 1-2 neutral towels on a rail. Realistic textures and reflections
+- Do NOT add: plants, candles, art, bottles, or decorative objects
 
-FINAL CONSTRAINTS:
-- Output must look like IMAGE 1 was renovated — same room, same angle, same architecture. ${cameraConstraintReinforcement}
-${occlusionLines.length > 0 ? `- Occluded zones (${occlusionLines.join('; ')}): do NOT invent content in areas not visible in IMAGE 1.` : ''}
-- Photorealistic, magazine-quality result.
+STAGE 5 — FINAL VERIFICATION:
+Before generating, verify:
+- Camera position, angle, lens = IDENTICAL to IMAGE 1. ${cameraConstraintReinforcement}
+- Walls, ceiling, beams, slopes = IDENTICAL to IMAGE 1
+- Windows and doors = IDENTICAL positions and sizes as IMAGE 1
+- No architectural features added or removed
+${occlusionLines.length > 0 ? `- Occluded zones (${occlusionLines.join('; ')}): do NOT invent content in areas not visible in IMAGE 1` : ''}
+- The result is a photorealistic, magazine-quality photograph of IMAGE 1's bathroom after renovation
+
+Now generate the final image.
 `;
 
   parts.push({ text: prompt });
