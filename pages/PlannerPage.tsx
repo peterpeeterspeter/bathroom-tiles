@@ -443,15 +443,23 @@ export default function PlannerPage() {
           preferredTimeline: data.preferredTimeline,
           styleName: styleProfile?.presetName || styleProfile?.summary?.slice(0, 50) || '',
           styleSummary: styleProfile?.summary || '',
+          styleTags: styleProfile?.tags?.map(t => typeof t === 'string' ? t : t.tag) || [],
+          moodDescription: moodDescription || undefined,
+          roomNotes: roomNotes || undefined,
+          productActions: productActions as Record<string, string>,
           products: selectedProductDetailsRef.current,
           roomWidth: spec?.estimatedWidthMeters,
           roomLength: spec?.estimatedLengthMeters,
           roomArea: spec?.totalAreaM2,
+          ceilingHeight: spec?.ceilingHeightMeters,
           estimateLow: totalLow,
           estimateHigh: totalHigh,
           leadScore: leadResult.leadScore,
           originalPhotoUrl,
           renderImageUrl,
+          inspirationImageCount: referenceImages.length,
+          expertAnalysis: styleProfile?.expertAnalysis || undefined,
+          estimatedComplexity: styleProfile?.expertAnalysis?.estimatedComplexity || undefined,
         });
       } catch (err) {
         console.error('Email notification failed (non-blocking):', err);
