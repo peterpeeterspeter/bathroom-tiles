@@ -5,9 +5,8 @@ import { Logo } from './Logo';
 
 const navLinks = [
   { to: '/', label: 'Home' },
-  { to: '/badkamer-renovatie-kosten', label: 'Kosten' },
-  { to: '/planner', label: 'AI Planner' },
   { to: '/badkamer-inspiratie', label: 'Inspiratie' },
+  { to: '/badkamer-renovatie-kosten', label: 'Kosten' },
 ];
 
 export const Header = () => {
@@ -46,10 +45,10 @@ export const Header = () => {
 
         <div className="hidden md:flex items-center gap-4">
           <Link
-            to="/offerte-aanvragen"
+            to="/planner"
             className="inline-flex items-center gap-2 bg-accent hover:bg-accent-hover text-white font-bold text-sm px-6 py-2.5 rounded-full transition-all hover:shadow-lg hover:shadow-accent/25"
           >
-            Gratis Offerte <ArrowRight size={16} />
+            AI Planner <ArrowRight size={16} />
           </Link>
         </div>
 
@@ -80,10 +79,10 @@ export const Header = () => {
             ))}
             <div className="pt-3">
               <Link
-                to="/offerte-aanvragen"
+                to="/planner"
                 className="flex items-center justify-center gap-2 bg-accent text-white font-bold text-sm px-6 py-3 rounded-full w-full"
               >
-                Gratis Offerte <ArrowRight size={16} />
+                AI Planner <ArrowRight size={16} />
               </Link>
             </div>
           </nav>
