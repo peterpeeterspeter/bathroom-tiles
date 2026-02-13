@@ -1,0 +1,122 @@
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+26The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.Understand this error
+26The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?Understand this error
+26The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.Understand this error
+De-Badkamer-Visualiseer-Je-Droombadkamer:1 The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.Understand this error
+De-Badkamer-Visualiseer-Je-Droombadkamer:1 The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?Understand this error
+De-Badkamer-Visualiseer-Je-Droombadkamer:1 The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.Understand this error
+9293adff22cd35c6.js:14 
+      /////////////////////
+   ///////////////////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////        Curious and driven?
+  ///////////////@@@@@@@///////        Work with us!
+  ///////////////@@@@@@@///////
+  ///////////////@@@@@@@///////        https://join.replit.com/hack.with.us
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@#//////////////
+   ///////////////////////////
+      /////////////////////
+      
+9293adff22cd35c6.js:14 Download the Apollo DevTools for a better development experience: https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm
+installHook.js:1 [ai-chat] Creating connection with chat proxy enabled
+overrideMethod @ installHook.js:1Understand this warning
+9293adff22cd35c6.js:14 [LaunchDarkly] LaunchDarkly client initialized
+9293adff22cd35c6.js:14 [Coframe] Replit Enterprise watcher loaded
+ SES Removing unpermitted intrinsics
+ SES Removing unpermitted intrinsics
+De-Badkamer-Visualiseer-Je-Droombadkamer:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+7Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.Understand this error
+9954129c7dd6dc22.js:2 Unrecognized feature: 'ambient-light-sensor'.
+C @ 9954129c7dd6dc22.js:2Understand this warning
+9954129c7dd6dc22.js:2 Unrecognized feature: 'battery'.
+C @ 9954129c7dd6dc22.js:2Understand this warning
+9954129c7dd6dc22.js:2 Unrecognized feature: 'execution-while-not-rendered'.
+C @ 9954129c7dd6dc22.js:2Understand this warning
+9954129c7dd6dc22.js:2 Unrecognized feature: 'execution-while-out-of-viewport'.
+C @ 9954129c7dd6dc22.js:2Understand this warning
+9954129c7dd6dc22.js:2 Unrecognized feature: 'layout-animations'.
+C @ 9954129c7dd6dc22.js:2Understand this warning
+9954129c7dd6dc22.js:2 Unrecognized feature: 'legacy-image-formats'.
+C @ 9954129c7dd6dc22.js:2Understand this warning
+9954129c7dd6dc22.js:2 Unrecognized feature: 'navigation-override'.
+C @ 9954129c7dd6dc22.js:2Understand this warning
+9954129c7dd6dc22.js:2 Unrecognized feature: 'oversized-images'.
+C @ 9954129c7dd6dc22.js:2Understand this warning
+9954129c7dd6dc22.js:2 Unrecognized feature: 'publickey-credentials'.
+C @ 9954129c7dd6dc22.js:2Understand this warning
+9954129c7dd6dc22.js:2 Unrecognized feature: 'speaker-selection'.
+C @ 9954129c7dd6dc22.js:2Understand this warning
+9954129c7dd6dc22.js:2 Unrecognized feature: 'unoptimized-images'.
+C @ 9954129c7dd6dc22.js:2Understand this warning
+9954129c7dd6dc22.js:2 Unrecognized feature: 'unsized-media'.
+C @ 9954129c7dd6dc22.js:2Understand this warning
+9954129c7dd6dc22.js:2 Unrecognized feature: 'pointer-lock'.
+C @ 9954129c7dd6dc22.js:2Understand this warning
+9954129c7dd6dc22.js:2 Allow attribute will take precedence over 'allowfullscreen'.
+C @ 9954129c7dd6dc22.js:2Understand this warning
+9954129c7dd6dc22.js:2 Allow attribute will take precedence over 'allowpaymentrequest'.
+C @ 9954129c7dd6dc22.js:2Understand this warning
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+attached_assets/yingtu-1770996486931_1770996554756.png:1  Failed to load resource: the server responded with a status of 404 ()Understand this error
+attached_assets/modernclassic_1770996586955.png:1  Failed to load resource: the server responded with a status of 404 ()Understand this error
+108De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+installHook.js:1 Cache data may be lost when replacing the hostingBuildDeployActionUpdates field of a Subscription object.
+
+This could cause additional (usually avoidable) network requests to fetch data that were otherwise cached.
+
+To address this problem (which is not a bug in Apollo Client), either ensure all objects of type HostingBuildDeployLogAction and HostingBuildDeployStatusAction have an ID or a custom merge function, or define a custom merge function for the Subscription.hostingBuildDeployActionUpdates field, so InMemoryCache can safely merge these objects:
+
+  existing: {"__typename":"HostingBuildDeployLogAction","log":"\r\u001b[38;2;169;169;169m2026-02-13T16:24:29Z\u001b[37m \u001b[32minfo\u001b[37m: Build: c8c38252-6a34-4587-b6f1-f790b25a90b5\r\n"}
+  incoming: {"__typename":"HostingBuildDeployStatusAction","status":"security_scanning","message":null,"debugSummary":null}
+
+For more information about these options, please refer to the documentation:
+
+  * Ensuring entity objects have IDs: https://go.apollo.dev/c/generating-unique-identifiers
+  * Defining custom merge functions: https://go.apollo.dev/c/merging-non-normalized-objects
+
+overrideMethod @ installHook.js:1Understand this warning
+installHook.js:1 [Coframe] Mutation callback infinite loop protection triggered, disconnecting mutation observer Object
+overrideMethod @ installHook.js:1Understand this error
+83De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+workspace_iframe.html?initialPath=%2Fplanner&id=%3Arn7%3A:32 Unrecognized feature: 'ambient-light-sensor'.Understand this warning
+workspace_iframe.html?initialPath=%2Fplanner&id=%3Arn7%3A:32 Unrecognized feature: 'battery'.Understand this warning
+workspace_iframe.html?initialPath=%2Fplanner&id=%3Arn7%3A:32 Unrecognized feature: 'execution-while-not-rendered'.Understand this warning
+workspace_iframe.html?initialPath=%2Fplanner&id=%3Arn7%3A:32 Unrecognized feature: 'execution-while-out-of-viewport'.Understand this warning
+workspace_iframe.html?initialPath=%2Fplanner&id=%3Arn7%3A:32 Unrecognized feature: 'layout-animations'.Understand this warning
+workspace_iframe.html?initialPath=%2Fplanner&id=%3Arn7%3A:32 Unrecognized feature: 'legacy-image-formats'.Understand this warning
+workspace_iframe.html?initialPath=%2Fplanner&id=%3Arn7%3A:32 Unrecognized feature: 'navigation-override'.Understand this warning
+workspace_iframe.html?initialPath=%2Fplanner&id=%3Arn7%3A:32 Unrecognized feature: 'oversized-images'.Understand this warning
+workspace_iframe.html?initialPath=%2Fplanner&id=%3Arn7%3A:32 Unrecognized feature: 'publickey-credentials'.Understand this warning
+workspace_iframe.html?initialPath=%2Fplanner&id=%3Arn7%3A:32 Unrecognized feature: 'speaker-selection'.Understand this warning
+workspace_iframe.html?initialPath=%2Fplanner&id=%3Arn7%3A:32 Unrecognized feature: 'unoptimized-images'.Understand this warning
+workspace_iframe.html?initialPath=%2Fplanner&id=%3Arn7%3A:32 Unrecognized feature: 'unsized-media'.Understand this warning
+workspace_iframe.html?initialPath=%2Fplanner&id=%3Arn7%3A:32 Allow attribute will take precedence over 'allowfullscreen'.Understand this warning
+workspace_iframe.html?initialPath=%2Fplanner&id=%3Arn7%3A:32 Allow attribute will take precedence over 'allowpaymentrequest'.Understand this warning
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+injected.js:37 [PlannerPage] Step 1: Compressing image...
+injected.js:37 [PlannerPage] Step 2: Running analyzeBathroomInput...
+injected.js:37 [analyzeBathroomInput] Starting bathroom analysis...
+injected.js:37 [analyzeBathroomInput] Calling proxy...
+api.laozhang.ai/v1beta/models/gemini-3-pro-preview:generateContent:1  Failed to load resource: the server responded with a status of 503 ()Understand this error
+injected.js:37 API call failed (503), retrying in 3000ms (attempt 1/2, switching to direct API)...
+(anonymous) @ injected.js:37Understand this warning
+injected.js:37 [analyzeBathroomInput] Calling direct API...
+injected.js:37 [PlannerPage] Step 2 complete: Analysis done
+injected.js:37 [PlannerPage] Step 3: Fetching products and images...
+injected.js:37 [PlannerPage] Step 3 complete: 3 products, 3 images
+injected.js:37 [PlannerPage] Step 4: Starting generation + cost estimation in parallel...
+injected.js:37 [generateRenovation] Starting image generation via proxy...
+injected.js:37 [calculateRenovationCost] Starting cost estimation...
+injected.js:37 [calculateRenovationCost] Calling proxy...
+api.laozhang.ai/v1beta/models/gemini-3-pro-preview:generateContent:1  Failed to load resource: the server responded with a status of 503 ()Understand this error
+injected.js:37 API call failed (503), retrying in 3000ms (attempt 1/2, switching to direct API)...
+(anonymous) @ injected.js:37Understand this warning
+injected.js:37 [calculateRenovationCost] Calling direct API...
