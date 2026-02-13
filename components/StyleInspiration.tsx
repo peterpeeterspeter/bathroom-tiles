@@ -299,13 +299,21 @@ export const StyleInspiration = ({ onStyleSelected, onMoodDescriptionChange }: S
         </div>
       </div>
 
-      {selectedPreset && referenceImages.length === 0 && (
+      {(selectedPreset || moodDescription.trim()) && referenceImages.length === 0 && (
         <div className="mt-8 max-w-md mx-auto">
-          <div className="bg-surface border border-neutral-300/50 rounded-2xl p-4 text-center">
-            <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
-              Stijl geselecteerd: <span className="text-primary">{selectedPreset.label_nl}</span> -- upload optioneel inspiratiebeelden om te verfijnen.
-            </p>
-          </div>
+          {selectedPreset && (
+            <div className="bg-surface border border-neutral-300/50 rounded-2xl p-4 text-center mb-4">
+              <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
+                Stijl geselecteerd: <span className="text-primary">{selectedPreset.label_nl}</span> -- upload optioneel inspiratiebeelden om te verfijnen.
+              </p>
+            </div>
+          )}
+          <button
+            onClick={handleProceedWithImages}
+            className="w-full py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary-dark transition-all flex items-center justify-center gap-3 shadow-xl"
+          >
+            <Sparkles size={18} /> Ga verder
+          </button>
         </div>
       )}
     </div>

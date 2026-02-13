@@ -326,7 +326,7 @@ export default function PlannerPage() {
 
       if (abortRef.current?.signal.aborted) throw new Error('timeout');
 
-      setLoadingMessage('4 renovatievarianten genereren — dit kan 1-2 minuten duren...');
+      setLoadingMessage('Uw renovatieontwerp genereren — dit kan 2-3 minuten duren...');
 
       const [render, est] = await Promise.all([
         generateRenovation(
