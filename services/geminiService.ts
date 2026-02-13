@@ -628,10 +628,47 @@ export const generateRenovation = async (
     }
   }
 
+  const wallLabels = ['far', 'right', 'behind camera', 'left'];
+
   let plumbingHint = '';
   if (spec && spec.plumbingWall != null) {
-    const wallLabels = ['far', 'right', 'behind camera', 'left'];
     plumbingHint = `Hint: the existing plumbing connections are on the ${wallLabels[spec.plumbingWall]} wall. Keep water-connected fixtures near that wall to minimize plumbing relocation.`;
+  }
+
+  let referenceNotes = '';
+  if (spec) {
+    const noteParts: string[] = [];
+
+    if (spec.naturalDescription) {
+      noteParts.push(spec.naturalDescription);
+    }
+
+    if (spec.estimatedWidthMeters && spec.estimatedLengthMeters && spec.ceilingHeightMeters) {
+      const dims = `${spec.estimatedWidthMeters}m wide x ${spec.estimatedLengthMeters}m long, ${spec.ceilingHeightMeters}m ceiling`;
+      const shape = spec.layoutShape === 'L_SHAPE' ? 'L-shaped' : spec.layoutShape.toLowerCase();
+      noteParts.push(`Room dimensions: approximately ${dims} (${shape} layout).`);
+    }
+
+    const NON_FIXTURE_TYPES = new Set(['WINDOW', 'DOOR', 'RADIATOR', 'OBSTACLE']);
+    const conditionNotes = spec.existingFixtures
+      .filter(f => !NON_FIXTURE_TYPES.has(f.type) && f.condition && f.condition !== 'UNKNOWN' && f.condition !== 'GOOD')
+      .map(f => `${(f.description || f.type).toLowerCase()} is in ${f.condition.toLowerCase()} condition`);
+    if (conditionNotes.length > 0) {
+      noteParts.push(`Fixture conditions: ${conditionNotes.join('; ')}.`);
+    }
+
+    if (spec.occlusions && spec.occlusions.length > 0) {
+      noteParts.push(`Not visible from this viewpoint: ${spec.occlusions.join('; ')}. Do NOT invent or hallucinate content in these occluded areas.`);
+    }
+
+    if (spec.constraints && spec.constraints.length > 0) {
+      noteParts.push(`Structural notes: ${spec.constraints.join('. ')}.`);
+    }
+
+    referenceNotes = `
+REFERENCE NOTES (from a prior analysis of IMAGE 1 — use to supplement your own observations, but trust IMAGE 1 if anything conflicts):
+${noteParts.join('\n')}
+`;
   }
 
   const prompt = `
@@ -643,7 +680,7 @@ Analyze the room geometry, camera position, angle, and lens distortion in IMAGE 
 Identify every wall, window, door, ceiling feature, and fixture visible in the frame.
 Note the exact perspective — this is your spatial anchor. The output viewpoint must be IDENTICAL.
 ${roomNotes ? `The homeowner notes: "${sanitizeUserText(roomNotes)}"` : ''}
-
+${referenceNotes}
 STEP 2 — STRIP TO EMPTY SHELL:
 Mentally remove ALL fixtures, tiles, and finishes from the room.
 What remains is ONLY the bare architectural shell:
