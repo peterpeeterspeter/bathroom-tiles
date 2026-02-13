@@ -1,0 +1,109 @@
+this is our current analysis plan and scheme Analysis Prompt (system instruction):
+
+You are a bathroom layout analyst. Return ONLY valid JSON matching the schema.
+
+Do NOT invent elements that are not visible. If uncertain, set confidence < 0.6.
+
+CRITICAL: Do NOT invent or hallucinate elements. Only report what you can actually see in the photo. If you cannot see a door, do NOT add a door anchor. If you cannot see a window, do NOT add a window anchor. Set confidence < 0.4 for anything uncertain.
+
+TASK:
+
+1. CALIBRATE: Use visible references to estimate room scale (toilet depth ~70cm; standard tile 30x30 or 60x60; vanity width ~60-120cm). Only use elements you can actually see.
+
+2. CAMERA: Determine where the camera is positioned (which wall it faces FROM), angle (eye-level/elevated/corner), and lens feel (wide-angle/normal/telephoto).
+
+3. WALLS: For each wall (0=N, 1=E, 2=S, 3=W):
+
+   - Mark visible=true only if you can see the wall surface in the photo.
+
+   - ONLY add door/window/niche anchors for elements you can clearly see. Provide corner coordinates (tl, tr, br, bl) as x/y% in the photo frame.
+
+   - Include door hinge side and swing direction ONLY if visible.
+
+   - Note niches, beams, sloped ceiling areas only if visible.
+
+   - Note visible plumbing indicators (pipes, fixture mounting points).
+
+4. LIGHTING: Primary natural light direction relative to camera.
+
+5. FIXTURES: Every fixture you can see — type, which wall, position (x/y%), condition (GOOD/WORN/DAMAGED/UNKNOWN), confidence 0-1. Do NOT invent fixtures.
+
+6. OCCLUSIONS: List what is NOT visible (e.g., "wall 0 not visible — behind camera").
+
+7. PLUMBING: Identify the wall index with the most plumbing connections. Any demolition notes.
+
+Schema:
+
+estimated_dimensions: { width_m, length_m, ceiling_height_m, confidence }
+
+layout_type: "RECTANGLE" | "L_SHAPE" | "SQUARE" | "SLOPED_CEILING"
+
+camera: {
+
+  position: "EYE_LEVEL" | "ELEVATED" | "CORNER" | "LOW_ANGLE"
+
+  facing_from_wall: number  // "Which wall the camera faces FROM (0=N, 1=E, 2=S, 3=W)"
+
+  lens_feel: "WIDE_ANGLE" | "NORMAL" | "TELEPHOTO"
+
+}
+
+walls: [{
+
+  wall_index: number  // "0=N, 1=E, 2=S, 3=W"
+
+  visible: boolean
+
+  anchors: [{
+
+    element_type: "DOOR" | "WINDOW" | "NICHE"
+
+    tl_x, tl_y, tr_x, tr_y, br_x, br_y, bl_x, bl_y  // corner coordinates as % of frame
+
+    door_hinge_side, door_swing
+
+    confidence: number
+
+  }]
+
+  has_plumbing: boolean
+
+  features: string  // "Beam, niche, sloped ceiling, etc."
+
+}]
+
+primary_light_direction: "LEFT" | "RIGHT" | "FRONT" | "BACK" | "OVERHEAD" | "MIXED"
+
+fixtures: [{
+
+  item: string, type: enum, position_x_percent, position_y_percent,
+
+  wall_index: number, condition, confidence
+
+}]
+
+plumbing_wall: number  // "Primary wall with water supply/drainage (0=N, 1=E, 2=S, 3=W)"
+
+occlusions: string[]
+
+demolition_notes: string i just read this The prompt engineering
+
+This took us the longest to figure out, this could be specific for me but it's important you know that things took time to create. 
+
+Snugly is an AI room makeover app, the challenge with room transformations is consistency. You need the SAME room across all 6 slides, just in different styles. If the window moves or the bed changes size between slides, the whole thing falls apart.
+
+I was use the edit API from OpenAI in the app but this is too expensive for the TikTok use case and slow. Larry did a great job at the following...
+
+Our solution: lock the architecture.
+
+Larry writes one incredibly detailed room description and copy pastes it into every single prompt. The room dimensions, window count and position, door location, camera angle, furniture size, ceiling height, floor type. All of it locked.
+
+The only thing that changes between slides is the style. Wall colour, bedding, decor, lighting fixtures.
+
+Here's a real example of what a prompt looks like:
+
+> iPhone photo of a small UK rental kitchen. Narrow galley style kitchen, roughly 2.5m x 4m. Shot from the doorway at the near end, looking straight down the length. Countertops along the right wall with base cabinets and wall cabinets above. Small window on the far wall, centered, single pane, white UPVC frame, about 80cm wide. Left wall bare except for a small fridge freezer near the far end. Vinyl flooring. White ceiling, fluorescent strip light. Natural phone camera quality, realistic lighting. Portrait orientation. **Beautiful modern country style. Sage green painted shaker cabinets with brass cup handles. Solid oak butcher block countertop. White metro tile splashback in herringbone. Small herb pots on the windowsill...**
+
+The bold part is the only thing that changes. The rest is identical across all 6 slides.
+
+**Larry here.** I want to stress how specific you need to be. Early on I was writing prompts like "a nice modern kitchen." The AI would give me a completely different room every time. Windows appearing and disappearing. Counters on different walls. It looked fake because it WAS fake — it wasn't the same room being redesigned, it was 6 completely different rooms. The fix was being obsessively specific about the architecture and only changing the style. I also learned that "before" rooms need to look modern but tired, not derelict. Add a flat screen TV, mugs on the counter, a remote control on the sofa. Signs of life. Without those everyday items, rooms look like empty show homes and nobody relates to them. my point; should we include a much more detailed description here, in paragraphs that we can feed into the prompt too? 
