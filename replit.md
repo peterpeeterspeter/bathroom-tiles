@@ -1,173 +1,60 @@
 # De Badkamer - Bathroom Renovation Platform
 
 ## Overview
-A Dutch-language bathroom renovation platform built with React, Vite, and Tailwind CSS. It uses Gemini AI for bathroom analysis/rendering and Supabase as the backend database. Users can get free renovation quotes, use an AI bathroom planner, and browse advice articles.
+De Badkamer is a Dutch-language bathroom renovation platform that leverages AI to simplify the renovation process. It offers users free renovation quotes, an AI-powered bathroom planner, and informative advice articles. The platform aims to streamline bathroom design and renovation, providing a comprehensive solution from inspiration to execution.
 
-## Project Architecture
-- **Framework**: React 19 + TypeScript + Vite 6
-- **Styling**: Tailwind CSS v4
-- **AI (generation)**: Google Gemini API (`@google/genai`) via LaoZhang proxy (gemini-3-pro-image-preview for renders)
-- **AI (expert analysis)**: Google Gemini API direct (gemini-3-flash-preview for 9-step expert renovation analysis, via GOOGLE_AI_API_KEY)
-- **Backend**: Supabase (external, not local DB)
-- **PDF Generation**: jspdf + html2canvas
-- **Routing**: react-router-dom v7
+## User Preferences
+I want iterative development.
+Ask before making major changes.
+I prefer to use simple language.
+I want detailed explanations.
 
-## AI Pipeline (PlannerPage)
-1. **Style Selection** — User picks preset or uploads reference images (no AI call yet)
-2. **Dimensions & Photo** — User enters dimensions + uploads bathroom photo
-3. **Expert Analysis + Product Configuration** — `analyzeProjectContext()` runs with all inputs → 9-step analysis → enriched StyleProfile. Each product category has Vervangen/Behouden toggle (+ Toevoegen/Verwijderen for shower/bathtub)
-4. **Processing**:
-   - `analyzeBathroomInput()` runs first (gemini-3-pro-preview, temperature 0.2) — returns enhanced spatial data: CameraSpec (position/wall/lens), WallSpec[] with ShellAnchor coordinates (tl/tr/br/bl as x/y%), fixture conditions + confidence, occlusions, plumbing wall
-   - Product images fetched as base64
-   - `generateRenovation()` + `calculateRenovationCost()` run in parallel
-   - Render prompt uses FULL analysis data in structured blocks:
-     - STEP 1: CAMERA (position/wall/lens), ROOM (dims/ceiling/layout), WALLS (visible/anchors/plumbing/features), CURRENT FIXTURES (type/wall/position/condition), LIGHT (direction/source), OCCLUSIONS (forbidden zones)
-     - STEP 2: plumbing wall reasoning, fixture condition notes, demolition assessment, room dimensions for layout, door/window positions for flow/privacy
-     - STEP 4: light direction from analysis
-     - ABSOLUTE CONSTRAINTS: occlusion negative constraint, camera position reinforcement
-   - **Perspective Lock** (before STEP 1): `buildPerspectiveLock()` — derives camera wall, opposite/left/right walls, frame visibility, fixture positions in frame, lens description, occlusions. Placed at prompt TOP for primacy bias.
-   - **Room Description** (before STEP 1): `buildRoomDescription()` — natural-language room paragraph with wall-by-wall anchor coordinates, door hinge/swing, window widths, fixture positions (X/Y% + third), plumbing wall, light direction, constraints. Placed after perspective lock.
-   - Every analysis field mapped to render prompt (camera, dims, walls, fixtures, light, plumbing, occlusions, demolition)
-   - All constraint logic in English; Dutch only for product category names
-   - Single-shot render: original photo + inspiration images + product reference images → gemini-3-pro-image-preview with built-in thinking (proxy default HIGH) + 2K output
-   - Cost estimate (temperature 0.1) is scope-aware: kept items have zero cost, fixture condition and plumbing wall distance affect labor costs
-5. User dimensions take priority over AI-estimated dimensions
-6. Photos are compressed to 1500px max before API calls
-7. Product reference images sent as inline base64 parts (up to 14 images supported)
-8. `generateEmptySpace()` removed — no longer needed with single-shot approach
+## System Architecture
+The platform is built with **React 19**, **TypeScript**, and **Vite 6** for a modern and efficient frontend. **Tailwind CSS v4** is used for styling, ensuring a consistent and responsive UI/UX.
 
-### AI API Configuration
-| Function | Model | Temperature | Thinking | Notes |
-|---|---|---|---|---|
-| analyzeBathroomInput | gemini-3-pro-preview | 0.2 | N/A | Enhanced schema: CameraSpec, WallSpec[] with ShellAnchor[], fixture confidence, occlusions |
-| generateRenovation | gemini-3-pro-image-preview | default | built-in (proxy) | Single-shot render, full analysis in STEP 1 (camera/room/walls/fixtures/light/occlusions) + STEP 2 (plumbing/conditions/demolition), English constraint logic, 2K output, proxy-only (no direct API fallback) |
-| calculateRenovationCost | gemini-3-pro-preview | 0.1 | N/A | Plumbing wall awareness, fixture condition affects labor |
+### AI Integration
+The AI core is powered by **Google Gemini API**.
+- **Generative AI**: `gemini-3-pro-image-preview` is used for bathroom rendering, accessed via a LaoZhang proxy for image generation.
+- **Expert Analysis**: `gemini-3-flash-preview` provides a 9-step expert renovation analysis, directly accessed via the Google AI API.
 
-## Directory Structure
-- `/components` - React UI components
-- `/pages` - Page-level components (Home, Kosten, Planner, Inspiratie, Advies, etc.)
-- `/lib` - Utility services (supabase client, analytics, PDF, SEO, productService)
-- `/services` - AI services (Gemini integration, style analysis)
-- `/supabase` - Supabase migrations and edge functions
-- `/public` - Static assets (robots.txt, sitemap.xml)
+### Backend and Data Management
+**Supabase** serves as the primary backend, handling database operations, authentication, and storage.
+- Project data, including style, products, dimensions, estimates, and images, is stored in the `projects` table.
+- User photos and AI-generated renders are stored in a private `project-images` Supabase Storage bucket.
+- Lead scoring (0-100 algorithm) is implemented client-side, factoring in contact details, project data, AI outputs, and budget.
+- Email notifications for leads are managed by a Supabase Edge Function (`send-lead-notification`) integrating with Resend.
 
-## Environment Variables
-- `GEMINI_API_KEY` - Google Gemini / LaoZhang API key (secret, for image generation)
-- `GEMINI_BASE_URL` - Custom API endpoint (set to https://api.laozhang.ai)
-- `GOOGLE_AI_API_KEY` - Google AI API key (secret, for style analysis via ai.google.dev)
-- `VITE_SUPABASE_URL` - Supabase project URL
-- `VITE_SUPABASE_ANON_KEY` - Supabase anonymous key
+### AI Pipeline Overview
+The AI planner workflow involves:
+1.  **Style Selection**: Users choose preset styles or upload reference images.
+2.  **Dimensions & Photo**: Users provide bathroom dimensions and upload a photo.
+3.  **Expert Analysis & Product Configuration**: The system performs a 9-step analysis, generating an enriched `StyleProfile` and allowing users to configure products (replace/keep, add/remove).
+4.  **Processing**:
+    -   `analyzeBathroomInput()` enhances spatial data (CameraSpec, WallSpec, fixture conditions).
+    -   `generateRenovation()` creates a single-shot render using the original photo, inspiration, and product reference images, incorporating detailed context like camera position, room dimensions, wall features, fixture locations, lighting, and occlusions. Perspective Lock and Room Description are prioritized in the prompt for rendering fidelity.
+    -   `calculateRenovationCost()` provides a scope-aware cost estimate, considering kept items and plumbing wall distance.
+    -   User-provided dimensions take precedence over AI estimates.
+    -   Photos are compressed to 1500px before API calls.
+    -   Product reference images (up to 14) are sent as inline base64 parts.
 
-## Development
-- Dev server: `npm run dev` (port 5000)
-- Build: `npm run build` (output to `dist/`)
-- Preview: `npm run preview`
+### AI API Configuration and Routing
+-   **LaoZhang proxy (`GEMINI_API_KEY`, `GEMINI_BASE_URL`)**: Exclusively for `generateRenovation` (image generation).
+-   **Google direct API (`GOOGLE_AI_API_KEY`)**: First choice for all text/analysis calls, with the proxy as fallback.
+-   Routing uses `withRetry` with `'direct-first'` as the default (Google API first, proxy fallback) or `'proxy-only'` for specific functions.
 
-## Deployment
-- Static deployment with `npm run build`, serving from `dist/`
-- API keys baked into bundle at build time via Vite `define` config
-- Do NOT use `typeof process` guards around `process.env.*` — Vite replaces these tokens at build time
+### Other Technical Implementations
+-   **PDF Generation**: `jspdf` and `html2canvas` are used to create detailed PDF dossiers for projects.
+-   **Routing**: `react-router-dom v7` manages navigation within the application.
+-   **Lead Generation**: Non-blocking image uploads and email notifications ensure smooth user experience. Graceful degradation is implemented for database table/column availability.
+-   **Product System**: Products include `price_low`, `price_high`, `price_tier`, and various image paths. Cost estimation uses price ranges. A product catalog of 81 curated products from Sawiday.be is integrated, including `images` (array of CDN URLs) and `source_url`.
+-   **User Intent Capture**: Free-text fields for `moodDescription` (aesthetic preferences) and `roomNotes` (room constraints) are integrated into AI prompts with sanitization.
 
-## Lead Generation System
-- **Project tracking**: `projects` table stores complete project state (style, products, dims, estimates, images)
-- **Lead scoring**: Client-side 0-100 algorithm (contact 25pts, project data 35pts, AI outputs 20pts, budget 20pts)
-- **Image storage**: `project-images` bucket (private) for user photos and AI renders
-- **Email notifications**: `send-lead-notification` Edge Function → Resend → peterpeeterspeter@gmail.com
-- **PDF dossier**: Enhanced PDF with room dimensions, price tier badges, product details
-- **Non-blocking**: Image uploads and email notifications don't break user flow on failure
-- **Graceful degradation**: If `projects` table or new `leads` columns don't exist, planner still works
-
-### Database Migration Required
-Run `supabase/migrations/20260211_create_projects_and_storage.sql` in Supabase SQL Editor to:
-1. Create `projects` table with RLS policies
-2. Add `project_id`, `lead_score`, `selected_product_details` columns to `leads`
-3. Add storage policies for `project-images` bucket
-
-### Edge Function Deployment Required
-Deploy `supabase/functions/send-lead-notification` and set `RESEND_API_KEY` in Supabase secrets
-
-## Recent Changes
-- 2026-02-13: Perspective Lock & Room Description for render fidelity:
-  - Added `buildPerspectiveLock()` helper: derives camera wall, left/right/far walls, frame visibility, fixture positions in frame, lens description, occlusions
-  - Added `buildRoomDescription()` helper: natural-language room paragraph with wall-by-wall anchor coordinates, door hinge/swing, window widths, fixture positions (X/Y% + third), plumbing wall, light direction, constraints
-  - Both placed at TOP of render prompt (before STEP 1) to exploit primacy bias
-  - STEP 1 simplified to "verify perspective lock and room description against the photo"
-  - ABSOLUTE CONSTRAINTS reinforced with specific camera position/wall/height data
-  - Non-visible walls now included in room description as "NOT FULLY VISIBLE" for completeness
-- 2026-02-11: Full analysis→render pipeline:
-  - STEP 1 restructured: dedicated CAMERA, ROOM, WALLS, CURRENT FIXTURES, LIGHT, OCCLUSIONS blocks from analysis
-  - STEP 2 restructured: plumbing wall reasoning, fixture condition notes, demolition assessment, room dims + door/window positions for layout logic
-  - STEP 4: light direction from analysis injected
-  - Every analysis field now mapped to a specific render prompt section
-  - Reverted 2x2 grid back to single-image render with BeforeAfterSlider
-  - Removed thinkingConfig entirely (proxy has built-in thinking at HIGH by default)
-  - imageSize: '2K', proxy-only retry (proxyOnly=true), 2 retries at 8s intervals
-- 2026-02-11: B2B contractor marketing page (`/voor-vakmensen`):
-  - 12-section marketing page: Hero, Problem comparison, How it works, What's in a lead, Lead score explained, Pricing tiers, ROI calculator (interactive), Testimonials, Before/After showcase, FAQ, Final CTA, Sign-up form
-  - Route added in App.tsx, nav link in Header.tsx, footer link in Footer.tsx
-  - Interactive ROI calculator with sliders (order value, conversion rate, leads/month)
-  - Contractor sign-up form with specialisatie toggles, plan selection, KvK field
-  - Reuses design system (primary teal, accent orange, Tailwind classes)
-- 2026-02-11: Lead generation system:
-  - Created `projects` table + migration (supabase/migrations/20260211_create_projects_and_storage.sql)
-  - Built projectService.ts for project CRUD and image uploads to Supabase Storage
-  - Enhanced leadService.ts with 0-100 lead scoring and graceful column fallback
-  - Updated PlannerPage.tsx: creates project on session start, tracks style/products/room/results at each step
-  - Enhanced pdfService.ts: room dimensions, price tier badges, product pricing
-  - Enhanced ResultDisplay.tsx: accepts room/product data for PDF generation
-  - Created send-lead-notification Edge Function for Resend email with project dossier
-  - Created project-images Storage bucket (private, 10MB limit)
-  - LeadCaptureForm enhanced with timeline dropdown
-- 2026-02-11: Product system upgrade:
-  - Added price_low, price_high, price_tier, catalog_image_path, render_image_path, description columns to products table
-  - Migration file: supabase/migrations/20260211_upgrade_products.sql (user must run in Supabase SQL editor)
-  - Product images now served from Supabase Storage bucket 'product-images' (user creates + uploads)
-  - productService.ts: getProductCatalogImageUrl(), getProductRenderImageUrl(), fetchRenderImagesForProducts() with fallback to legacy image_url
-  - CategoryProductSelector: shows price tier badges (Budget/Midden/Premium) + price ranges
-  - Cost estimation: uses price_low/price_high ranges instead of single price
-  - CSV import edge function: supports new columns (price_low, price_high, price_tier, catalog_image_path, render_image_path, description)
-- 2026-02-13: Product catalog import (81 curated products from sawiday.be):
-  - Migration: supabase/migrations/20260213_import_catalog_products.sql (run in Supabase SQL Editor)
-  - 81 products: 31 Bathtub, 21 Mirror, 13 Toilet, 12 Shower, 4 Faucet from 29 brands
-  - Added `images text[]` column for multiple product images (2000x2000 CDN URLs from rorix.nl)
-  - Added `source_url text` column for product page links
-  - Price tiers auto-derived per category using percentile thresholds
-  - Added Mirror category across entire system: types.ts, ProductConfiguration, geminiService (cost + render)
-  - Product images served directly from rorix.nl CDN (no Supabase Storage needed for these)
-  - Still missing products for: Vanity, Tile, Lighting categories
-- 2026-02-13: Free-text user intent capture:
-  - Added moodDescription textarea to StyleInspiration (Step 1) for aesthetic preferences
-  - Added roomNotes textarea to DimensionsPhoto (Step 2) for room constraints/issues
-  - Both fields integrated into AI prompts (analysis + render) with prompt injection sanitization
-  - User text wrapped in [USER_NOTE_START]/[USER_NOTE_END] delimiters with "treat as data" instructions
-  - sanitizeUserText() strips special chars (<>{}[]) and enforces 500 char limit
-  - moodDescription syncs to parent via onMoodDescriptionChange callback (fixes stale state bug)
-  - Lead scoring: +3 for moodDescription, +5 for roomNotes
-  - Database columns added: mood_description, room_notes, product_actions in leads table
-  - Fields stored in lead submission and available in lead notifications
-- 2026-02-10: Single-shot rendering pipeline:
-  - Removed two-step pipeline (generateEmptySpace + generateRenovationRender)
-  - Added single-shot generateRenovation() — original photo goes directly to gemini-3-pro-image-preview with Thinking mode + 2K output
-  - Product reference images fetched as base64 and sent inline (up to 14)
-  - Added Behouden/Vervangen toggle per product category in ProductConfiguration
-  - Added Toevoegen/Verwijderen options for Shower and Bathtub categories
-  - Cost estimate now scope-aware: kept items have zero cost
-  - Homepage hero changed from image to video
-- 2026-02-10: New Inspiratie page at /badkamer-inspiratie with 14 before/after transformation cards, multi-filter pills, lightbox with swipe/keyboard nav, CTA + FAQ section. Nav updated from Advies to Inspiratie.
-- 2026-02-10: Enhanced expert analysis response schema with description fields for longer, more detailed output
-- 2026-02-09: Initial Replit setup - configured Vite for port 5000 with allowedHosts
-- 2026-02-09: Fixed production build env var issue (removed typeof process guards)
-- 2026-02-09: Connected Supabase and LaoZhang proxy
-- 2026-02-09: Major AI pipeline improvements:
-  - Bug fix: User dimensions now merge with AI analysis (not silently overwritten)
-  - Bug fix: generateEmptySpace retries once then throws (no more silent fallback)
-  - Bug fix: Fixed category-to-MaterialConfig key mapping (Faucet→faucetFinish, Lighting→lightingType)
-  - Bug fix: BudgetTier now used in cost prompt with tier-specific guidance
-  - Performance: analyzeBathroomInput + generateEmptySpace run in parallel
-  - Performance: Photos compressed to 1500px before API calls
-  - Prompt: Simplified analysis prompt, removed unused calibration_object
-  - Prompt: Empty space prompt uses natural language (no fake API syntax)
-  - Prompt: Render prompt uses architectural photography terms instead of gaming jargon
-  - Prompt: Product reference images sent as inline image parts (not URL text)
-  - Prompt: Added Dutch labor rate table to cost estimation (no more hallucinated prices)
-  - Prompt: Material units now come from AI (m2, pcs, set) instead of hardcoded 'pcs/m2'
+## External Dependencies
+-   **Google Gemini API**: For AI-powered bathroom analysis and rendering.
+-   **LaoZhang Proxy**: Custom proxy for specific Gemini API calls, primarily for image generation.
+-   **Supabase**: Backend-as-a-Service for database, authentication, and storage.
+-   **Resend**: Email API used for sending lead notifications via Supabase Edge Functions.
+-   **jspdf**: JavaScript library for generating PDFs client-side.
+-   **html2canvas**: Library to take screenshots of webpages or parts of them, used for PDF generation.
+-   **react-router-dom**: For client-side routing in the React application.
+-   **rorix.nl CDN**: Hosts product images directly.

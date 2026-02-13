@@ -60,12 +60,12 @@ async function withRetry<T>(
   fn: (useDirect: boolean) => Promise<T>,
   maxRetries = 2,
   baseDelay = 3000,
-  proxyOnly = false,
+  routing: 'proxy-only' | 'direct-first' = 'direct-first',
   perAttemptTimeoutMs = 120000
 ): Promise<T> {
   let lastError: any;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const useDirect = proxyOnly ? false : attempt > 0;
+    const useDirect = routing === 'proxy-only' ? false : (routing === 'direct-first' ? attempt === 0 : attempt > 0);
     try {
       return await withTimeout(fn(useDirect), perAttemptTimeoutMs, `API attempt ${attempt + 1}`);
     } catch (err: any) {
@@ -75,7 +75,8 @@ async function withRetry<T>(
       const isRetryable = status === 429 || status === 503 || status === 500 || msg.includes('timed out');
       if (!isRetryable || attempt === maxRetries) throw err;
       const delay = baseDelay * Math.pow(2, attempt);
-      console.warn(`API call failed (${status || msg}), retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries}${proxyOnly ? '' : ', switching to direct API'})...`);
+      const switchLabel = routing === 'proxy-only' ? '' : (useDirect ? ', switching to proxy' : ', switching to direct API');
+      console.warn(`API call failed (${status || msg}), retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries}${switchLabel})...`);
       await sleep(delay);
     }
   }
@@ -134,9 +135,9 @@ TASK:
 7. PLUMBING: Identify the wall index with the most plumbing connections. Any demolition notes.`;
 
   try {
-    console.log('[analyzeBathroomInput] Starting bathroom analysis...');
+    console.log('[analyzeBathroomInput] Starting bathroom analysis (direct API first)...');
     const response = await withRetry(async (useDirect) => {
-      console.log(`[analyzeBathroomInput] Calling ${useDirect ? 'direct API' : 'proxy'}...`);
+      console.log(`[analyzeBathroomInput] Calling ${useDirect ? 'Google direct API' : 'LaoZhang proxy'}...`);
       const ai = createClient(useDirect);
       return ai.models.generateContent({
         model,
@@ -414,9 +415,9 @@ ${['Tile', 'Vanity', 'Toilet', 'Faucet', 'Shower', 'Bathtub', 'Mirror', 'Lightin
   `;
 
   try {
-    console.log('[calculateRenovationCost] Starting cost estimation...');
+    console.log('[calculateRenovationCost] Starting cost estimation (direct API first)...');
     const response = await withRetry(async (useDirect) => {
-      console.log(`[calculateRenovationCost] Calling ${useDirect ? 'direct API' : 'proxy'}...`);
+      console.log(`[calculateRenovationCost] Calling ${useDirect ? 'Google direct API' : 'LaoZhang proxy'}...`);
       const ai = createClient(useDirect);
       return ai.models.generateContent({
         model,
@@ -906,7 +907,7 @@ ${occlusionLines.length > 0 ? `- Occluded zones (${occlusionLines.join('; ')}): 
           },
         },
       });
-    }, 2, 8000, true, 180000);
+    }, 2, 8000, 'proxy-only', 180000);
     console.log('[generateRenovation] Response received, extracting image...');
 
     for (const part of response.candidates?.[0]?.content?.parts || []) {
