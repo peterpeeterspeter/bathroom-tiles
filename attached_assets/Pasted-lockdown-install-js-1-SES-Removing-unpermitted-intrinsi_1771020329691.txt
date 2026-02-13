@@ -1,0 +1,551 @@
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+VM1382:8 [Coframe] Replit Enterprise watcher loaded
+29The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.Understand this error
+29The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?Understand this error
+29The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.Understand this error
+De-Badkamer-Visualiseer-Je-Droombadkamer:1 The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.Understand this error
+De-Badkamer-Visualiseer-Je-Droombadkamer:1 The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?Understand this error
+De-Badkamer-Visualiseer-Je-Droombadkamer:1 The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.Understand this error
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+aa7781e715f74eb4.js:14 
+      /////////////////////
+   ///////////////////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////        Curious and driven?
+  ///////////////@@@@@@@///////        Work with us!
+  ///////////////@@@@@@@///////
+  ///////////////@@@@@@@///////        https://join.replit.com/hack.with.us
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@#//////////////
+   ///////////////////////////
+      /////////////////////
+      
+aa7781e715f74eb4.js:14 Download the Apollo DevTools for a better development experience: https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm
+De-Badkamer-Visualiseer-Je-Droombadkamer:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+installHook.js:1 [ai-chat] Creating connection with chat proxy enabled
+overrideMethod @ installHook.js:1
+(anonymous) @ aa7781e715f74eb4.js:14
+(anonymous) @ 1b8a1473103592aa.js:2
+uI @ 9954129c7dd6dc22.js:2
+oU @ 9954129c7dd6dc22.js:2
+(anonymous) @ 9954129c7dd6dc22.js:2
+E @ 9954129c7dd6dc22.js:2
+L @ 9954129c7dd6dc22.js:2Understand this warning
+chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+aa7781e715f74eb4.js:14 [LaunchDarkly] LaunchDarkly client initialized
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+24Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.Understand this error
+12Unrecognized feature: 'ambient-light-sensor'.Understand this warning
+12Unrecognized feature: 'battery'.Understand this warning
+12Unrecognized feature: 'execution-while-not-rendered'.Understand this warning
+12Unrecognized feature: 'execution-while-out-of-viewport'.Understand this warning
+12Unrecognized feature: 'layout-animations'.Understand this warning
+12Unrecognized feature: 'legacy-image-formats'.Understand this warning
+12Unrecognized feature: 'navigation-override'.Understand this warning
+12Unrecognized feature: 'oversized-images'.Understand this warning
+12Unrecognized feature: 'publickey-credentials'.Understand this warning
+12Unrecognized feature: 'speaker-selection'.Understand this warning
+12Unrecognized feature: 'unoptimized-images'.Understand this warning
+12Unrecognized feature: 'unsized-media'.Understand this warning
+9954129c7dd6dc22.js:2 Unrecognized feature: 'pointer-lock'.
+C @ 9954129c7dd6dc22.js:2
+(anonymous) @ 9954129c7dd6dc22.js:2
+oO @ 9954129c7dd6dc22.js:2
+oD @ 9954129c7dd6dc22.js:2
+oR @ 9954129c7dd6dc22.js:2
+oS @ 9954129c7dd6dc22.js:2
+E @ 9954129c7dd6dc22.js:2
+L @ 9954129c7dd6dc22.js:2Understand this warning
+12Allow attribute will take precedence over 'allowfullscreen'.Understand this warning
+12Allow attribute will take precedence over 'allowpaymentrequest'.Understand this warning
+b151f1e3386cb7aa.js:2 WebSocket connection to 'wss://replit.com/graphql_subscriptions' failed: 
+(anonymous) @ b151f1e3386cb7aa.js:2Understand this error
+sp.replit.com/v1/m:1  Failed to load resource: net::ERR_TIMED_OUTUnderstand this error
+installHook.js:1 Error sending segment performance metrics TypeError: Failed to fetch
+    at aa7781e715f74eb4.js:14:10038
+    at o (sdk.min.js:1:23763)
+    at t.<anonymous> (remote-metrics.ts:138:12)
+    at tslib.es6.js:103:23
+    at Object.next (tslib.es6.js:108:37)
+    at tslib.es6.js:80:8
+    at new Promise (<anonymous>)
+    at u (tslib.es6.js:72:27)
+    at i.148.t.send (sdk.min.js:1:22021)
+    at t.<anonymous> (remote-metrics.ts:125:16)
+    at tslib.es6.js:103:23
+    at Object.next (tslib.es6.js:108:37)
+    at tslib.es6.js:80:8
+    at new Promise (<anonymous>)
+    at u (tslib.es6.js:72:27)
+    at t.flush (sdk.min.js:1:21754)
+    at l (remote-metrics.ts:83:14)
+    at r (aa7781e715f74eb4.js:14:3259)
+overrideMethod @ installHook.js:1
+(anonymous) @ aa7781e715f74eb4.js:14
+a @ remote-metrics.ts:53
+(anonymous) @ remote-metrics.ts:126Understand this error
+attached_assets/yingtu-1770996486931_1770996554756.png:1  Failed to load resource: the server responded with a status of 404 ()Understand this error
+attached_assets/modernclassic_1770996586955.png:1  Failed to load resource: the server responded with a status of 404 ()Understand this error
+chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+installHook.js:1 [Coframe] Mutation callback infinite loop protection triggered, disconnecting mutation observer Object
+overrideMethod @ installHook.js:1Understand this error
+injected.js:37 [PlannerPage] Step 1: Compressing image...
+injected.js:37 [PlannerPage] Step 2: Running analyzeBathroomInput...
+injected.js:37 [analyzeBathroomInput] Starting bathroom analysis...
+injected.js:37 [analyzeBathroomInput] Calling proxy...
+api.laozhang.ai/v1beta/models/gemini-3-pro-preview:generateContent:1  Failed to load resource: the server responded with a status of 503 ()Understand this error
+injected.js:37 API call failed (503), retrying in 3000ms (attempt 1/2, switching to direct API)...
+(anonymous) @ VM28 injected.js:37Understand this warning
+injected.js:37 [analyzeBathroomInput] Calling direct API...
+injected.js:37 [analyzeBathroomInput] Analysis result: {
+  "camera": {
+    "position": "EYE_LEVEL",
+    "facingFromWall": 2,
+    "lensFeel": "WIDE_ANGLE"
+  },
+  "walls": [
+    {
+      "wallIndex": 0,
+      "visible": true,
+      "hasPlumbing": true,
+      "anchors": []
+    },
+    {
+      "wallIndex": 1,
+      "visible": true,
+      "hasPlumbing": true,
+      "anchors": [
+        {
+          "type": "WINDOW",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "wallIndex": 2,
+      "visible": false,
+      "hasPlumbing": false,
+      "anchors": []
+    },
+    {
+      "wallIndex": 3,
+      "visible": true,
+      "hasPlumbing": true,
+      "anchors": []
+    }
+  ],
+  "fixtures": [
+    {
+      "type": "SINK",
+      "wall": 3,
+      "x": 15,
+      "condition": "GOOD",
+      "confidence": 0.95
+    },
+    {
+      "type": "SHOWER",
+      "wall": 0,
+      "x": 25,
+      "condition": "GOOD",
+      "confidence": 0.95
+    },
+    {
+      "type": "WINDOW",
+      "wall": 1,
+      "x": 66,
+      "condition": "GOOD",
+      "confidence": 0.95
+    },
+    {
+      "type": "RADIATOR",
+      "wall": 1,
+      "x": 66,
+      "condition": "GOOD",
+      "confidence": 0.95
+    },
+    {
+      "type": "TOILET",
+      "wall": 1,
+      "x": 85,
+      "condition": "GOOD",
+      "confidence": 0.95
+    }
+  ],
+  "plumbingWall": 1,
+  "occlusions": [
+    "Wall 2 not visible (behind camera)",
+    "Ceiling partially cut off"
+  ],
+  "dims": "2.8x3.6x2.5"
+}
+injected.js:37 [PlannerPage] Step 2 complete: Analysis done
+injected.js:37 [PlannerPage] Step 3: Fetching products and images...
+injected.js:37 [PlannerPage] Step 3 complete: 5 products, 5 images
+injected.js:37 [PlannerPage] Step 4: Starting generation + cost estimation in parallel...
+injected.js:37 [generateRenovation] PERSPECTIVE LOCK: PERSPECTIVE LOCK — The output image MUST match this exact viewpoint:
+The camera is positioned at the South wall, at chest height, approximately 1.4m, looking straight toward the North wall. Wide-angle lens — edges of the frame show slight barrel distortion.
+The North wall (far wall) is fully visible, the West wall (left side) is visible, the East wall (right side) is visible.
+Visible architectural features: Window on the East wall.
+Current fixtures in frame: double vanity unit on the West wall (
+injected.js:37 [generateRenovation] ROOM DESCRIPTION: ROOM DESCRIPTION — This is the exact room being renovated:
+A rectangle bathroom, approximately 4.95m wide × 3.6m long, 2.5m ceiling height.
+Walls: North wall: visible — has plumbing connections — Black tiled shower area. East wall: visible — has a window (approximately 32% of wall width) at frame coordinates [50%,28%] → [82%,62%] — has plumbing connections — Large window recess. South wall: NOT FULLY VISIBLE (behind camera/occluded).. West wall: visible — has plumbing connections — Vanity wall.
+
+injected.js:37 [generateRenovation] Starting image generation via proxy...
+injected.js:37 [calculateRenovationCost] Starting cost estimation...
+injected.js:37 [calculateRenovationCost] Calling proxy...
+api.laozhang.ai/v1beta/models/gemini-3-pro-preview:generateContent:1  Failed to load resource: the server responded with a status of 503 ()Understand this error
+injected.js:37 API call failed (503), retrying in 3000ms (attempt 1/2, switching to direct API)...
+(anonymous) @ VM28 injected.js:37Understand this warning
+injected.js:37 [calculateRenovationCost] Calling direct API...
+injected.js:37 [generateRenovation] Response received, extracting image...
+injected.js:37 API call failed (API attempt 2 timed out after 120s), retrying in 6000ms (attempt 2/2, switching to direct API)...
+(anonymous) @ VM28 injected.js:37Understand this warning
+7[Violation] 'requestAnimationFrame' handler took <N>ms
+injected.js:37 [calculateRenovationCost] Calling direct API...
+injected.js:37 [PlannerPage] Step 4 complete: render=yes, estimate total=21718.621000000003
+33De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+4planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+2De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+2De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+2De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+4planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+3planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+3planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+2planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+3De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+3planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+4planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+12De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+2De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+2De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+2De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+2planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+3De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+2planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+3De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+2f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev/planner:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+23De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+16[Violation] Forced reflow while executing JavaScript took <N>ms
+injected.js:37 [vite] server connection lost. Polling for restart...
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev/__replco/static/devtools/injected.js:37 [vite] connecting...
+f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev/__replco/static/devtools/injected.js:37 [vite] connected.
+16[Violation] 'setInterval' handler took <N>ms
+67ccafcbe3345c19.js:2 [Violation] 'visibilitychange' handler took 192ms
+aa7781e715f74eb4.js:14 [Violation] 'visibilitychange' handler took 274ms
+f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev/__replco/static/devtools/injected.js:37 [vite] server connection lost. Polling for restart...
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev/__replco/static/devtools/injected.js:37 [vite] connecting...
+f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev/__replco/static/devtools/injected.js:37 [vite] connected.
+7[Violation] 'message' handler took <N>ms
+67ccafcbe3345c19.js:2 [Violation] 'scroll' handler took 155ms
+f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev/__replco/static/devtools/injected.js:37 [vite] server connection lost. Polling for restart...
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+aa7781e715f74eb4.js:14 [Violation] 'setTimeout' handler took 120ms
+67ccafcbe3345c19.js:2 [Violation] 'scroll' handler took 282ms
+shared-9d7763893ae52fad7fc6317a7db7c9f8.js:1 [Violation] 'setTimeout' handler took 64ms
+aa7781e715f74eb4.js:14 [Violation] 'setTimeout' handler took 103ms
+injected.js:37 [vite] server connection lost. Polling for restart...
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+67ccafcbe3345c19.js:2 [Violation] 'visibilitychange' handler took 573ms
+injected.js:37 [vite] server connection lost. Polling for restart...
+injected.js:37 Failed to create project: {message: 'TypeError: Failed to fetch', details: 'TypeError: Failed to fetch\n    at Object.apply (ht…v5t8.riker.replit.dev/lib/projectService.ts:5:27)', hint: '', code: ''}
+(anonymous) @ injected.js:37
+createProject @ projectService.ts:7
+await in createProject
+(anonymous) @ PlannerPage.tsx:96
+react_stack_bottom_frame @ react-dom_client.js?v=a8b54839:18567
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:997
+commitHookEffectListMount @ react-dom_client.js?v=a8b54839:9411
+commitHookPassiveMountEffects @ react-dom_client.js?v=a8b54839:9465
+reconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11273
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11240
+reconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11292
+doubleInvokeEffectsOnFiber @ react-dom_client.js?v=a8b54839:13339
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:999
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13321
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+commitDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13347
+flushPassiveEffects @ react-dom_client.js?v=a8b54839:13157
+(anonymous) @ react-dom_client.js?v=a8b54839:12776
+performWorkUntilDeadline @ react-dom_client.js?v=a8b54839:36
+<...>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=a8b54839:247
+App @ App.tsx:47
+react_stack_bottom_frame @ react-dom_client.js?v=a8b54839:18509
+renderWithHooksAgain @ react-dom_client.js?v=a8b54839:5729
+renderWithHooks @ react-dom_client.js?v=a8b54839:5665
+updateFunctionComponent @ react-dom_client.js?v=a8b54839:7475
+beginWork @ react-dom_client.js?v=a8b54839:8525
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:997
+performUnitOfWork @ react-dom_client.js?v=a8b54839:12561
+workLoopSync @ react-dom_client.js?v=a8b54839:12424
+renderRootSync @ react-dom_client.js?v=a8b54839:12408
+performWorkOnRoot @ react-dom_client.js?v=a8b54839:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=a8b54839:13505
+performWorkUntilDeadline @ react-dom_client.js?v=a8b54839:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=a8b54839:247
+(anonymous) @ f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev/index.tsx?t=1771015824570:21Understand this error
+injected.js:37 Failed to create project: {message: 'TypeError: Failed to fetch', details: 'TypeError: Failed to fetch\n    at Object.apply (ht…v5t8.riker.replit.dev/lib/projectService.ts:5:27)', hint: '', code: ''}
+(anonymous) @ injected.js:37
+createProject @ projectService.ts:7
+await in createProject
+(anonymous) @ PlannerPage.tsx:96
+react_stack_bottom_frame @ react-dom_client.js?v=a8b54839:18567
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:997
+commitHookEffectListMount @ react-dom_client.js?v=a8b54839:9411
+commitHookPassiveMountEffects @ react-dom_client.js?v=a8b54839:9465
+reconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11273
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11240
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11173
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11141
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11055
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11066
+flushPassiveEffects @ react-dom_client.js?v=a8b54839:13150
+(anonymous) @ react-dom_client.js?v=a8b54839:12776
+performWorkUntilDeadline @ react-dom_client.js?v=a8b54839:36
+<...>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=a8b54839:247
+App @ App.tsx:47
+react_stack_bottom_frame @ react-dom_client.js?v=a8b54839:18509
+renderWithHooksAgain @ react-dom_client.js?v=a8b54839:5729
+renderWithHooks @ react-dom_client.js?v=a8b54839:5665
+updateFunctionComponent @ react-dom_client.js?v=a8b54839:7475
+beginWork @ react-dom_client.js?v=a8b54839:8525
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:997
+performUnitOfWork @ react-dom_client.js?v=a8b54839:12561
+workLoopSync @ react-dom_client.js?v=a8b54839:12424
+renderRootSync @ react-dom_client.js?v=a8b54839:12408
+performWorkOnRoot @ react-dom_client.js?v=a8b54839:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=a8b54839:13505
+performWorkUntilDeadline @ react-dom_client.js?v=a8b54839:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=a8b54839:247
+(anonymous) @ f77fa61c-ae92-4da1-aa7f-d881695800f5-00-3uun13a6xv5t8.riker.replit.dev/index.tsx?t=1771015824570:21Understand this error
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] server connection lost. Polling for restart...
+9954129c7dd6dc22.js:2 [Violation] 'close' handler took 199ms
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+injected.js:37 [vite] server connection lost. Polling for restart...
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+injected.js:37 [vite] server connection lost. Polling for restart...
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+11De-Badkamer-Visualis…-Je-Droombadkamer:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+injected.js:37 [vite] server connection lost. Polling for restart...
+9954129c7dd6dc22.js:2 [Violation] 'close' handler took 179ms
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
+injected.js:37 Failed to create project: {message: 'TypeError: Failed to fetch', details: 'TypeError: Failed to fetch\n    at Object.apply (ht…v5t8.riker.replit.dev/lib/projectService.ts:5:27)', hint: '', code: ''}
+(anonymous) @ injected.js:37
+createProject @ projectService.ts:7
+await in createProject
+(anonymous) @ PlannerPage.tsx:96
+react_stack_bottom_frame @ react-dom_client.js?v=a8b54839:18567
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:997
+commitHookEffectListMount @ react-dom_client.js?v=a8b54839:9411
+commitHookPassiveMountEffects @ react-dom_client.js?v=a8b54839:9465
+reconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11273
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11240
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11173
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11141
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11055
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=a8b54839:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=a8b54839:11066
+flushPassiveEffects @ react-dom_client.js?v=a8b54839:13150
+(anonymous) @ react-dom_client.js?v=a8b54839:12776
+performWorkUntilDeadline @ react-dom_client.js?v=a8b54839:36
+<...>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=a8b54839:247
+App @ App.tsx:47
+react_stack_bottom_frame @ react-dom_client.js?v=a8b54839:18509
+renderWithHooksAgain @ react-dom_client.js?v=a8b54839:5729
+renderWithHooks @ react-dom_client.js?v=a8b54839:5665
+updateFunctionComponent @ react-dom_client.js?v=a8b54839:7475
+beginWork @ react-dom_client.js?v=a8b54839:8525
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:997
+performUnitOfWork @ react-dom_client.js?v=a8b54839:12561
+workLoopSync @ react-dom_client.js?v=a8b54839:12424
+renderRootSync @ react-dom_client.js?v=a8b54839:12408
+performWorkOnRoot @ react-dom_client.js?v=a8b54839:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=a8b54839:13505
+performWorkUntilDeadline @ react-dom_client.js?v=a8b54839:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=a8b54839:247
+(anonymous) @ index.tsx?t=1771016775105:21Understand this error
+injected.js:37 Failed to create project: {message: 'TypeError: Failed to fetch', details: 'TypeError: Failed to fetch\n    at Object.apply (ht…v5t8.riker.replit.dev/lib/projectService.ts:5:27)', hint: '', code: ''}
+(anonymous) @ injected.js:37
+createProject @ projectService.ts:7
+await in createProject
+(anonymous) @ PlannerPage.tsx:96
+react_stack_bottom_frame @ react-dom_client.js?v=a8b54839:18567
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:997
+commitHookEffectListMount @ react-dom_client.js?v=a8b54839:9411
+commitHookPassiveMountEffects @ react-dom_client.js?v=a8b54839:9465
+reconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11273
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11240
+reconnectPassiveEffects @ react-dom_client.js?v=a8b54839:11292
+doubleInvokeEffectsOnFiber @ react-dom_client.js?v=a8b54839:13339
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:999
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13321
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13317
+commitDoubleInvokeEffectsInDEV @ react-dom_client.js?v=a8b54839:13347
+flushPassiveEffects @ react-dom_client.js?v=a8b54839:13157
+(anonymous) @ react-dom_client.js?v=a8b54839:12776
+performWorkUntilDeadline @ react-dom_client.js?v=a8b54839:36
+<...>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=a8b54839:247
+App @ App.tsx:47
+react_stack_bottom_frame @ react-dom_client.js?v=a8b54839:18509
+renderWithHooksAgain @ react-dom_client.js?v=a8b54839:5729
+renderWithHooks @ react-dom_client.js?v=a8b54839:5665
+updateFunctionComponent @ react-dom_client.js?v=a8b54839:7475
+beginWork @ react-dom_client.js?v=a8b54839:8525
+runWithFiberInDEV @ react-dom_client.js?v=a8b54839:997
+performUnitOfWork @ react-dom_client.js?v=a8b54839:12561
+workLoopSync @ react-dom_client.js?v=a8b54839:12424
+renderRootSync @ react-dom_client.js?v=a8b54839:12408
+performWorkOnRoot @ react-dom_client.js?v=a8b54839:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=a8b54839:13505
+performWorkUntilDeadline @ react-dom_client.js?v=a8b54839:36
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=a8b54839:247
+(anonymous) @ index.tsx?t=1771016775105:21Understand this error
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+injected.js:37 [vite] connecting...
+injected.js:37 [vite] connected.
