@@ -1,0 +1,49 @@
+What’s correct
+	•	Thinking level is real and controls internal reasoning depth/latency tradeoff. Gemini 3 models use dynamic thinking by default (high), and thinkingLevel / thinking_level lets you constrain it (e.g., low for speed).  ￼
+	•	Higher thinking can delay the first output and improve carefully reasoned outputs. The docs explicitly describe longer time to first output token at high.  ￼
+	•	For Gemini 3 Pro Image, “reasoning capabilities” are a stated design goal (positioned for complex, multi-turn image generation/editing).  ￼
+	•	Your INSTRUCT vs ASSERT principle is directionally right for image editing. If you assert incorrect geometry, you can force contradictions; instructing the model to use the image as the spatial anchor is generally safer.
+
+What to adjust / avoid overstating
+
+1) “Reasoning budget” framing
+
+Your text implies a fixed token budget like 2.5’s thinkingBudget. For Gemini 3, the docs describe levels as relative allowances, not a guaranteed token count.  ￼
+So “budget” is OK as shorthand, but qualify it as level-based and dynamic, not a fixed number of tokens.
+
+2) “Chain-of-thought” claims
+
+Saying “This internal reasoning is the model’s chain-of-thought” is risky phrasing. In production comms you should avoid implying you can observe or rely on a step-by-step chain-of-thought. The docs talk about “internal reasoning process” and thinking depth, not exposing or guaranteeing a specific step sequence.  ￼
+Safer wording: “internal reasoning” / “planning” rather than “chain-of-thought.”
+
+3) STEP prompts as “checkpoints”
+
+It’s plausible that structured prompts help, but it’s not guaranteed that:
+	•	the model follows steps strictly,
+	•	it reasons in that exact order,
+	•	it “verifies” post-hoc the way you describe.
+
+Better claim: “STEP structure often improves instruction-following by making priorities explicit (geometry first, styling second).” Not “the model’s reasoning mirrors the STEP sequence.”
+
+4) “Without STEPs, spatial reasoning gets drowned out”
+
+Directionally plausible, but also not universally true. What is reliably true is: conflicting constraints (style + geometry + product changes) increase failure. STEPs are one way to reduce conflicts.
+
+One important parameter correction
+
+For Gemini 3 Pro / Pro Image, high is already the default (dynamic) if you don’t specify it. Setting it explicitly can help readability/consistency in code, but you’re not “turning on” thinking—it’s already on by default.  ￼
+Also: “thinking off” isn’t supported for Gemini 3 Pro.  ￼
+
+Suggested rewrite (safe + accurate)
+
+You can keep your structure but revise the strongest claims:
+
+When you set thinkingLevel: "high" (the default for Gemini 3 Pro/Pro Image), the model is allowed to do deeper internal reasoning before producing output, which can increase latency but often improves adherence to complex constraints. Thinking levels are relative allowances, not fixed token budgets.  ￼
+
+STEP prompts help because they prioritize constraints (geometry/perspective first, materials/products second) and reduce instruction conflicts. They don’t guarantee a literal step-by-step internal execution, but they often improve consistency.
+
+Prefer INSTRUCT (“use the photo as the spatial anchor; don’t change viewpoint; don’t add/remove openings”) over ASSERT (hard-coded camera/wall facts) unless your asserted facts are extremely reliable, because incorrect assertions can conflict with what the model sees.
+
+Practical production rule for your pipeline
+	•	Only ASSERT what you can validate deterministically (e.g., “do not change camera viewpoint,” “do not add windows,” “keep layout identical”), and avoid asserting specific wall orientations/measurements unless they’re confirmed.
+	•	Use STEP structure, but treat it as priority ordering, not guaranteed checkpoints.

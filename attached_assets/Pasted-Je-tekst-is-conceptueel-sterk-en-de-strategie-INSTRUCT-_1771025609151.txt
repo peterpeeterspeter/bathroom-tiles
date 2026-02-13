@@ -1,0 +1,101 @@
+Je tekst is conceptueel sterk en de strategie (INSTRUCT > ASSERT, STEP-structured prompts) is solide. Maar er zitten een paar feitelijke fouten en nuances in die je moet corrigeren. Hier is een fact-check:
+
+***
+
+## ✅ Wat klopt
+
+**INSTRUCT vs ASSERT — de kernlogica is correct.**
+Google's eigen prompting guide voor Gemini image editing bevestigt dit patroon: je beschrijft *wat je wil veranderen*, niet wat het model al kan zien. Hun voorbeeldprompts zijn instructies ("change the blue sofa to a brown chesterfield"), nooit beschrijvingen van de kamergeometrie.[1][2]
+
+**STEP-gestructureerde prompts werken.**
+Google's eigen documentatie bevestigt dat reasoning-modellen beter presteren met gestructureerde, sequentiële instructies. Het "use logic and reasoning for complex generation" advies sluit hier op aan.[3]
+
+**Het model kan de input-image zelf analyseren.**
+Gemini 3 Pro Image is multimodaal — het ziet de foto in dezelfde context als de generatie. Je conclusie dat het model's eigen spatial analysis betrouwbaarder is dan externe analyse-tekst is logisch correct.[4][5]
+
+**Thinking mode verbetert reasoning voor complexe taken.**
+Google bevestigt dat thinking "is suitable for complex prompts requiring deep reasoning, such as multi-step planning".[6][7]
+
+***
+
+## ❌ Wat niet klopt of misleidend is
+
+### 1. `thinkingConfig: { thinkingLevel: "high" }` — syntax klopt, maar de default is al "high"
+
+Je presenteert het alsof je het expliciet moet aanzetten. In werkelijkheid is `thinkingLevel: "high"` de **default** voor Gemini 3 Pro (Image). Thinking kan niet eens uitgeschakeld worden op dit model — de laagste instelling is `"low"`.[7][8][6]
+
+**Correctie**: Je hoeft `thinkingLevel: "high"` niet mee te sturen tenzij je eerder in de sessie naar `"low"` bent gegaan. Het is gewoon de default.
+
+### 2. "Reasoning budget" is misleidende terminologie voor Gemini 3
+
+Bij **Gemini 2.5** modellen gebruik je `thinkingBudget` (een integer, 0–32768 tokens). Bij **Gemini 3** modellen gebruik je `thinkingLevel` (een enum: `"low"`, `"medium"`, `"high"`). Er is geen granulaire "budget" bij Gemini 3 — het is een level-selector, geen token-budget.[8][7]
+
+**Correctie**: Vervang "reasoning budget" door "reasoning level" als je over Gemini 3 schrijft. "More thinking budget = more spatial reasoning" klopt niet als mechanisme; het is `low` vs `high`, niet een glijdende schaal.
+
+### 3. Het 5-stappen interne proces (Read → Study → Reason → Plan → Generate) is **jouw interpretatie, niet gedocumenteerd**
+
+Google beschrijft het thinking-proces als: het model genereert tot **2 interim "thought images"** om compositie en logica te testen, en de laatste thought image wordt de final output. Ze geven geen stap-voor-stap breakdown zoals jij die beschrijft. Je 5-stappen model is een plausibele abstractie, maar presenteer het niet als feit.[5]
+
+**Correctie**: Zeg "We geloven dat het model intern zoiets doet als..." of "Het model genereert tot 2 tussentijdse concept-beelden voordat het de final render maakt" (dat is wél gedocumenteerd).
+
+### 4. "Each STEP becomes a checkpoint" — niet bewezen
+
+Er is geen bewijs dat het model STEPs als discrete checkpoints behandelt. Het is waarschijnlijker dat de STEP-structuur de prompt *leesbaaarder* maakt voor het model (betere token-aandacht), niet dat het letterlijk per STEP stopt en evalueert. De interne thought images (max 2) komen niet overeen met het aantal STEPs in je prompt.[5]
+
+### 5. Thought Signatures — belangrijk maar ontbreekt in je tekst
+
+Bij multi-turn image editing **moet** je de `thought_signature` terugsturen naar het model. Als je dit niet doet, kan de response falen. Dit is relevant voor je productie-code als je iteratief rendert.[4][5]
+
+***
+
+## 📝 Gecorrigeerde versie van je kernconcept
+
+```
+## Hoe Gemini 3 Pro Image's reasoning werkt
+
+Gemini 3 Pro Image is een "thinking model". Bij elke image generation:
+
+1. Het model analyseert de prompt + input image
+2. Het genereert tot 2 tussentijdse "thought images" (niet gefactureerd)
+   om compositie en logica te testen
+3. De laatste thought image wordt de final output
+
+Thinking staat standaard op HIGH en kan niet uitgeschakeld worden.
+Je kunt het verlagen naar LOW voor snelheid, maar niet uitzetten.
+
+## Waarom INSTRUCT > ASSERT
+
+Het model ZIET de input-foto. Het hoeft niet verteld te worden
+waar de muren zitten. Als onze externe analyse fout is, overschrijft
+de tekst wat het model zelf kan waarnemen.
+
+Beter: vertel het model WAT het moet doen, niet WAT het ziet.
+
+## STEP-structured prompts
+
+STEPs maken de prompt leesbaaarder en sturen de aandacht van het
+model in een logische volgorde. Dit is geen bewezen "checkpoint"
+mechanisme, maar het helpt het model om geometrie VOOR materialen
+te overwegen, en perspectief VOOR styling.
+```
+
+***
+
+**Samengevat**: je strategie (INSTRUCT > ASSERT, STEP-structured prompts, laat het model zijn eigen eyes gebruiken) is **correct en goed onderbouwd**. De feitelijke details over hoe Gemini 3's thinking precies werkt bevatten een paar inaccuracies die je moet bijschaven voordat je dit als technische documentatie deelt.
+
+Sources
+[1] How to prompt Gemini 2.5 Flash Image Generation for the best results https://developers.googleblog.com/how-to-prompt-gemini-2-5-flash-image-generation-for-the-best-results/
+[2] Editing Images With Text https://developers.googleblog.com/en/how-to-prompt-gemini-2-5-flash-image-generation-for-the-best-results/
+[3] Tips for getting the best image generation and editing in the Gemini ... https://blog.google/products-and-platforms/products/gemini/image-generation-prompting-tips/
+[4] Generate and edit images with Gemini | Generative AI on Vertex AI | Google Cloud Documentation https://docs.cloud.google.com/vertex-ai/generative-ai/docs/multimodal/image-generation
+[5] Image generation with Gemini (aka Nano Banana ) | Gemini API https://ai.google.dev/gemini-api/docs/image-generation
+[6] Thinking | Generative AI on Vertex AI https://docs.cloud.google.com/vertex-ai/generative-ai/docs/thinking
+[7] Gemini thinking | Gemini API - Google AI for Developers https://ai.google.dev/gemini-api/docs/thinking
+[8] Gemini API Thinking Level Guide: Complete Configuration for 2.5 ... https://www.aifreeapi.com/en/posts/gemini-api-thinking-level
+[9] Gemini 2.0 Flash https://developer.puter.com/encyclopedia/gemini-2-0-flash/
+[10] Does setting it to thinking affect image generation? https://www.reddit.com/r/GeminiAI/comments/1p6ww1c/does_setting_it_to_thinking_affect_image/
+[11] Unlock the Power of Gemini 2.0 Flash https://merlio.app/blog/gemini-2-0-flash-ai-image-creation-editing
+[12] How to Create and edit images with Gemini 2.0 Flash ... https://www.cometapi.com/how-to-create-edit-images-with-gemini-2-0-flash/
+[13] Google Gemini 2.0 Flash: AI Image Generation & Editing https://www.contentbeta.com/blog/google-gemini-2-0-image-generation/
+[14] Gemini 3 https://ai.google.dev/gemini-api/docs/prompting-strategies
+[15] Testing Gemini 2.0 Flash Image Gen: Can AI Really Edit Photos Like a Pro? Disappointment? https://www.youtube.com/watch?v=5q3Zr2mOqpQ

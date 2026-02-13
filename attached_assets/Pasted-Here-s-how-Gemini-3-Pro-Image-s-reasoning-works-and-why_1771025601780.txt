@@ -1,0 +1,74 @@
+Here's how Gemini 3 Pro Image's reasoning works and why it matters for us:
+
+## How the model thinks
+
+When you pass `thinkingConfig: { thinkingLevel: "high" }`, the model gets a **reasoning budget** before it generates the image. It doesn't just go input→output in one step. It:
+
+1. **Reads** the full prompt
+2. **Studies** the input image
+3. **Reasons internally** — spatial layout, perspective, what needs to change, what stays
+4. **Plans** the composition
+5. **Generates** the output
+
+This internal reasoning is the model's own chain-of-thought. More thinking budget = more spatial reasoning before the first pixel is generated.
+
+## How STEP prompts leverage this
+
+When you write:
+```
+STEP 1 — Study the room geometry and camera angle in this photo.
+STEP 2 — Identify which fixtures stay and which get replaced.
+STEP 3 — Apply the new materials and products.
+STEP 4 — Verify perspective matches the original.
+```
+
+You're giving the model's thinking process a **structure to follow**. Each STEP becomes a checkpoint. The model's internal reasoning mirrors the STEP sequence — it thinks about geometry BEFORE materials, perspective BEFORE styling.
+
+Without STEPs, the model tries to process everything at once — and spatial reasoning gets drowned out by style/material instructions.
+
+## The critical difference: INSTRUCT vs ASSERT
+
+This is where the production code went wrong:
+
+**ASSERT (what broke it):**
+```
+The camera is at the South wall, 1.4m height, looking toward the North wall.
+The East wall is on the right. Window on the North wall is 0% width.
+```
+We TOLD the model what the room looks like. If our analysis was wrong, the text **overrides** what the model can actually see in the image. The model trusts our (buggy) text over its own eyes.
+
+**INSTRUCT (what we should do):**
+```
+STEP 1 — Study the existing room in this photo. Note the exact camera 
+position, angle, and lens distortion. Identify every wall, window, door, 
+and fixture visible in the frame. This is your spatial anchor — the output 
+must match this exact viewpoint.
+```
+We tell the model **what to think about**, not **what it sees**. The model does its own spatial analysis — and it's better at this than our separate analysis call because it can see the image in the same context as the generation.
+
+## How this applies to us
+
+The model already has the image. It can SEE the perspective, the walls, the fixtures. It doesn't need us to describe what it's looking at. It needs us to:
+
+1. **Direct its attention** — "look at the camera angle, look at the walls"
+2. **Set constraints** — "don't change the viewpoint, don't add windows"
+3. **Give it products/style** — "use these materials, this style"
+4. **Give it thinking budget** — `thinkingLevel: "high"` for spatial reasoning
+
+The render prompt should be **instructions for reasoning**, not a data dump of (unreliable) analysis results.
+
+```
+STEP 1 — STUDY: Analyze the room geometry and camera position in this photo.
+           This is your spatial anchor. Do not deviate from this viewpoint.
+
+STEP 2 — PLAN: The user wants [style]. Replace fixtures with [products].
+           Keep all walls, windows, doors in their exact positions.
+
+STEP 3 — RENDER: Generate the renovated bathroom. Same perspective, same
+           room shape, new materials and fixtures only.
+
+STEP 4 — VERIFY: Check that no walls moved, no windows were added/removed,
+           and the camera angle is identical to the input photo.
+```
+
+The **thinking budget** is where the real work happens. The STEPs just guide what the model thinks about, in what order. The model's own spatial reasoning (from seeing the actual image) is more reliable than our external analysis text.
