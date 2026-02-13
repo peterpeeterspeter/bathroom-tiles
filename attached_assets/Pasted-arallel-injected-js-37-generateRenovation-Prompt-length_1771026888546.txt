@@ -1,0 +1,110 @@
+arallel...
+injected.js:37 [generateRenovation] Prompt length: 3965 chars
+injected.js:37 [generateRenovation] Starting image generation via proxy...
+injected.js:37 [calculateRenovationCost] Starting cost estimation (direct API first)...
+injected.js:37 [calculateRenovationCost] Calling Google direct API...
+injected.js:37 [generateRenovation] Response received, extracting image...
+injected.js:37 [PlannerPage] Step 4 complete: render=yes, estimate total=15788.801200000002
+injected.js:37 [PlannerPage] Step 1: Compressing image...
+injected.js:37 [PlannerPage] Step 2: Running analyzeBathroomInput...
+injected.js:37 [analyzeBathroomInput] Starting bathroom analysis (direct API first)...
+injected.js:37 [analyzeBathroomInput] Calling Google direct API...
+injected.js:37 [analyzeBathroomInput] Analysis result: {
+  "camera": {
+    "position": "EYE_LEVEL",
+    "facingFromWall": 2,
+    "lensFeel": "NORMAL"
+  },
+  "walls": [
+    {
+      "wallIndex": 0,
+      "visible": true,
+      "hasPlumbing": false,
+      "anchors": [
+        {
+          "type": "WINDOW",
+          "confidence": 0.9
+        }
+      ]
+    },
+    {
+      "wallIndex": 1,
+      "visible": true,
+      "hasPlumbing": true,
+      "anchors": [
+        {
+          "type": "WINDOW",
+          "confidence": 0.9
+        }
+      ]
+    },
+    {
+      "wallIndex": 2,
+      "visible": false,
+      "hasPlumbing": false,
+      "anchors": []
+    },
+    {
+      "wallIndex": 3,
+      "visible": true,
+      "hasPlumbing": true,
+      "anchors": []
+    }
+  ],
+  "fixtures": [
+    {
+      "type": "SINK",
+      "wall": 3,
+      "x": 15,
+      "condition": "GOOD",
+      "confidence": 0.95
+    },
+    {
+      "type": "SINK",
+      "wall": 3,
+      "x": 40,
+      "condition": "GOOD",
+      "confidence": 0.95
+    },
+    {
+      "type": "BATHTUB",
+      "wall": 1,
+      "x": 75,
+      "condition": "GOOD",
+      "confidence": 0.95
+    },
+    {
+      "type": "WINDOW",
+      "wall": 0,
+      "x": 44,
+      "condition": "GOOD",
+      "confidence": 0.9
+    },
+    {
+      "type": "WINDOW",
+      "wall": 1,
+      "x": 63,
+      "condition": "GOOD",
+      "confidence": 0.9
+    }
+  ],
+  "plumbingWall": 3,
+  "occlusions": [
+    "Wall 2 (behind camera) not visible",
+    "Ceiling details partially cropped",
+    "Floor area near camera cropped"
+  ],
+  "dims": "3.2x2.8x2.5",
+  "naturalDescription": "A spacious, traditional bathroom captured from an eye-level perspective looking towards the corner where the far wall meets the right wall. The room features a soft robin's egg blue paint scheme with oak wood trim. On the left wall (Wall 3), a large oak double vanity extends deep into the frame, topped with a white cultured marble countertop and two integrated oval sinks with chrome/brass mix faucets. A massive frameless sheet mirror spans the wall above the vanity, reflecting the opposite side of the room including a white door. The far wall (Wall 0) is a short segment containing a single-hung window with wood casing and sheer white curtains. This wall meets the right wall (Wall 1) at a 90-degree corner. The right wall features a matching window and a large white drop-in soaking tub set into a tiled deck with a beadboard-style tiled apron. A large gold letter 'B' hangs on the right wall above the tub. The floor is tiled in square beige ceramic tiles laid in a grid pattern. Natural light floods in from the two corner windows."
+}
+injected.js:37 [PlannerPage] Step 2 complete: Analysis done
+injected.js:37 [PlannerPage] Step 3: Fetching products and images...
+injected.js:37 [PlannerPage] Step 3 complete: 2 products, 2 images
+injected.js:37 [PlannerPage] Step 4: Starting generation + cost estimation in parallel...
+injected.js:37 [generateRenovation] Prompt length: 3853 chars
+injected.js:37 [generateRenovation] Starting image generation via proxy...
+injected.js:37 [calculateRenovationCost] Starting cost estimation (direct API first)...
+injected.js:37 [calculateRenovationCost] Calling Google direct API...
+aa7781e715f74eb4.js:14 [Violation] 'setTimeout' handler took 119ms
+injected.js:37 [generateRenovation] Response received, extracting image...
+injected.js:37 [PlannerPage] Step 4 complete: render=yes, estimate total=15242.8718
