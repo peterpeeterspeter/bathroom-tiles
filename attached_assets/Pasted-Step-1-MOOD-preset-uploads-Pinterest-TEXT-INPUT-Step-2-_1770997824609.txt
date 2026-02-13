@@ -1,0 +1,147 @@
+Step 1: MOOD       — preset + uploads + Pinterest + TEXT INPUT
+Step 2: RUIMTE     — photo + dimensions + TEXT INPUT (structural notes)
+Step 3: PRODUCTEN  — product selection (with AI analysis results visible)
+Step 4: Processing → lead → result
+
+Note: this reorders the current flow — room photo moves from step 3 to step 2, products move from step 2 to step 3. This is better because:
+
+The AI analysis runs between step 2 and 3
+Step 3 can show what the AI found (fixtures, layout) and let the user choose keep/replace per fixture
+User's structural notes from step 2 inform the analysis
+What Each Text Field Captures
+Step 1 — Mood Description (moodDescription)
+
+"Ik hou van lichte, rustige badkamers met veel hout en natuursteen. 
+Geen koude witte tegels. Liefst een warm Scandinavisch gevoel 
+met een vleugje luxe."
+
+This is qualitative — it tells the AI what the user FEELS, not just what tags to apply. The preset gives structure, the text gives nuance.
+
+Step 2 — Room Notes (roomNotes)
+
+"De douchecabine is kapot en moet weg. Ik wil graag een inloopdouche. 
+Het raam moet zeker blijven. De vloer is recent gelegd dus die mag 
+behouden blijven als het kan. De muur links heeft vochtproblemen."
+
+This is intent — it tells the AI what the user WANTS structurally, before the user even sees the product selection. This can pre-populate the behouden/vervangen toggles in step 3.
+
+How It Flows Into the Render Prompt
+Here's exactly where each user input appears in our STEP 1-5 prompt:
+
+STEP 1 — STUDY THE EXISTING ROOM:
+[... camera, walls, fixtures from analysis ...]
+
+USER'S ROOM NOTES:
+The homeowner has specifically noted:
+"${roomNotes}"
+Take these notes into account when studying the room.
+
+STEP 2 — PLAN THE LAYOUT:
+[... plumbing logic, flow rules ...]
+
+The homeowner expressed these structural preferences:
+"${roomNotes}"
+Respect these wishes in your layout — if they say something should
+stay, keep it. If they want a walk-in shower, plan for one.
+
+STEP 3 — APPLY CHANGES:
+[... scope lines per category with products ...]
+
+STEP 4 — STYLE AND ATMOSPHERE:
+Design style: ${presetName}: ${styleSummary}
+Qualities: ${topTags}
+
+The homeowner described their aesthetic as:
+"${moodDescription}"
+This is their personal vision — let it guide the atmosphere,
+color warmth, material feel, and overall mood beyond the preset tags.
+
+STEP 5 — LIGHTING AND FINISHING:
+[... as planned ...]
+
+How It Flows Into the Analysis Prompt
+The roomNotes also feed into analyzeBathroomInput() so the vision model pays attention to what the user flagged:
+
+You are analyzing a bathroom for renovation planning.
+The homeowner has noted: "${roomNotes}"
+
+Pay special attention to elements they mentioned — if they say
+"the shower is broken", note its condition as DAMAGED.
+If they say "the floor is new", note its condition as GOOD.
+
+How It Flows Into Lead Data
+The lead dossier becomes much richer:
+
+// In submitLead():
+row.mood_description = moodDescription;      // What they like aesthetically
+row.room_notes = roomNotes;                  // What they want structurally
+row.style_profile = styleProfile;            // Tags + summary
+row.selected_products = selectedProductIds;  // Product choices
+row.product_actions = productActions;        // Keep/replace per category
+row.estimated_total_low = totalLow;
+row.estimated_total_high = totalHigh;
+// ... existing fields
+
+A renovation partner reading this lead now gets:
+
+Who: name, email, phone, postcode
+What they want (mood): "warm Scandinavisch met vleugje luxe"
+What they want (structural): "inloopdouche, vloer behouden, vochtproblemen links"
+What products: selected product IDs per category
+What to keep/replace: per category actions
+AI analysis: room dimensions, fixture positions, layout
+Cost estimate: price range
+Visual: before photo + AI render
+How to VERIFY Everything Is Taken Into Account
+Your question: "how we know if all this information is taken in account for the generation?"
+
+Three mechanisms:
+
+1. Explicit injection — every user input has a named slot in the prompt:
+
+User Input	Where in Prompt	Format
+moodDescription	STEP 4 — Style	Quoted text with instruction
+roomNotes	STEP 1 + STEP 2	Quoted text with instruction
+Preset selection	STEP 4 — Style	Preset name + tags
+Reference images	Image parts array	base64 as inspiration images
+Product selections	STEP 3 — Scope lines	Per-category KEEP/REPLACE/ADD
+Room photo	Image parts array	base64 as current bathroom
+Dimensions	STEP 1 — Room	Width x length
+2. Analysis integration — roomNotes goes into the analysis prompt too, so the AI's fixture conditions reflect what the user told us (e.g., "broken shower" → condition: DAMAGED).
+
+3. Log the assembled prompt — in development, log the complete prompt text to console before sending to Gemini. You can visually verify every field appears where it should.
+
+Type Changes Needed
+// types.ts
+export interface StyleProfile {
+  // ... existing ...
+  moodDescription?: string;  // NEW — user's free-text aesthetic description
+}
+
+// New state in PlannerPage
+const [roomNotes, setRoomNotes] = useState<string>('');
+
+// LeadPayload update
+interface LeadPayload {
+  // ... existing ...
+  moodDescription?: string;  // NEW
+  roomNotes?: string;        // NEW
+  productActions?: Record<string, string>;  // NEW (from IMPLEMENTATION_BRIEF)
+}
+
+Database Migration (leads table)
+ALTER TABLE leads ADD COLUMN mood_description text;
+ALTER TABLE leads ADD COLUMN room_notes text;
+ALTER TABLE leads ADD COLUMN product_actions jsonb;
+
+Files to Modify
+File	Changes
+types.ts	Add moodDescription to StyleProfile
+components/StyleInspiration.tsx	Add textarea for mood description
+components/DimensionsPhoto.tsx	Add textarea for room notes, reorder to step 2
+components/ProductConfiguration.tsx	Reorder to step 3, show AI analysis results
+pages/PlannerPage.tsx	New state (roomNotes, moodDescription), reorder steps, pass to processing
+services/geminiService.ts	Include moodDescription + roomNotes in analyze + render prompts
+lib/leadService.ts	Add moodDescription, roomNotes, productActions to payload
+supabase/migrations/new.sql	Add columns to leads table
+components/StepIndicator.tsx	Update step labels (Stijl → Ruimte → Producten)
