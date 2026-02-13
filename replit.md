@@ -117,6 +117,15 @@ Deploy `supabase/functions/send-lead-notification` and set `RESEND_API_KEY` in S
   - CategoryProductSelector: shows price tier badges (Budget/Midden/Premium) + price ranges
   - Cost estimation: uses price_low/price_high ranges instead of single price
   - CSV import edge function: supports new columns (price_low, price_high, price_tier, catalog_image_path, render_image_path, description)
+- 2026-02-13: Product catalog import (81 curated products from sawiday.be):
+  - Migration: supabase/migrations/20260213_import_catalog_products.sql (run in Supabase SQL Editor)
+  - 81 products: 31 Bathtub, 21 Mirror, 13 Toilet, 12 Shower, 4 Faucet from 29 brands
+  - Added `images text[]` column for multiple product images (2000x2000 CDN URLs from rorix.nl)
+  - Added `source_url text` column for product page links
+  - Price tiers auto-derived per category using percentile thresholds
+  - Added Mirror category across entire system: types.ts, ProductConfiguration, geminiService (cost + render)
+  - Product images served directly from rorix.nl CDN (no Supabase Storage needed for these)
+  - Still missing products for: Vanity, Tile, Lighting categories
 - 2026-02-10: Single-shot rendering pipeline:
   - Removed two-step pipeline (generateEmptySpace + generateRenovationRender)
   - Added single-shot generateRenovation() — original photo goes directly to gemini-3-pro-image-preview with Thinking mode + 2K output
