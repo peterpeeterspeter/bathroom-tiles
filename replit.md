@@ -24,7 +24,9 @@ A Dutch-language bathroom renovation platform built with React, Vite, and Tailwi
      - STEP 1: CAMERA (position/wall/lens), ROOM (dims/ceiling/layout), WALLS (visible/anchors/plumbing/features), CURRENT FIXTURES (type/wall/position/condition), LIGHT (direction/source), OCCLUSIONS (forbidden zones)
      - STEP 2: plumbing wall reasoning, fixture condition notes, demolition assessment, room dimensions for layout, door/window positions for flow/privacy
      - STEP 4: light direction from analysis
-     - ABSOLUTE CONSTRAINTS: occlusion negative constraint
+     - ABSOLUTE CONSTRAINTS: occlusion negative constraint, camera position reinforcement
+   - **Perspective Lock** (before STEP 1): `buildPerspectiveLock()` — derives camera wall, opposite/left/right walls, frame visibility, fixture positions in frame, lens description, occlusions. Placed at prompt TOP for primacy bias.
+   - **Room Description** (before STEP 1): `buildRoomDescription()` — natural-language room paragraph with wall-by-wall anchor coordinates, door hinge/swing, window widths, fixture positions (X/Y% + third), plumbing wall, light direction, constraints. Placed after perspective lock.
    - Every analysis field mapped to render prompt (camera, dims, walls, fixtures, light, plumbing, occlusions, demolition)
    - All constraint logic in English; Dutch only for product category names
    - Single-shot render: original photo + inspiration images + product reference images → gemini-3-pro-image-preview with built-in thinking (proxy default HIGH) + 2K output
@@ -85,6 +87,13 @@ Run `supabase/migrations/20260211_create_projects_and_storage.sql` in Supabase S
 Deploy `supabase/functions/send-lead-notification` and set `RESEND_API_KEY` in Supabase secrets
 
 ## Recent Changes
+- 2026-02-13: Perspective Lock & Room Description for render fidelity:
+  - Added `buildPerspectiveLock()` helper: derives camera wall, left/right/far walls, frame visibility, fixture positions in frame, lens description, occlusions
+  - Added `buildRoomDescription()` helper: natural-language room paragraph with wall-by-wall anchor coordinates, door hinge/swing, window widths, fixture positions (X/Y% + third), plumbing wall, light direction, constraints
+  - Both placed at TOP of render prompt (before STEP 1) to exploit primacy bias
+  - STEP 1 simplified to "verify perspective lock and room description against the photo"
+  - ABSOLUTE CONSTRAINTS reinforced with specific camera position/wall/height data
+  - Non-visible walls now included in room description as "NOT FULLY VISIBLE" for completeness
 - 2026-02-11: Full analysis→render pipeline:
   - STEP 1 restructured: dedicated CAMERA, ROOM, WALLS, CURRENT FIXTURES, LIGHT, OCCLUSIONS blocks from analysis
   - STEP 2 restructured: plumbing wall reasoning, fixture condition notes, demolition assessment, room dims + door/window positions for layout logic
