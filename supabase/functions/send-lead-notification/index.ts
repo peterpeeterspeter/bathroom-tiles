@@ -434,28 +434,41 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    const fromDomain = Deno.env.get("RESEND_FROM_DOMAIN");
+    const fromAddress = fromDomain
+      ? `De Badkamer <noreply@${fromDomain}>`
+      : "De Badkamer <onboarding@resend.dev>";
+
     const internalHtml = buildInternalEmail(payload);
     const internalResult = await sendEmail(resendKey, {
-      from: "De Badkamer <onboarding@resend.dev>",
+      from: fromAddress,
       to: ["peterpeeterspeter@gmail.com"],
       subject: `Nieuw Lead: ${payload.name} \u2014 ${payload.postcode} \u2014 Score ${payload.leadScore || 0} \u2014 EUR ${payload.estimateLow || "?"}+`,
       html: internalHtml,
     });
+    console.log("Internal email result:", JSON.stringify(internalResult));
 
-    let customerResult = { ok: false, result: { skipped: true } };
+    let customerResult = { ok: false, result: { message: "skipped" } as any };
     if (payload.email) {
       const customerHtml = buildCustomerEmail(payload);
       customerResult = await sendEmail(resendKey, {
-        from: "De Badkamer <onboarding@resend.dev>",
+        from: fromAddress,
         to: [payload.email],
         subject: `Uw renovatieplan \u2014 De Badkamer AI Planner`,
         html: customerHtml,
       });
+      console.log("Customer email result:", JSON.stringify(customerResult));
+
+      if (!customerResult.ok) {
+        console.error("Customer email FAILED for", payload.email, "Error:", JSON.stringify(customerResult.result));
+      }
     }
 
     return new Response(JSON.stringify({
       internal: internalResult.result,
       customer: customerResult.result,
+      fromAddress,
+      customerEmailOk: customerResult.ok,
     }), {
       status: internalResult.ok ? 200 : 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

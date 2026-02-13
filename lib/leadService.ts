@@ -132,11 +132,16 @@ export async function submitLead(payload: LeadPayload): Promise<{ success: boole
 
 export async function sendLeadNotification(payload: Record<string, unknown>): Promise<void> {
   try {
-    const { error } = await supabase.functions.invoke('send-lead-notification', {
+    const { data, error } = await supabase.functions.invoke('send-lead-notification', {
       body: payload,
     });
     if (error) {
       console.error('Lead notification email failed:', error);
+    } else {
+      console.log('[LeadNotification] Response:', JSON.stringify(data));
+      if (data?.customerEmailOk === false) {
+        console.warn('[LeadNotification] Customer email was NOT delivered. From:', data?.fromAddress, 'Response:', JSON.stringify(data?.customer));
+      }
     }
   } catch (err) {
     console.error('Lead notification request failed:', err);
