@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, Link2, X, Loader2, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { Upload, Link2, X, Loader2, Sparkles, Image as ImageIcon, Pen } from 'lucide-react';
 import { StylePreset } from '../types';
 import { fetchStylePresets } from '../lib/productService';
 import { presetToProfile } from '../services/styleAnalysis';
@@ -73,7 +73,7 @@ export const StyleInspiration = ({ onStyleSelected, onMoodDescriptionChange }: S
           }];
         });
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(file as Blob);
     });
 
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -126,176 +126,197 @@ export const StyleInspiration = ({ onStyleSelected, onMoodDescriptionChange }: S
 
   return (
     <div className="animate-fade-in">
-      <div className="text-center max-w-2xl mx-auto mb-10 md:mb-16">
+      <div className="text-center max-w-2xl mx-auto mb-10 md:mb-14">
         <h2 className="text-3xl md:text-5xl font-black tracking-tighter mb-4 leading-tight">
-          Bepaal uw <span className="text-primary italic">stijl</span>.
+          Wat is uw <span className="text-primary italic">droomstijl</span>?
         </h2>
         <p className="text-neutral-500 font-bold text-base md:text-lg">
-          Kies een basisstijl, upload inspiratiebeelden, of combineer beide.
+          Beschrijf uw ideale badkamer, upload inspiratie, kies een basisstijl — of combineer alles.
         </p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-8 md:gap-12 max-w-6xl mx-auto">
-        <div>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-              <Sparkles size={18} />
+      <div className="max-w-3xl mx-auto mb-10 md:mb-14">
+        <div className="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] border-2 border-primary/20 shadow-xl">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+              <Pen size={18} />
             </div>
-            <h3 className="font-black uppercase tracking-widest text-xs text-neutral-500">Kies een stijl</h3>
+            <div>
+              <h3 className="font-black uppercase tracking-widest text-xs text-neutral-700">Beschrijf uw droomstijl</h3>
+              <p className="text-[10px] font-bold text-neutral-400 mt-0.5">Onze AI analyseert uw voorkeuren en past het ontwerp hierop aan</p>
+            </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {presets.map(preset => (
-              <button
-                key={preset.id}
-                onClick={() => handlePresetSelect(preset)}
-                className={`group relative h-44 md:h-56 overflow-hidden rounded-2xl border-2 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1 ${
-                  selectedPreset?.id === preset.id
-                    ? 'border-primary ring-4 ring-primary/20'
-                    : 'border-white'
-                }`}
-              >
-                <img
-                  src={preset.image_url}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  alt={preset.label_nl}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
-                <div className="absolute inset-x-0 bottom-0 p-3 md:p-4 text-left">
-                  <p className="text-[9px] font-black text-primary uppercase tracking-[0.3em] mb-1">Style</p>
-                  <h4 className="text-xs md:text-sm font-black text-white leading-tight uppercase">{preset.label_nl}</h4>
-                  <p className="text-white/60 text-[10px] font-bold mt-1 hidden md:block">{preset.description_nl}</p>
-                </div>
-                {selectedPreset?.id === preset.id && (
-                  <div className="absolute top-2 right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white rounded-full" />
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
+          <textarea
+            value={moodDescription}
+            onChange={(e) => { setMoodDescription(e.target.value); onMoodDescriptionChange?.(e.target.value); }}
+            placeholder="Bijv: Ik droom van een lichte, warme badkamer met veel hout en natuursteen. Geen koude witte tegels. Liefst een Scandinavisch gevoel met een vleugje luxe. De douche mag ruim zijn met een regendouchekop."
+            rows={4}
+            maxLength={500}
+            className="w-full bg-surface border-2 border-neutral-300/50 rounded-xl p-4 md:p-5 text-sm md:text-base font-bold outline-none focus:border-primary transition-all resize-none placeholder:text-neutral-300 leading-relaxed"
+          />
+          <p className="text-[10px] font-bold text-neutral-300 mt-2 text-right">{moodDescription.length}/500</p>
         </div>
+      </div>
 
-        <div>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-xl bg-neutral-900/10 flex items-center justify-center text-neutral-700">
-              <ImageIcon size={18} />
+      <div className="max-w-6xl mx-auto mb-10 md:mb-14">
+        <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-8 h-8 rounded-xl bg-neutral-900/10 flex items-center justify-center text-neutral-700">
+                <ImageIcon size={18} />
+              </div>
+              <div>
+                <h3 className="font-black uppercase tracking-widest text-xs text-neutral-500">Upload inspiratie</h3>
+              </div>
+              <span className="text-[10px] font-bold text-neutral-300 ml-auto">{referenceImages.length}/3</span>
             </div>
-            <h3 className="font-black uppercase tracking-widest text-xs text-neutral-500">Upload inspiratie</h3>
-            <span className="text-[10px] font-bold text-neutral-300 ml-auto">{referenceImages.length}/3</span>
+            <p className="text-[10px] font-bold text-neutral-400 mb-5 ml-11">Voeg foto's toe van badkamers die u aanspreken</p>
+
+            <div className="space-y-4">
+              {referenceImages.length > 0 && (
+                <div className="grid grid-cols-3 gap-3">
+                  {referenceImages.map(img => (
+                    <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden group">
+                      <img src={img.thumbnail} className="w-full h-full object-cover" alt="Reference" />
+                      <button
+                        onClick={() => removeImage(img.id)}
+                        className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X size={12} />
+                      </button>
+                      <div className="absolute bottom-1.5 left-1.5 px-2 py-0.5 bg-black/60 backdrop-blur-sm rounded-full">
+                        <span className="text-[8px] font-black text-white uppercase tracking-wider">
+                          {img.source === 'pinterest' ? 'Pinterest' : 'Upload'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {referenceImages.length < 3 && (
+                <>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full border-2 border-dashed border-neutral-300/50 rounded-2xl p-6 md:p-8 cursor-pointer hover:border-primary hover:bg-surface transition-all group flex flex-col items-center justify-center text-center"
+                  >
+                    <div className="w-12 h-12 bg-surface rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                      <Upload className="text-neutral-500" size={20} />
+                    </div>
+                    <p className="font-black uppercase tracking-widest text-[10px] mb-1">Upload foto's</p>
+                    <p className="text-[10px] font-bold text-neutral-500">JPG, PNG - Max 3 beelden</p>
+                  </button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                </>
+              )}
+            </div>
           </div>
 
-          <div className="space-y-4">
-            {referenceImages.length > 0 && (
-              <div className="grid grid-cols-3 gap-3">
-                {referenceImages.map(img => (
-                  <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden group">
-                    <img src={img.thumbnail} className="w-full h-full object-cover" alt="Reference" />
-                    <button
-                      onClick={() => removeImage(img.id)}
-                      className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X size={12} />
-                    </button>
-                    <div className="absolute bottom-1.5 left-1.5 px-2 py-0.5 bg-black/60 backdrop-blur-sm rounded-full">
-                      <span className="text-[8px] font-black text-white uppercase tracking-wider">
-                        {img.source === 'pinterest' ? 'Pinterest' : 'Upload'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-8 h-8 rounded-xl bg-[#E60023]/10 flex items-center justify-center text-[#E60023]">
+                <Link2 size={18} />
               </div>
-            )}
+              <div>
+                <h3 className="font-black uppercase tracking-widest text-xs text-neutral-500">Pinterest inspiratie</h3>
+              </div>
+            </div>
+            <p className="text-[10px] font-bold text-neutral-400 mb-5 ml-11">Plak een Pinterest link en wij halen het beeld automatisch op</p>
 
-            {referenceImages.length < 3 && (
-              <>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full border-2 border-dashed border-neutral-300/50 rounded-2xl p-6 md:p-8 cursor-pointer hover:border-primary hover:bg-surface transition-all group flex flex-col items-center justify-center text-center"
-                >
-                  <div className="w-12 h-12 bg-surface rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <Upload className="text-neutral-500" size={20} />
-                  </div>
-                  <p className="font-black uppercase tracking-widest text-[10px] mb-1">Upload foto's</p>
-                  <p className="text-[10px] font-bold text-neutral-500">JPG, PNG - Max 3 beelden</p>
-                </button>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleFileUpload}
-                />
-
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-px bg-neutral-300/50" />
-                  <span className="text-[10px] font-black text-neutral-300 uppercase tracking-widest">of</span>
-                  <div className="flex-1 h-px bg-neutral-300/50" />
-                </div>
-
+            <div className="space-y-4">
+              <div className="bg-white border-2 border-neutral-300/30 rounded-2xl p-5 md:p-6 shadow-sm">
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
                     <input
                       type="url"
-                      placeholder="Pinterest URL plakken..."
+                      placeholder="https://pinterest.com/pin/..."
                       value={pinterestUrl}
                       onChange={e => { setPinterestUrl(e.target.value); setPinError(null); }}
                       onKeyDown={e => e.key === 'Enter' && handlePinterestAdd()}
-                      className="w-full bg-surface border-2 border-neutral-300/50 rounded-xl py-3 pl-10 pr-4 text-sm font-bold outline-none focus:border-primary transition-all"
+                      className="w-full bg-surface border-2 border-neutral-300/50 rounded-xl py-3 pl-10 pr-4 text-sm font-bold outline-none focus:border-[#E60023] transition-all"
                     />
                   </div>
                   <button
                     onClick={handlePinterestAdd}
                     disabled={fetchingPin || !pinterestUrl.trim()}
-                    className="px-4 bg-neutral-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-neutral-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-5 bg-[#E60023] text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#c5001e] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {fetchingPin ? <Loader2 size={14} className="animate-spin" /> : 'Ophalen'}
                   </button>
                 </div>
                 {pinError && (
-                  <p className="text-[10px] font-bold text-red-500">{pinError}</p>
+                  <p className="text-[10px] font-bold text-red-500 mt-2">{pinError}</p>
                 )}
-              </>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {referenceImages.length > 0 && (
+          <div className="mt-8 max-w-md mx-auto">
+            <button
+              onClick={handleProceedWithImages}
+              className="w-full py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary-dark transition-all flex items-center justify-center gap-3 shadow-xl"
+            >
+              <Sparkles size={18} /> Ga verder met inspiratie
+            </button>
+            {selectedPreset && (
+              <p className="text-[10px] font-bold text-neutral-500 text-center mt-3">
+                Combineert met {selectedPreset.label_nl} stijl
+              </p>
             )}
           </div>
-
-          {referenceImages.length > 0 && (
-            <div className="mt-6">
-              <button
-                onClick={handleProceedWithImages}
-                className="w-full py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary-dark transition-all flex items-center justify-center gap-3 shadow-xl"
-              >
-                <Sparkles size={18} /> Ga verder
-              </button>
-              {selectedPreset && (
-                <p className="text-[10px] font-bold text-neutral-500 text-center mt-3">
-                  Combineert met {selectedPreset.label_nl} stijl
-                </p>
-              )}
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
-      <div className="mt-8 md:mt-12 max-w-6xl mx-auto">
-        <div className="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] border-2 border-neutral-300/30 shadow-xl">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-              <Sparkles size={18} />
-            </div>
-            <h3 className="font-black uppercase tracking-widest text-xs text-neutral-500">Beschrijf uw droomstijl</h3>
-            <span className="text-[10px] font-bold text-neutral-300 ml-auto uppercase">Optioneel</span>
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+            <Sparkles size={18} />
           </div>
-          <textarea
-            value={moodDescription}
-            onChange={(e) => { setMoodDescription(e.target.value); onMoodDescriptionChange?.(e.target.value); }}
-            placeholder="Bijv: Ik hou van lichte, rustige badkamers met veel hout en natuursteen. Geen koude witte tegels. Liefst een warm Scandinavisch gevoel met een vleugje luxe."
-            rows={3}
-            maxLength={500}
-            className="w-full bg-surface border-2 border-neutral-300/50 rounded-xl p-4 text-sm font-bold outline-none focus:border-primary transition-all resize-none placeholder:text-neutral-300"
-          />
-          <p className="text-[10px] font-bold text-neutral-300 mt-2 text-right">{moodDescription.length}/500</p>
+          <div>
+            <h3 className="font-black uppercase tracking-widest text-xs text-neutral-500">Kies een basisstijl</h3>
+          </div>
+        </div>
+        <p className="text-[10px] font-bold text-neutral-400 mb-6 ml-11">Selecteer een stijl als startpunt — u kunt dit later altijd verfijnen</p>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {presets.map(preset => (
+            <button
+              key={preset.id}
+              onClick={() => handlePresetSelect(preset)}
+              className={`group relative h-44 md:h-56 overflow-hidden rounded-2xl border-2 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1 ${
+                selectedPreset?.id === preset.id
+                  ? 'border-primary ring-4 ring-primary/20'
+                  : 'border-white'
+              }`}
+            >
+              <img
+                src={preset.image_url}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                alt={preset.label_nl}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
+              <div className="absolute inset-x-0 bottom-0 p-3 md:p-4 text-left">
+                <p className="text-[9px] font-black text-primary uppercase tracking-[0.3em] mb-1">Style</p>
+                <h4 className="text-xs md:text-sm font-black text-white leading-tight uppercase">{preset.label_nl}</h4>
+                <p className="text-white/60 text-[10px] font-bold mt-1 hidden md:block">{preset.description_nl}</p>
+              </div>
+              {selectedPreset?.id === preset.id && (
+                <div className="absolute top-2 right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                  <div className="w-2 h-2 bg-white rounded-full" />
+                </div>
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -304,7 +325,7 @@ export const StyleInspiration = ({ onStyleSelected, onMoodDescriptionChange }: S
           {selectedPreset && (
             <div className="bg-surface border border-neutral-300/50 rounded-2xl p-4 text-center mb-4">
               <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
-                Stijl geselecteerd: <span className="text-primary">{selectedPreset.label_nl}</span> -- upload optioneel inspiratiebeelden om te verfijnen.
+                Stijl geselecteerd: <span className="text-primary">{selectedPreset.label_nl}</span> — upload optioneel inspiratiebeelden om te verfijnen.
               </p>
             </div>
           )}
