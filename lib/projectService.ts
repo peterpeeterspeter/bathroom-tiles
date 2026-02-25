@@ -110,7 +110,7 @@ export async function markProjectLeadSubmitted(projectId: string): Promise<void>
 
 export async function uploadProjectImage(
   projectId: string,
-  imageType: 'original_photo' | 'ai_render',
+  imageType: 'original_photo' | 'ai_render' | `inspiration_${number}`,
   dataUrl: string
 ): Promise<string | null> {
   try {

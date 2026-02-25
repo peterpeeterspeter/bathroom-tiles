@@ -576,7 +576,7 @@ export const generateRenovation = async (
   productImages: Map<string, { base64: string; mimeType: string }>,
   spec?: ProjectSpec,
   roomNotes?: string,
-  options?: { approach?: RenovationApproach; bathroomImageUrl?: string }
+  options?: { approach?: RenovationApproach; bathroomImageUrl?: string; inspirationImageUrls?: string[] }
 ): Promise<string> => {
   const model = "gemini-3-pro-image-preview";
   const approach: RenovationApproach = options?.approach || "baseline";
@@ -780,6 +780,7 @@ Generate the final image.
     console.log('[generateRenovation] Starting Seedream v5 lite edit pipeline...');
     return generateSeedreamRenovation({
       bathroomImageUrl: options.bathroomImageUrl,
+      inspirationImageUrls: options.inspirationImageUrls,
       styleProfile,
       selectedProducts,
       productActions,

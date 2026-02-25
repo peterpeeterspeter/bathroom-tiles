@@ -45,7 +45,7 @@ The planner generates up to 5 renovation renders in parallel, each using a diffe
 -   **Aanpak B (structure_locked)**: Locked approach with lower temperature (0.15) for higher fidelity.
 -   **Aanpak C (two_pass_locked)**: Two-pass pipeline — first a text-only layout guardrail check, then the locked render.
 -   **Aanpak D (openai_gpt_image_1_5)**: OpenAI GPT Image 1.5 edit pipeline (requires `OPENAI_API_KEY`).
--   **Aanpak E (seedream_5_lite_edit)**: ByteDance Seedream v5 Lite via fal.ai (requires `FAL_KEY`, gated by `VITE_ENABLE_SEEDREAM_LITE=true`). Uses URL-based image input from Supabase signed URLs.
+-   **Aanpak E (seedream_5_lite_edit)**: ByteDance Seedream v5 Lite via fal.ai (requires `FAL_KEY`, gated by `VITE_ENABLE_SEEDREAM_LITE=true`). Uses URL-based image input from Supabase signed URLs. Prompt uses photographic/architectural language and example-based editing: inspiration images are framed as style exemplars ("apply the style in Figure 2 to Figure 1") leveraging Seedream's ability to infer transformations from before/after pairs. Image ordering: Figure 1 = bathroom photo, Figure 2-N = inspiration images (up to 3, uploaded to Supabase for signed URLs), Figure N+1... = product images (CDN URLs). The `naturalDescription` from analysis is passed as spatial context. Inspiration images (originally base64 data URLs from user uploads) are uploaded to Supabase storage during the Seedream prep phase to obtain HTTP signed URLs.
 All approaches are fault-tolerant — if one fails, the others still return. The user sees all successful variants.
 
 ### AI API Configuration and Routing

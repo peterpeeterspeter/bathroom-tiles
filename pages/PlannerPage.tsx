@@ -298,6 +298,7 @@ export default function PlannerPage() {
       const base64 = compressed.split(',')[1];
 
       let originalPhotoSignedUrl: string | null = null;
+      let inspirationSignedUrls: string[] = [];
       if (projectId) {
         const storedPath = await uploadProjectImage(projectId, 'original_photo', compressed).catch(err => {
           console.error('Original photo upload failed (non-blocking):', err);
@@ -309,6 +310,24 @@ export default function PlannerPage() {
             originalPhotoSignedUrl = await getSignedImageUrl(storedPath);
           } catch (seedreamPrepError) {
             console.warn('[PlannerPage] Seedream input preparation failed (non-blocking):', seedreamPrepError);
+          }
+
+          if (referenceImages.length > 0) {
+            const inspirationUploads = referenceImages.slice(0, 3).map(async (img, idx) => {
+              try {
+                const path = await uploadProjectImage(projectId, `inspiration_${idx}` as `inspiration_${number}`, img.thumbnail);
+                if (path) return getSignedImageUrl(path);
+                return null;
+              } catch (err) {
+                console.warn(`[PlannerPage] Inspiration image ${idx} upload failed (non-blocking):`, err);
+                return null;
+              }
+            });
+            const results = await Promise.all(inspirationUploads);
+            inspirationSignedUrls = results.filter((url): url is string => !!url);
+            if (inspirationSignedUrls.length > 0) {
+              console.log(`[PlannerPage] Uploaded ${inspirationSignedUrls.length} inspiration images for Seedream`);
+            }
           }
         }
       }
@@ -436,7 +455,7 @@ export default function PlannerPage() {
             productImageMap,
             mergedSpec,
             roomNotes || undefined,
-            { approach: 'seedream_5_lite_edit', bathroomImageUrl: originalPhotoSignedUrl }
+            { approach: 'seedream_5_lite_edit', bathroomImageUrl: originalPhotoSignedUrl, inspirationImageUrls: inspirationSignedUrls.length > 0 ? inspirationSignedUrls : undefined }
           ).catch((err) => {
             console.error('Seedream v5 lite render failed:', err);
             trackEvent('generation_approach_failed', { approach: 'seedream_5_lite_edit', error: String(err) });
