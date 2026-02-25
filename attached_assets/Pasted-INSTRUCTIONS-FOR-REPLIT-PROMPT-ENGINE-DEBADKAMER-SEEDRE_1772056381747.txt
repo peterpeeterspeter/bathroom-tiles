@@ -1,0 +1,163 @@
+INSTRUCTIONS FOR REPLIT (PROMPT ENGINE) — DEBADKAMER / SEEDREAM
+Goal: High-fidelity bathroom renovation renders where (1) room geometry & camera stay identical to the input bathroom photo, (2) specified products are used accurately, (3) style preferences are applied without changing layout.
+
+========================
+A) CORE PRINCIPLES (Seedream)
+========================
+1) Treat this as IMAGE EDITING, not “rebuild the bathroom”.
+2) Minimize cognitive load: short, direct blocks > long step-by-step reasoning.
+3) Prevent reference blending by assigning explicit ROLES to each image and enforcing priority:
+   - Image 1 = GROUND TRUTH (room geometry + camera)
+   - Images 2..P = PRODUCT REFERENCES (high fidelity for objects)
+   - Remaining images = STYLE REFERENCES (aesthetic only; MUST NOT affect geometry)
+4) Never include unreliable spatial claims (wall numbering, coordinates, “0% window width”, etc.).
+5) Add “recognizability lock”: output must still look like the same photo, renovated.
+
+========================
+B) INPUTS YOUR PIPELINE PROVIDES
+========================
+- baseBathroomImage (required) → Image 1
+- productImages[] (0..N) → should be next, high priority
+- styleImages[] (0..M) → last, low priority, style-only
+- userStyleText (optional) → free-text mood
+- presetStyle (optional) → e.g., “Japandi”, “Modern”, “Industrieel”
+- styleProfile (optional structured object) → internal JSON. DO NOT send raw JSON to Seedream; convert to compact text.
+- actionsByCategory (KEEP/REPLACE/REMOVE/ADD) + selected products per category
+
+========================
+C) DECISION RULES (WHEN TO SEND STYLE IMAGES)
+========================
+Send style images IF:
+- user uploaded 1–4 coherent inspiration images (similar palette/materials), AND
+- style images are not “architecturally extreme” (skylights, different room geometry that could induce drift)
+
+Do NOT send style images (text-only style brief) IF:
+- style images are noisy (collages, mixed styles), OR
+- they strongly differ in architecture (wet room vs tub room, huge windows, etc.)
+
+Max style images: 4 (ideal 2). Max total images: keep ≤ 10 if possible.
+
+========================
+D) BUILD A COMPACT “STYLE BRIEF” TEXT BLOCK
+========================
+Your style analysis step should output JSON internally, but prompt should include only:
+- style_name (preset + inferred)
+- palette (3–5 terms)
+- materials (4–8 terms)
+- finishes (matte/satin, metal finish)
+- lighting_temp (e.g., 3000K)
+- mood_words (3–6)
+- do_not_include (3–6)
+
+Convert to a short block, <= 12 lines.
+
+Example:
+STYLE BRIEF:
+Japandi warm minimal spa.
+Palette: warm off-white, light oak, beige stone, soft greige.
+Materials: light stone tile, natural oak, plaster walls, matte ceramic.
+Finishes: matte, minimal grout; metal finish: brushed black.
+Lighting: soft diffused 3000K.
+Mood: calm, airy, premium, uncluttered.
+Avoid: plants, art, bold patterns, shiny chrome, clutter.
+
+========================
+E) PROMPT TEMPLATE (SEEDREAM-OPTIMIZED)
+========================
+Use this exact structure. Keep it under ~300–450 words.
+
+--- PROMPT START ---
+IMG_2094.CR2
+
+You are doing high-fidelity bathroom photo editing.
+
+INPUT IMAGE ROLES (priority order):
+- Image 1 = GROUND TRUTH bathroom photo. Preserve the SAME camera viewpoint, lens distortion, room geometry, wall boundaries, ceiling lines, door/window positions, and floor perspective EXACTLY.
+- Images 2..{P} = PRODUCT REFERENCES. Use these products exactly for the replaced items (shape, proportions, materials, color). Do NOT change the room layout to fit them.
+- Images {P+1}..{T} = STYLE REFERENCES only. Use them for palette/material mood only. DO NOT copy their architecture, layout, camera angle, or room geometry.
+
+FIDELITY LOCK:
+The final image must be clearly recognizable as the same bathroom photo as Image 1, just renovated. No structural changes.
+
+EDIT SCOPE (only these changes):
+{PRODUCT_REPLACEMENT_BLOCK}
+
+MATERIALS / FINISHES:
+{MATERIALS_BLOCK}
+
+STYLE:
+{STYLE_BRIEF_BLOCK}
+
+NEGATIVE CONSTRAINTS (strict):
+Do NOT change camera angle or room shape. Do NOT move or resize doors/windows. Do NOT add/remove walls, windows, doors, niches, or ceiling features. Do NOT redesign the layout. Do NOT add extra fixtures beyond the listed replacements.
+No clutter. Max 1 folded towel. No plants. No artwork.
+Photorealistic, magazine-quality. Return image only.
+--- PROMPT END ---
+
+========================
+F) HOW TO BUILD THE PRODUCT_REPLACEMENT_BLOCK
+========================
+Generate one line per category that is REPLACE/ADD/REMOVE/KEEP.
+
+Rules:
+- KEEP: “Keep existing {item} exactly as in Image 1 (no change).”
+- REMOVE: “Remove {item} and leave a clean finished surface; do not change layout.”
+- REPLACE: “Replace existing {item} with PRODUCT {k}; keep same location/footprint as in Image 1.”
+- ADD: only if user explicitly adds; anchor to “nearest logical plumbing wall” without moving structure.
+
+Template:
+- Replace the existing bathtub with PRODUCT 1: {name}. Keep the same location/footprint and realistic scale.
+- Replace the existing toilet with PRODUCT 2: {name}. Same position and plumbing alignment.
+- Replace the existing shower set on the {wall} with PRODUCT 3: {name}. Keep same anchor points.
+- Replace the existing mirror/vanity with PRODUCT 4: {name}. Same wall position and scale.
+
+IMPORTANT:
+Avoid wall numbering or coordinates. Use “existing location in Image 1”.
+
+========================
+G) MATERIALS_BLOCK (KEEP SHORT)
+========================
+Only describe surfaces you intend to change. Example:
+- Wall tiles: large-format matte light stone tile, minimal grout.
+- Other walls: warm off-white plaster finish.
+- Floor: large-format light stone tile, minimal grout; preserve floor perspective.
+
+========================
+H) IMPLEMENTATION CHECKLIST (PROMPT ASSEMBLY)
+========================
+1) Order images: [baseBathroomImage, ...productImages, ...styleImages]
+2) Compute P = 1 + productImages.length
+3) Compute T = 1 + productImages.length + styleImages.length
+4) Build STYLE_BRIEF_BLOCK from:
+   - presetStyle + userStyleText + extracted styleProfile (internal)
+5) If styleImages are excluded by decision rules, set styleImages=[] and still include STYLE_BRIEF_BLOCK.
+6) Keep prompt length bounded; truncate style brief before truncating fidelity constraints.
+
+========================
+I) DEFAULTS FOR CONSISTENCY
+========================
+If user provides no style:
+- style_name = “Modern warm spa”
+- palette = warm off-white, light stone, soft greige
+- lighting = 3000K soft diffused
+- avoid = clutter, plants, art, bold patterns
+
+If user provides style images but no text:
+- derive style_name + palette + materials from the style analysis step.
+
+========================
+J) DEBUGGING (WHEN OUTPUT DOESN’T MATCH ROOM)
+========================
+If room fidelity fails:
+- Reduce styleImages count to 0–1
+- Remove “strip to shell” language (never use it)
+- Remove any mention of “camera height”, “north wall”, coordinates, percentages
+- Increase “recognizable same photo” lock prominence
+- Reduce changes: start with 1–2 product replacements, then add more
+
+If products are wrong:
+- Ensure products are immediately after Image 1 (higher priority)
+- Add “Use PRODUCT k exactly (shape/material/color).”
+- Avoid conflicting material/style instructions that override product appearance
+
+END OF INSTRUCTIONS

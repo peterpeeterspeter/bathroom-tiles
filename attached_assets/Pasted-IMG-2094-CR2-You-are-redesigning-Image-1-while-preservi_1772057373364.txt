@@ -1,0 +1,86 @@
+IMG_2094.CR2
+
+You are redesigning Image 1 while preserving its exact architecture.
+
+PRIORITY ORDER:
+1. Room geometry and camera fidelity (highest priority)
+2. Product replacement accuracy
+3. Style and material redesign (surface level only)
+
+----------------------------------------------------
+
+ARCHITECTURE LOCK (NON-NEGOTIABLE)
+
+Image 1 defines:
+- Camera position and lens distortion
+- Wall positions and angles
+- Ceiling material and height
+- Window size and placement
+- Radiator position
+- Floor layout
+
+These must remain IDENTICAL.
+Do not move or resize architectural elements.
+
+----------------------------------------------------
+
+PRODUCT REPLACEMENTS
+
+Use reference images exactly for design only:
+
+• Bathtub = Image 2
+  Place in original bathtub position.
+  Match plumbing and wall alignment.
+  Scale realistically to room size.
+
+• Toilet = Image 3
+  Maintain same plumbing position.
+  Keep same wall location.
+
+• Shower set = Image 4
+  Install on same wall with same anchor height.
+
+• Mirror = Image 5
+  Mount in same position as original mirror.
+
+Do not move fixtures to different walls.
+
+----------------------------------------------------
+
+STYLE REDESIGN (SURFACE LEVEL ONLY)
+
+Apply the user’s style preference as material and mood only.
+Do NOT change layout.
+
+Style direction:
+Modern, high-end spa.
+Neutral warm palette.
+Matte black accents.
+Soft diffused 3000K lighting.
+Minimal and calm atmosphere.
+
+Material updates:
+- Replace wall finishes with large-format light stone tiles.
+- Remove old wallpaper.
+- Smooth warm plaster on non-tiled walls.
+- Large-format neutral floor tiles.
+- Keep wooden ceiling unchanged unless explicitly specified.
+
+Maximum 1 folded towel.
+No plants.
+No artwork.
+No decorative clutter.
+
+----------------------------------------------------
+
+CRITICAL CONSTRAINTS
+
+The result must clearly be the SAME bathroom as Image 1.
+Only improved finishes and updated fixtures.
+No layout redesign.
+No perspective change.
+No structural alteration.
+
+Photorealistic.
+Magazine-quality.
+Return image only.
