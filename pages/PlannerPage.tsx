@@ -366,85 +366,12 @@ export default function PlannerPage() {
 
       if (abortRef.current?.signal.aborted) throw new Error('timeout');
 
-      console.log('[PlannerPage] Step 4: Starting multi-approach render generation + cost estimation in parallel...');
-      const activeApproachCount = ENABLE_SEEDREAM_LITE ? 5 : 4;
-      setLoadingMessage(`${activeApproachCount} renovatievoorstellen genereren — dit kan 3-5 minuten duren...`);
+      console.log('[PlannerPage] Step 4: Starting Seedream render generation + cost estimation in parallel...');
+      setLoadingMessage('Renovatievoorstel genereren — dit kan 1-2 minuten duren...');
 
-      const renderTasks: Promise<string | null>[] = [
-        generateRenovation(
-          base64,
-          mimeType,
-          styleProfile,
-          productActions,
-          selectedProducts,
-          productImageMap,
-          mergedSpec,
-          roomNotes || undefined,
-          { approach: 'baseline' }
-        ).catch((err) => {
-          console.error('Baseline render failed:', err);
-          return null;
-        }),
-        generateRenovation(
-          base64,
-          mimeType,
-          styleProfile,
-          productActions,
-          selectedProducts,
-          productImageMap,
-          mergedSpec,
-          roomNotes || undefined,
-          { approach: 'baseline' }
-        ).catch((err) => {
-          console.error('Baseline render failed:', err);
-          return null;
-        }),
-        generateRenovation(
-          base64,
-          mimeType,
-          styleProfile,
-          productActions,
-          selectedProducts,
-          productImageMap,
-          mergedSpec,
-          roomNotes || undefined,
-          { approach: 'structure_locked' }
-        ).catch((err) => {
-          console.error('Structure-locked render failed:', err);
-          return null;
-        }),
-        generateRenovation(
-          base64,
-          mimeType,
-          styleProfile,
-          productActions,
-          selectedProducts,
-          productImageMap,
-          mergedSpec,
-          roomNotes || undefined,
-          { approach: 'two_pass_locked' }
-        ).catch((err) => {
-          console.error('Two-pass locked render failed:', err);
-          return null;
-        }),
-        generateRenovation(
-          base64,
-          mimeType,
-          styleProfile,
-          productActions,
-          selectedProducts,
-          productImageMap,
-          mergedSpec,
-          roomNotes || undefined,
-          { approach: 'openai_gpt_image_1_5' }
-        ).catch((err) => {
-          console.error('OpenAI GPT Image render failed:', err);
-          trackEvent('generation_approach_failed', { approach: 'openai_gpt_image_1_5', error: String(err) });
-          return null;
-        }),
-      ];
+      const renderTasks: Promise<string | null>[] = [];
 
-      if (ENABLE_SEEDREAM_LITE && originalPhotoSignedUrl) {
+      if (originalPhotoSignedUrl) {
         renderTasks.push(
           generateRenovation(
             base64,
@@ -462,7 +389,8 @@ export default function PlannerPage() {
             return null;
           })
         );
-      } else if (ENABLE_SEEDREAM_LITE) {
+      } else {
+        console.error('[PlannerPage] No signed URL available for Seedream render');
         trackEvent('generation_approach_skipped', { approach: 'seedream_5_lite_edit', reason: 'missing_original_photo_signed_url' });
       }
 
