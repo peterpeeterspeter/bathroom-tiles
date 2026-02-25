@@ -1,0 +1,19 @@
+Photorealistic interior renovation of Figure 1's bathroom. Shot on a medium format digital camera, natural window light, warm 3000K color temperature, soft directional shadows, architectural photography with shallow depth of field on foreground fixtures.
+
+Replace the existing bathtub in Figure 1 with Figure 2 (Looox Looox Bath collection Hoekbad) — match its exact color, shape, material, and finish.
+Replace the existing shower in Figure 1 with Figure 3 (Adema Adema Dawn Inloopdouche) — match its exact color, shape, material, and finish.
+Replace the existing toilet in Figure 1 with Figure 4 (Duravit Duravit Sensowash Douche WC) — match its exact color, shape, material, and finish.
+Replace the existing faucet in Figure 1 with Figure 5 (Fortifura Fortifura Calvi Douchekraan) — match its exact color, shape, material, and finish.
+Replace the existing mirror in Figure 1 with Figure 6 (Arcqua Arcqua Oval Spiegel met verlichting) — match its exact color, shape, material, and finish.
+
+Replace the tile with a modern alternative matching the renovation style.
+Replace the vanity with a modern alternative matching the renovation style.
+Replace the lighting with a modern alternative matching the renovation style.
+
+Design direction: Modern Klassiek style: Deze badkamer biedt een fantastische basis voor een volledige metamorfose naar een Modern Klassiek paradijs. Door de gedateerde patronen te vervangen door rustige marmerstructuren en hoogwaardig geborsteld nikkel beslag, creëren we een tijdloze en luxe sfeer. De transformatie van de douche-nis naar een moderne inloopdouche zal de ruimte een compleet nieuw gevoel van openheid geven.
+Material palette: brushed nickel, timeless silhouettes, neutral palette, marble, refined details, subtle patterns, rain shower, layered lighting.
+Homeowner's vision: "landelijke badkamer met retrovibe met lichte tinten, luxe douche en een eiken badkamermeubel met veel opbergruimte"
+
+Room context: The camera is positioned at eye level, looking into a bathroom with a somewhat dated, functional layout. The room appears to be roughly rectangular, with a shower area recessed into the far wall (wall 0). On the left wall (wall 3), there is a white pedestal sink with a large rectangular mirror above it, flanked by two vertical sconce lights. The wall behind the sink is covered in light-colored ver
+
+Constraints: preserve all walls, windows, doors, ceiling structure, and camera angle from Figure 1. Do not add architectural features not present in Figure 1. Do not add plants, candles, art, or decorative objects. Add 1-2 neutral towels on a rail. Magazine-quality interior photography.
