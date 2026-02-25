@@ -31,6 +31,7 @@ import {
 } from '../lib/projectService';
 
 const TIMEOUT_MS = 180_000;
+const ENABLE_SEEDREAM_LITE = (import.meta as any).env?.VITE_ENABLE_SEEDREAM_LITE === 'true';
 
 const compressImage = (dataUrl: string, maxDimension: number): Promise<string> => {
   return new Promise((resolve) => {
@@ -296,10 +297,20 @@ export default function PlannerPage() {
       const mimeType = compressed.match(/^data:(.*);base64,/)?.[1] || 'image/jpeg';
       const base64 = compressed.split(',')[1];
 
+      let originalPhotoSignedUrl: string | null = null;
       if (projectId) {
-        uploadProjectImage(projectId, 'original_photo', compressed).catch(err =>
-          console.error('Original photo upload failed (non-blocking):', err)
-        );
+        const storedPath = await uploadProjectImage(projectId, 'original_photo', compressed).catch(err => {
+          console.error('Original photo upload failed (non-blocking):', err);
+          return null;
+        });
+
+        if (ENABLE_SEEDREAM_LITE && storedPath) {
+          try {
+            originalPhotoSignedUrl = await getSignedImageUrl(storedPath);
+          } catch (seedreamPrepError) {
+            console.warn('[PlannerPage] Seedream input preparation failed (non-blocking):', seedreamPrepError);
+          }
+        }
       }
 
       console.log('[PlannerPage] Step 2: Running analyzeBathroomInput...');
@@ -337,9 +348,24 @@ export default function PlannerPage() {
       if (abortRef.current?.signal.aborted) throw new Error('timeout');
 
       console.log('[PlannerPage] Step 4: Starting multi-approach render generation + cost estimation in parallel...');
-      setLoadingMessage('Vier renovatievoorstellen genereren — dit kan 2-3 minuten duren...');
+      const activeApproachCount = ENABLE_SEEDREAM_LITE ? 5 : 4;
+      setLoadingMessage(`${activeApproachCount} renovatievoorstellen genereren — dit kan 2-3 minuten duren...`);
 
-      const [baselineRender, lockedRender, twoPassRender, openAiRender, est] = await Promise.all([
+      const renderTasks: Promise<string | null>[] = [
+        generateRenovation(
+          base64,
+          mimeType,
+          styleProfile,
+          productActions,
+          selectedProducts,
+          productImageMap,
+          mergedSpec,
+          roomNotes || undefined,
+          { approach: 'baseline' }
+        ).catch((err) => {
+          console.error('Baseline render failed:', err);
+          return null;
+        }),
         generateRenovation(
           base64,
           mimeType,
@@ -394,16 +420,46 @@ export default function PlannerPage() {
           { approach: 'openai_gpt_image_1_5' }
         ).catch((err) => {
           console.error('OpenAI GPT Image render failed:', err);
+          trackEvent('generation_approach_failed', { approach: 'openai_gpt_image_1_5', error: String(err) });
           return null;
         }),
+      ];
+
+      if (ENABLE_SEEDREAM_LITE && originalPhotoSignedUrl) {
+        renderTasks.push(
+          generateRenovation(
+            base64,
+            mimeType,
+            styleProfile,
+            productActions,
+            selectedProducts,
+            productImageMap,
+            mergedSpec,
+            roomNotes || undefined,
+            { approach: 'seedream_5_lite_edit', bathroomImageUrl: originalPhotoSignedUrl }
+          ).catch((err) => {
+            console.error('Seedream v5 lite render failed:', err);
+            trackEvent('generation_approach_failed', { approach: 'seedream_5_lite_edit', error: String(err) });
+            return null;
+          })
+        );
+      } else if (ENABLE_SEEDREAM_LITE) {
+        trackEvent('generation_approach_skipped', { approach: 'seedream_5_lite_edit', reason: 'missing_original_photo_signed_url' });
+      }
+
+      const [renderResults, est] = await Promise.all([
+        Promise.all(renderTasks),
         calculateRenovationCost(mergedSpec, BudgetTier.STANDARD, styleProfile, materialConfig, allProducts, productActions)
       ]);
+
+      const [baselineRender, lockedRender, twoPassRender, openAiRender, seedreamRender] = renderResults;
 
       const variants = [
         baselineRender ? { id: 'baseline', label: 'Aanpak A', description: 'Creatieve balans', url: baselineRender } : null,
         lockedRender ? { id: 'structure_locked', label: 'Aanpak B', description: 'Ruimte-fidelity (1-pass)', url: lockedRender } : null,
         twoPassRender ? { id: 'two_pass_locked', label: 'Aanpak C', description: '2-pass layout check (hoogste betrouwbaarheid)', url: twoPassRender } : null,
         openAiRender ? { id: 'openai_gpt_image_1_5', label: 'Aanpak D', description: 'GPT Image 1.5 edit-pipeline', url: openAiRender } : null,
+        seedreamRender ? { id: 'seedream_5_lite_edit', label: 'Aanpak E', description: 'Seedream 5.0 Lite edit (URL-first)', url: seedreamRender } : null,
       ].filter((variant): variant is { id: string; label: string; description: string; url: string } => Boolean(variant));
 
       if (variants.length === 0) {
@@ -423,7 +479,7 @@ export default function PlannerPage() {
       }
 
       const duration = Math.floor((Date.now() - startTime) / 1000);
-      trackEvent('generation_completed', { durationSeconds: duration, total: est.grandTotal });
+      trackEvent('generation_completed', { durationSeconds: duration, total: est.grandTotal, variants: variants.map(v => v.id) });
     } catch (err: any) {
       console.error(err);
       if (err?.message === 'timeout' || err?.message?.includes('timed out') || abortRef.current?.signal.aborted) {

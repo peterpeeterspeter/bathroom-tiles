@@ -1,6 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ProjectSpec, Estimate, BudgetTier, FixtureType, MaterialConfig, StyleProfile, DatabaseProduct, ProductAction, WallSpec, ShellAnchor, CameraSpec } from "../types";
 import { generateOpenAIRenovation } from "./openaiImageService";
+import { generateSeedreamRenovation } from "./seedreamImageService";
 const getApiKey = (): string => {
   const key = process.env.API_KEY || process.env.GEMINI_API_KEY || '';
   if (key) return key;
@@ -505,7 +506,7 @@ const CATEGORY_LABELS_NL: Record<string, string> = {
   Mirror: 'Spiegel',
   Lighting: 'Verlichting',
 };
-export type RenovationApproach = "baseline" | "structure_locked" | "two_pass_locked" | "openai_gpt_image_1_5";
+export type RenovationApproach = "baseline" | "structure_locked" | "two_pass_locked" | "openai_gpt_image_1_5" | "seedream_5_lite_edit";
 const generateLayoutGuardrails = async (
   spec: ProjectSpec,
   roomNotes?: string
@@ -565,6 +566,7 @@ ${locks || '- Keep shell unchanged.'}
 Risk notes:
 ${risks || '- No extra risks reported.'}`;
 };
+
 export const generateRenovation = async (
   bathroomBase64: string,
   bathroomMimeType: string,
@@ -574,12 +576,13 @@ export const generateRenovation = async (
   productImages: Map<string, { base64: string; mimeType: string }>,
   spec?: ProjectSpec,
   roomNotes?: string,
-  options?: { approach?: RenovationApproach }
+  options?: { approach?: RenovationApproach; bathroomImageUrl?: string }
 ): Promise<string> => {
   const model = "gemini-3-pro-image-preview";
   const approach: RenovationApproach = options?.approach || "baseline";
   const isOpenAIApproach = approach === "openai_gpt_image_1_5";
-  const isLockedApproach = approach === "structure_locked" || approach === "two_pass_locked" || isOpenAIApproach;
+  const isSeedreamApproach = approach === "seedream_5_lite_edit";
+  const isLockedApproach = approach === "structure_locked" || approach === "two_pass_locked" || isOpenAIApproach || isSeedreamApproach;
   let passOneGuardrails = "";
   if (approach === "two_pass_locked" && spec) {
     try {
@@ -767,6 +770,19 @@ Generate the final image.
       styleProfile,
       selectedProducts,
       productImages,
+    });
+  }
+
+  if (isSeedreamApproach) {
+    if (!options?.bathroomImageUrl) {
+      throw new Error('Seedream approach requires options.bathroomImageUrl');
+    }
+    console.log('[generateRenovation] Starting Seedream v5 lite edit pipeline...');
+    return generateSeedreamRenovation({
+      bathroomImageUrl: options.bathroomImageUrl,
+      prompt,
+      styleProfile,
+      selectedProducts,
     });
   }
 
