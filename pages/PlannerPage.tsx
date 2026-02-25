@@ -79,6 +79,7 @@ export default function PlannerPage() {
   const [projectSpec, setProjectSpec] = useState<ProjectSpec | null>(null);
   const [estimate, setEstimate] = useState<Estimate | null>(null);
   const [renderUrl, setRenderUrl] = useState<string | null>(null);
+  const [renderVariants, setRenderVariants] = useState<Array<{ id: string; label: string; description: string; url: string }>>([]);
   const [error, setError] = useState<string | null>(null);
   const [legalModal, setLegalModal] = useState<{ open: boolean; type: 'privacy' | 'terms' | 'cookies'; title: string }>({ open: false, type: 'privacy', title: '' });
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -335,10 +336,10 @@ export default function PlannerPage() {
 
       if (abortRef.current?.signal.aborted) throw new Error('timeout');
 
-      console.log('[PlannerPage] Step 4: Starting generation + cost estimation in parallel...');
-      setLoadingMessage('Uw renovatieontwerp genereren — dit kan 2-3 minuten duren...');
+      console.log('[PlannerPage] Step 4: Starting multi-approach render generation + cost estimation in parallel...');
+      setLoadingMessage('Vier renovatievoorstellen genereren — dit kan 2-3 minuten duren...');
 
-      const [render, est] = await Promise.all([
+      const [baselineRender, lockedRender, twoPassRender, openAiRender, est] = await Promise.all([
         generateRenovation(
           base64,
           mimeType,
@@ -347,22 +348,78 @@ export default function PlannerPage() {
           selectedProducts,
           productImageMap,
           mergedSpec,
-          roomNotes || undefined
-        ),
+          roomNotes || undefined,
+          { approach: 'baseline' }
+        ).catch((err) => {
+          console.error('Baseline render failed:', err);
+          return null;
+        }),
+        generateRenovation(
+          base64,
+          mimeType,
+          styleProfile,
+          productActions,
+          selectedProducts,
+          productImageMap,
+          mergedSpec,
+          roomNotes || undefined,
+          { approach: 'structure_locked' }
+        ).catch((err) => {
+          console.error('Structure-locked render failed:', err);
+          return null;
+        }),
+        generateRenovation(
+          base64,
+          mimeType,
+          styleProfile,
+          productActions,
+          selectedProducts,
+          productImageMap,
+          mergedSpec,
+          roomNotes || undefined,
+          { approach: 'two_pass_locked' }
+        ).catch((err) => {
+          console.error('Two-pass locked render failed:', err);
+          return null;
+        }),
+        generateRenovation(
+          base64,
+          mimeType,
+          styleProfile,
+          productActions,
+          selectedProducts,
+          productImageMap,
+          mergedSpec,
+          roomNotes || undefined,
+          { approach: 'openai_gpt_image_1_5' }
+        ).catch((err) => {
+          console.error('OpenAI GPT Image render failed:', err);
+          return null;
+        }),
         calculateRenovationCost(mergedSpec, BudgetTier.STANDARD, styleProfile, materialConfig, allProducts, productActions)
       ]);
 
-      console.log(`[PlannerPage] Step 4 complete: render=${render ? 'yes' : 'no'}, estimate total=${est?.grandTotal}`);
-      setRenderUrl(render);
+      const variants = [
+        baselineRender ? { id: 'baseline', label: 'Aanpak A', description: 'Creatieve balans', url: baselineRender } : null,
+        lockedRender ? { id: 'structure_locked', label: 'Aanpak B', description: 'Ruimte-fidelity (1-pass)', url: lockedRender } : null,
+        twoPassRender ? { id: 'two_pass_locked', label: 'Aanpak C', description: '2-pass layout check (hoogste betrouwbaarheid)', url: twoPassRender } : null,
+        openAiRender ? { id: 'openai_gpt_image_1_5', label: 'Aanpak D', description: 'GPT Image 1.5 edit-pipeline', url: openAiRender } : null,
+      ].filter((variant): variant is { id: string; label: string; description: string; url: string } => Boolean(variant));
+
+      if (variants.length === 0) {
+        throw new Error('Geen render ontvangen');
+      }
+
+      console.log(`[PlannerPage] Step 4 complete: variants=${variants.length}, estimate total=${est?.grandTotal}`);
+      setRenderVariants(variants);
+      setRenderUrl(variants[0].url);
       setEstimate(est);
 
       if (projectId) {
         updateProjectResults(projectId, est).catch(() => {});
-        if (render) {
-          uploadProjectImage(projectId, 'ai_render', render).catch(err =>
-            console.error('Render upload failed (non-blocking):', err)
-          );
-        }
+        uploadProjectImage(projectId, 'ai_render', variants[0].url).catch(err =>
+          console.error('Render upload failed (non-blocking):', err)
+        );
       }
 
       const duration = Math.floor((Date.now() - startTime) / 1000);
@@ -492,6 +549,7 @@ export default function PlannerPage() {
     setProjectSpec(null);
     setEstimate(null);
     setRenderUrl(null);
+    setRenderVariants([]);
     setLeadSubmitted(false);
     setLeadName('');
     setError(null);
@@ -594,7 +652,7 @@ export default function PlannerPage() {
 
           {loading && <LoadingOverlay message={loadingMessage} elapsedSeconds={elapsedSeconds} />}
 
-          {step === 4 && !loading && !error && estimate && renderUrl && (
+          {step === 4 && !loading && !error && estimate && renderVariants.length > 0 && renderUrl && (
             <div className="animate-fade-in max-w-6xl mx-auto">
               {!leadSubmitted ? (
                 <div className="space-y-12 md:space-y-16">
@@ -604,18 +662,42 @@ export default function PlannerPage() {
                     <p className="text-neutral-500 text-sm md:text-base leading-relaxed">Op basis van uw stijlprofiel hebben we deze visualisatie samengesteld.</p>
                   </div>
 
-                  <div className="max-w-3xl mx-auto space-y-6 md:space-y-8">
+                  <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
                     <div className="flex items-center gap-3 justify-center">
                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary"><ImageIcon size={18} /></div>
-                      <h3 className="font-bold uppercase tracking-widest text-sm text-neutral-500">Renovatie Visualisatie</h3>
+                      <h3 className="font-bold uppercase tracking-widest text-sm text-neutral-500">Renovatie Visualisaties (4 Aanpakken)</h3>
                     </div>
+
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
+                      {renderVariants.map((variant) => (
+                        <button
+                          key={variant.id}
+                          onClick={() => setRenderUrl(variant.url)}
+                          className={`text-left p-4 rounded-2xl border transition-all ${renderUrl === variant.url ? 'border-primary bg-primary/5 shadow-sm' : 'border-neutral-300/40 bg-white hover:border-primary/50'}`}
+                        >
+                          <p className="text-xs uppercase tracking-widest font-bold text-neutral-500 mb-1">{variant.label}</p>
+                          <p className="font-semibold text-sm text-neutral-900">{variant.description}</p>
+                        </button>
+                      ))}
+                    </div>
+
                     <div className="relative">
                       <BeforeAfterSlider before={imagePreview!} after={renderUrl} />
                       <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-primary/20 rounded-full blur-[40px] -z-10" />
                     </div>
+
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {renderVariants.map((variant) => (
+                        <div key={`${variant.id}-thumb`} className="rounded-xl border border-neutral-300/40 p-2 bg-white">
+                          <p className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mb-2">{variant.label}</p>
+                          <img src={variant.url} alt={`Voorstel ${variant.label}`} className="w-full h-40 object-cover rounded-lg" />
+                        </div>
+                      ))}
+                    </div>
+
                     <div className="bg-surface p-6 md:p-8 rounded-2xl border border-neutral-300/30">
                       <h4 className="font-bold uppercase text-xs tracking-widest mb-3 md:mb-4 flex items-center gap-2 text-neutral-500"><Info size={16} /> Juridische Kadering</h4>
-                      <p className="text-[11px] text-neutral-500 leading-relaxed">Deze visualisatie is een AI-generatie op basis van de ingevoerde data en dient puur ter inspiratie. Afmetingen en productdetails kunnen in de realiteit afwijken. Een definitieve opname ter plaatse is noodzakelijk.</p>
+                      <p className="text-[11px] text-neutral-500 leading-relaxed">Deze visualisaties zijn AI-generaties op basis van de ingevoerde data en dienen puur ter inspiratie. Afmetingen en productdetails kunnen in de realiteit afwijken. Een definitieve opname ter plaatse is noodzakelijk.</p>
                     </div>
                   </div>
 
