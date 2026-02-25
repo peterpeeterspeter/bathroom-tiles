@@ -46,19 +46,37 @@ const buildSeedreamPrompt = (
 
   const lines: string[] = [];
 
-  lines.push(`Photorealistic interior renovation of Figure 1's bathroom. Shot on a medium format digital camera, natural window light, warm 3000K color temperature, soft directional shadows, architectural photography with shallow depth of field on foreground fixtures.`);
+  lines.push(`Edit Figure 1. This is a renovation of the existing bathroom — preserve Figure 1's exact room geometry, wall positions, ceiling, floor plan, windows, doors, camera angle, and perspective throughout. Do not generate a new room.`);
   lines.push(``);
 
+  if (spec?.naturalDescription) {
+    lines.push(`Room context: ${spec.naturalDescription}`);
+    lines.push(``);
+  } else if (spec) {
+    lines.push(`Room: approximately ${spec.estimatedWidthMeters}m × ${spec.estimatedLengthMeters}m, ${spec.ceilingHeightMeters}m ceiling, ${spec.layoutShape === 'L_SHAPE' ? 'L-shaped' : spec.layoutShape.toLowerCase()} layout.`);
+    lines.push(``);
+  }
+
   if (hasInspiration) {
-    const inspEnd = 1 + imageLayout.inspirationCount;
     if (imageLayout.inspirationCount === 1) {
-      lines.push(`Apply the style, material palette, and design language visible in Figure 2 to Figure 1's bathroom. Transform Figure 1 to match Figure 2's aesthetic while preserving Figure 1's exact room geometry, walls, windows, doors, ceiling, and camera perspective.`);
+      lines.push(`Apply the style, material palette, and design language visible in Figure 2 to Figure 1's bathroom while preserving Figure 1's room structure.`);
     } else {
       const figs = Array.from({ length: imageLayout.inspirationCount }, (_, i) => `Figure ${i + 2}`).join(', ');
-      lines.push(`Apply the combined style, material palette, and design language visible in ${figs} to Figure 1's bathroom. Transform Figure 1 to match that aesthetic while preserving Figure 1's exact room geometry, walls, windows, doors, ceiling, and camera perspective.`);
+      lines.push(`Apply the combined style, material palette, and design language visible in ${figs} to Figure 1's bathroom while preserving Figure 1's room structure.`);
     }
     lines.push(``);
   }
+
+  const presetDesc = styleProfile.presetName
+    ? `${styleProfile.presetName} style: ${styleProfile.summary}`
+    : styleProfile.summary;
+  const topTags = styleProfile.tags.slice(0, 8).map(t => t.tag).join(', ');
+  lines.push(`Design direction: ${presetDesc}`);
+  lines.push(`Material palette: ${topTags}.`);
+  if (styleProfile.moodDescription) {
+    lines.push(`Homeowner's vision: "${styleProfile.moodDescription}"`);
+  }
+  lines.push(``);
 
   if (hasProducts) {
     for (const pf of imageLayout.productFigures) {
@@ -95,31 +113,12 @@ const buildSeedreamPrompt = (
   }
   lines.push(``);
 
-  const presetDesc = styleProfile.presetName
-    ? `${styleProfile.presetName} style: ${styleProfile.summary}`
-    : styleProfile.summary;
-  const topTags = styleProfile.tags.slice(0, 8).map(t => t.tag).join(', ');
-  lines.push(`Design direction: ${presetDesc}`);
-  lines.push(`Material palette: ${topTags}.`);
-  if (styleProfile.moodDescription) {
-    lines.push(`Homeowner's vision: "${styleProfile.moodDescription.slice(0, 250)}"`);
-  }
-  lines.push(``);
-
-  if (spec?.naturalDescription) {
-    lines.push(`Room context: ${spec.naturalDescription.slice(0, 400)}`);
-    lines.push(``);
-  } else if (spec) {
-    lines.push(`Room: approximately ${spec.estimatedWidthMeters}m × ${spec.estimatedLengthMeters}m, ${spec.ceilingHeightMeters}m ceiling, ${spec.layoutShape === 'L_SHAPE' ? 'L-shaped' : spec.layoutShape.toLowerCase()} layout.`);
-    lines.push(``);
-  }
-
   if (roomNotes) {
-    lines.push(`Homeowner notes: ${roomNotes.slice(0, 200)}`);
+    lines.push(`Homeowner notes: ${roomNotes}`);
     lines.push(``);
   }
 
-  lines.push(`Constraints: preserve all walls, windows, doors, ceiling structure, and camera angle from Figure 1. Do not add architectural features not present in Figure 1. Do not add plants, candles, art, or decorative objects. Add 1-2 neutral towels on a rail. Magazine-quality interior photography.`);
+  lines.push(`Constraints: preserve all walls, windows, doors, ceiling structure, and camera angle from Figure 1. Do not add architectural features not present in Figure 1. Do not add plants, candles, art, or decorative objects. Photorealistic architectural interior photography, natural lighting.`);
 
   return lines.join('\n');
 };
@@ -176,7 +175,7 @@ export const generateSeedreamRenovation = async (params: SeedreamRenderParams): 
     num_images: 1,
     max_images: 1,
     enable_safety_checker: true,
-    enhance_prompt_mode: 'standard' as const,
+    enhance_prompt_mode: 'fast' as const,
   };
 
   const response = await fetch(FAL_ENDPOINT, {
