@@ -29,7 +29,6 @@ const getDirectApiKey = (): string => {
   } catch {}
   return '';
 };
-
 const createClient = (useDirect = false) => {
   if (useDirect) {
     const directKey = getDirectApiKey();

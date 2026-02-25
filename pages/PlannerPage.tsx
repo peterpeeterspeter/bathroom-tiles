@@ -375,6 +375,20 @@ export default function PlannerPage() {
           productImageMap,
           mergedSpec,
           roomNotes || undefined,
+          { approach: 'baseline' }
+        ).catch((err) => {
+          console.error('Baseline render failed:', err);
+          return null;
+        }),
+        generateRenovation(
+          base64,
+          mimeType,
+          styleProfile,
+          productActions,
+          selectedProducts,
+          productImageMap,
+          mergedSpec,
+          roomNotes || undefined,
           { approach: 'structure_locked' }
         ).catch((err) => {
           console.error('Structure-locked render failed:', err);
