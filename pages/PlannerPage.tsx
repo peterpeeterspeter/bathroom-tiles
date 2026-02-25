@@ -30,7 +30,7 @@ import {
   getSignedImageUrl,
 } from '../lib/projectService';
 
-const TIMEOUT_MS = 180_000;
+const TIMEOUT_MS = 360_000;
 const ENABLE_SEEDREAM_LITE = (import.meta as any).env?.VITE_ENABLE_SEEDREAM_LITE === 'true';
 
 const compressImage = (dataUrl: string, maxDimension: number): Promise<string> => {
@@ -271,9 +271,9 @@ export default function PlannerPage() {
     setError(null);
     abortRef.current = new AbortController();
     const overallTimeout = setTimeout(() => {
-      console.warn('[PlannerPage] Overall 5-minute timeout reached, aborting...');
+      console.warn('[PlannerPage] Overall 6-minute timeout reached, aborting...');
       abortRef.current?.abort();
-    }, 300000);
+    }, TIMEOUT_MS);
 
     if (projectId) {
       updateProjectProducts(
@@ -368,7 +368,7 @@ export default function PlannerPage() {
 
       console.log('[PlannerPage] Step 4: Starting multi-approach render generation + cost estimation in parallel...');
       const activeApproachCount = ENABLE_SEEDREAM_LITE ? 5 : 4;
-      setLoadingMessage(`${activeApproachCount} renovatievoorstellen genereren — dit kan 2-3 minuten duren...`);
+      setLoadingMessage(`${activeApproachCount} renovatievoorstellen genereren — dit kan 3-5 minuten duren...`);
 
       const renderTasks: Promise<string | null>[] = [
         generateRenovation(
