@@ -63,41 +63,39 @@ const buildSeedreamPrompt = (
 ): string => {
   const { styleProfile, productActions, spec, roomNotes } = params;
   const hasInspiration = imageLayout.inspirationCount > 0;
+  const presetName = styleProfile.presetName || 'Modern';
   const lines: string[] = [];
+
+  const B = '\t•\t';
+  const DIV = '\n\u2E3B\n';
 
   lines.push(`ROLE`);
   lines.push(`You are a professional architectural image editor specializing in high-fidelity bathroom renovations.`);
-  lines.push(``);
+  lines.push(DIV);
 
-  lines.push(`NON-NEGOTIABLE LOCKS`);
-  lines.push(`IMAGE 1 is the single source of truth for room geometry and perspective.`);
-  lines.push(`Camera position, angle, lens distortion, wall boundaries, ceiling height, door and window positions must remain identical.`);
-  lines.push(`Do not move structural elements.`);
-  lines.push(`Do not add or remove walls, windows, or doors.`);
-  lines.push(`Only renovate finishes and fixtures.`);
-  lines.push(`If any instruction conflicts with IMAGE 1, follow IMAGE 1.`);
+  lines.push(`\u{1F512} NON-NEGOTIABLE LOCKS`);
+  lines.push(`${B}IMAGE 1 is the single source of truth for room geometry and perspective.`);
+  lines.push(`${B}Camera position, angle, lens distortion, wall boundaries, ceiling height, door and window positions must remain identical.`);
+  lines.push(`${B}Do not move structural elements.`);
+  lines.push(`${B}Do not add or remove walls, windows, or doors.`);
+  lines.push(`${B}Only renovate finishes and fixtures.`);
   lines.push(``);
+  lines.push(`If any instruction conflicts with IMAGE 1, follow IMAGE 1.`);
+  lines.push(DIV);
 
   lines.push(`STEP 1 — STUDY THE EXISTING ROOM`);
   lines.push(``);
   lines.push(`Carefully analyze IMAGE 1.`);
   lines.push(`Identify:`);
-  lines.push(`- Exact camera viewpoint`);
-  lines.push(`- Wall layout`);
-  lines.push(`- Floor layout`);
-  lines.push(`- Plumbing wall`);
-  lines.push(`- Natural light direction`);
-  lines.push(`- Existing fixture placement`);
+  lines.push(`${B}Exact camera viewpoint`);
+  lines.push(`${B}Wall layout`);
+  lines.push(`${B}Floor layout`);
+  lines.push(`${B}Plumbing wall`);
+  lines.push(`${B}Natural light direction`);
+  lines.push(`${B}Existing fixture placement`);
   lines.push(``);
-  if (spec?.naturalDescription) {
-    lines.push(`Room analysis: ${spec.naturalDescription}`);
-    lines.push(``);
-  } else if (spec) {
-    lines.push(`Room: approximately ${spec.estimatedWidthMeters}m × ${spec.estimatedLengthMeters}m, ${spec.ceilingHeightMeters}m ceiling, ${spec.layoutShape === 'L_SHAPE' ? 'L-shaped' : spec.layoutShape.toLowerCase()} layout.`);
-    lines.push(``);
-  }
   lines.push(`This viewpoint must remain unchanged.`);
-  lines.push(``);
+  lines.push(DIV);
 
   lines.push(`STEP 2 — STRIP TO SHELL`);
   lines.push(``);
@@ -111,7 +109,7 @@ const buildSeedreamPrompt = (
     }
   }
   for (const item of removeList) {
-    lines.push(`- ${item}`);
+    lines.push(`${B}${item}`);
   }
   lines.push(``);
 
@@ -120,40 +118,39 @@ const buildSeedreamPrompt = (
     if (productActions[cat] === 'keep') keepItems.push(cat.toLowerCase());
   }
   lines.push(`Keep:`);
-  lines.push(`- Same room shape`);
-  lines.push(`- Same layout`);
-  lines.push(`- Same plumbing locations`);
-  lines.push(`- Same perspective`);
+  lines.push(`${B}Same room shape`);
+  lines.push(`${B}Same layout`);
+  lines.push(`${B}Same plumbing locations`);
+  lines.push(`${B}Same perspective`);
   if (keepItems.length > 0) {
-    lines.push(`- Existing ${keepItems.join(', ')} exactly as in IMAGE 1`);
+    lines.push(`${B}Existing ${keepItems.join(', ')} exactly as in IMAGE 1`);
   }
-  lines.push(``);
+  lines.push(DIV);
 
   lines.push(`STEP 3 — PLACE NEW FIXTURES (USE PRODUCT REFERENCES EXACTLY)`);
   lines.push(``);
 
+  const fixtureProducts = imageLayout.productFigures.filter(pf => pf.product.category !== 'Tile');
+  const tileProduct = imageLayout.productFigures.find(pf => pf.product.category === 'Tile');
+
   let productNum = 1;
-  for (const pf of imageLayout.productFigures) {
+  for (const pf of fixtureProducts) {
     const p = pf.product;
     const emoji = CATEGORY_EMOJI[p.category] || '';
-    const desc = p.description || '';
     const placement = getFixturePlacement(spec, p.category);
 
-    lines.push(`${emoji} PRODUCT ${productNum} — ${p.brand} ${p.name}`);
+    lines.push(`${emoji} PRODUCT ${productNum} — ${p.name}`);
     lines.push(``);
-    lines.push(`Use PRODUCT ${productNum} (Figure ${pf.figureIdx}) exactly as reference:`);
-    if (desc) {
-      lines.push(`${desc}`);
-    }
-    lines.push(`Match its exact color, shape, material, and finish.`);
+    lines.push(`Use PRODUCT ${productNum} exactly as reference:`);
     if (placement) {
       lines.push(`${placement}`);
     } else if (pf.action === 'add') {
-      lines.push(`Install as a new ${p.category.toLowerCase()} in the appropriate location.`);
+      lines.push(`Install in the most logical location based on room layout in IMAGE 1.`);
     } else {
       lines.push(`Place where the original ${p.category.toLowerCase()} existed in IMAGE 1.`);
     }
     lines.push(`Maintain realistic scale and plumbing alignment.`);
+    lines.push(``);
     lines.push(`Do not change room proportions to fit it — scale correctly.`);
     lines.push(``);
     productNum++;
@@ -168,19 +165,21 @@ const buildSeedreamPrompt = (
       removeCategories.push(cat.toLowerCase());
     }
   }
+  lines.push(DIV);
 
-  lines.push(`STEP 4 — APPLY MATERIALS AND FINISHES`);
+  lines.push(`STEP 4 — APPLY MATERIALS`);
   lines.push(``);
 
-  const tileProduct = imageLayout.productFigures.find(pf => pf.product.category === 'Tile');
   const topTags = styleProfile.tags.slice(0, 8).map(t => t.tag);
   if (tileProduct) {
     const tp = tileProduct.product;
-    lines.push(`PRODUCT ${imageLayout.productFigures.indexOf(tileProduct) + 1} — ${tp.brand} ${tp.name}`);
-    if (tp.description) {
-      lines.push(`${tp.description}`);
-    }
-    lines.push(`Apply as feature wall or primary wall finish.`);
+    const tileEmoji = CATEGORY_EMOJI['Tile'] || '';
+    lines.push(`${tileEmoji} PRODUCT ${productNum} — ${tp.name}`);
+    lines.push(``);
+    lines.push(`Use PRODUCT ${productNum} exactly as reference:`);
+    lines.push(`${B}Apply as feature wall behind vanity OR bathtub`);
+    lines.push(`${B}Match the exact tile pattern, color, and texture from the product image`);
+    lines.push(``);
     lines.push(`Do not change wall dimensions.`);
     lines.push(``);
   } else {
@@ -198,31 +197,40 @@ const buildSeedreamPrompt = (
     }
   }
 
-  lines.push(`Other surfaces:`);
+  lines.push(`Other walls:`);
   const hasMarble = topTags.some(t => /marble/i.test(t));
   const hasNeutral = topTags.some(t => /neutral|warm|soft/i.test(t));
   if (hasMarble) {
-    lines.push(`- Walls: warm off-white or marble-toned finish`);
+    lines.push(`${B}Warm off-white or marble-toned finish`);
   } else if (hasNeutral) {
-    lines.push(`- Walls: warm off-white or neutral plaster finish`);
+    lines.push(`${B}Warm off-white or neutral plaster finish`);
   } else {
-    lines.push(`- Walls: clean neutral finish matching the style direction`);
+    lines.push(`${B}Clean neutral finish matching the style direction`);
   }
-  lines.push(`- Floor: large-format light stone or neutral tile, minimal grout`);
+  lines.push(``);
+  lines.push(`Floor:`);
+  lines.push(`${B}Large-format light stone or neutral tile`);
+  lines.push(`${B}Minimal grout`);
   lines.push(``);
 
   if (removeCategories.length > 0) {
     lines.push(`Remove completely: ${removeCategories.join(', ')}. Fill the space seamlessly with matching wall/floor material.`);
     lines.push(``);
   }
+  lines.push(DIV);
 
-  lines.push(`STEP 5 — STYLE DIRECTION`);
+  lines.push(`STEP 5 — ${presetName.toUpperCase()} STYLE DIRECTION`);
   lines.push(``);
 
-  const presetName = styleProfile.presetName || 'Modern';
-  const presetDesc = styleProfile.summary;
-  lines.push(`Style: ${presetName}`);
-  lines.push(`${presetDesc}`);
+  lines.push(`Design principles:`);
+  lines.push(`${B}${topTags.slice(0, 4).join(', ')}`);
+  lines.push(`${B}Soft diffused lighting (3000K)`);
+  lines.push(`${B}Clean lines, functional simplicity`);
+  lines.push(`${B}No clutter`);
+  lines.push(`${B}Max 1 folded towel`);
+  lines.push(`${B}No decorative objects`);
+  lines.push(`${B}No plants`);
+  lines.push(`${B}No artwork`);
   lines.push(``);
 
   if (hasInspiration) {
@@ -235,15 +243,6 @@ const buildSeedreamPrompt = (
     lines.push(``);
   }
 
-  lines.push(`Design principles:`);
-  lines.push(`- ${topTags.slice(0, 4).join(', ')}`);
-  lines.push(`- Soft diffused lighting (3000K)`);
-  lines.push(`- Clean lines, functional simplicity`);
-  lines.push(`- No clutter`);
-  lines.push(`- Max 1-2 folded towels on a rail`);
-  lines.push(`- No decorative objects, no plants, no artwork`);
-  lines.push(``);
-
   if (styleProfile.moodDescription) {
     lines.push(`Homeowner's vision: "${styleProfile.moodDescription}"`);
     lines.push(``);
@@ -254,17 +253,20 @@ const buildSeedreamPrompt = (
   }
 
   lines.push(`Atmosphere: calm, serene, high-end spa aesthetic.`);
-  lines.push(``);
+  lines.push(DIV);
 
   lines.push(`STEP 6 — VERIFY BEFORE GENERATING`);
   lines.push(``);
   lines.push(`Confirm internally:`);
-  lines.push(`- Perspective matches IMAGE 1 exactly`);
-  lines.push(`- Walls, windows, doors unchanged`);
-  lines.push(`- All fixtures scaled realistically to room proportions`);
-  lines.push(`- Tiles follow wall geometry correctly`);
-  lines.push(`- No additional architectural changes`);
-  lines.push(``);
+  const placedCategories = fixtureProducts.map(pf => pf.product.category.toLowerCase());
+  lines.push(`${B}Perspective matches IMAGE 1 exactly`);
+  lines.push(`${B}Walls, windows, doors unchanged`);
+  if (placedCategories.length > 0) {
+    lines.push(`${B}${placedCategories.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(' and ')} scaled realistically`);
+  }
+  lines.push(`${B}Tiles follow wall geometry correctly`);
+  lines.push(`${B}No additional architectural changes`);
+  lines.push(DIV);
 
   lines.push(`OUTPUT`);
   lines.push(``);
