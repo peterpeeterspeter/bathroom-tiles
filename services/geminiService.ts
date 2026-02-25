@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ProjectSpec, Estimate, BudgetTier, FixtureType, MaterialConfig, StyleProfile, DatabaseProduct, ProductAction, WallSpec, ShellAnchor, CameraSpec } from "../types";
+import { generateOpenAIRenovation } from "./openaiImageService";
 const getApiKey = (): string => {
   const key = process.env.API_KEY || process.env.GEMINI_API_KEY || '';
   if (key) return key;
@@ -504,7 +505,7 @@ const CATEGORY_LABELS_NL: Record<string, string> = {
   Mirror: 'Spiegel',
   Lighting: 'Verlichting',
 };
-export type RenovationApproach = "baseline" | "structure_locked" | "two_pass_locked";
+export type RenovationApproach = "baseline" | "structure_locked" | "two_pass_locked" | "openai_gpt_image_1_5";
 const generateLayoutGuardrails = async (
   spec: ProjectSpec,
   roomNotes?: string
@@ -577,7 +578,8 @@ export const generateRenovation = async (
 ): Promise<string> => {
   const model = "gemini-3-pro-image-preview";
   const approach: RenovationApproach = options?.approach || "baseline";
-  const isLockedApproach = approach === "structure_locked" || approach === "two_pass_locked";
+  const isOpenAIApproach = approach === "openai_gpt_image_1_5";
+  const isLockedApproach = approach === "structure_locked" || approach === "two_pass_locked" || isOpenAIApproach;
   let passOneGuardrails = "";
   if (approach === "two_pass_locked" && spec) {
     try {
@@ -756,6 +758,18 @@ ${isLockedApproach ? `FAIL-SAFE RULE:
 ` : ''}
 Generate the final image.
 `;
+  if (isOpenAIApproach) {
+    console.log('[generateRenovation] Starting OpenAI gpt-image-1.5 pipeline...');
+    return generateOpenAIRenovation({
+      bathroomBase64,
+      bathroomMimeType,
+      prompt,
+      styleProfile,
+      selectedProducts,
+      productImages,
+    });
+  }
+
   parts.push({ text: prompt });
   console.log('[generateRenovation] Prompt length:', prompt.length, 'chars');
   try {

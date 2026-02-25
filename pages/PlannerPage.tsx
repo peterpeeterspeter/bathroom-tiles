@@ -337,9 +337,9 @@ export default function PlannerPage() {
       if (abortRef.current?.signal.aborted) throw new Error('timeout');
 
       console.log('[PlannerPage] Step 4: Starting multi-approach render generation + cost estimation in parallel...');
-      setLoadingMessage('Drie renovatievoorstellen genereren — dit kan 2-3 minuten duren...');
+      setLoadingMessage('Vier renovatievoorstellen genereren — dit kan 2-3 minuten duren...');
 
-      const [baselineRender, lockedRender, twoPassRender, est] = await Promise.all([
+      const [baselineRender, lockedRender, twoPassRender, openAiRender, est] = await Promise.all([
         generateRenovation(
           base64,
           mimeType,
@@ -382,6 +382,20 @@ export default function PlannerPage() {
           console.error('Two-pass locked render failed:', err);
           return null;
         }),
+        generateRenovation(
+          base64,
+          mimeType,
+          styleProfile,
+          productActions,
+          selectedProducts,
+          productImageMap,
+          mergedSpec,
+          roomNotes || undefined,
+          { approach: 'openai_gpt_image_1_5' }
+        ).catch((err) => {
+          console.error('OpenAI GPT Image render failed:', err);
+          return null;
+        }),
         calculateRenovationCost(mergedSpec, BudgetTier.STANDARD, styleProfile, materialConfig, allProducts, productActions)
       ]);
 
@@ -389,6 +403,7 @@ export default function PlannerPage() {
         baselineRender ? { id: 'baseline', label: 'Aanpak A', description: 'Creatieve balans', url: baselineRender } : null,
         lockedRender ? { id: 'structure_locked', label: 'Aanpak B', description: 'Ruimte-fidelity (1-pass)', url: lockedRender } : null,
         twoPassRender ? { id: 'two_pass_locked', label: 'Aanpak C', description: '2-pass layout check (hoogste betrouwbaarheid)', url: twoPassRender } : null,
+        openAiRender ? { id: 'openai_gpt_image_1_5', label: 'Aanpak D', description: 'GPT Image 1.5 edit-pipeline', url: openAiRender } : null,
       ].filter((variant): variant is { id: string; label: string; description: string; url: string } => Boolean(variant));
 
       if (variants.length === 0) {
@@ -650,10 +665,10 @@ export default function PlannerPage() {
                   <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
                     <div className="flex items-center gap-3 justify-center">
                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary"><ImageIcon size={18} /></div>
-                      <h3 className="font-bold uppercase tracking-widest text-sm text-neutral-500">Renovatie Visualisaties (3 Aanpakken)</h3>
+                      <h3 className="font-bold uppercase tracking-widest text-sm text-neutral-500">Renovatie Visualisaties (4 Aanpakken)</h3>
                     </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
                       {renderVariants.map((variant) => (
                         <button
                           key={variant.id}
@@ -671,7 +686,7 @@ export default function PlannerPage() {
                       <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-primary/20 rounded-full blur-[40px] -z-10" />
                     </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                       {renderVariants.map((variant) => (
                         <div key={`${variant.id}-thumb`} className="rounded-xl border border-neutral-300/40 p-2 bg-white">
                           <p className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mb-2">{variant.label}</p>
