@@ -28,7 +28,6 @@ const getDirectApiKey = (): string => {
   } catch {}
   return '';
 };
-
 const createClient = (useDirect = false) => {
   if (useDirect) {
     const directKey = getDirectApiKey();
@@ -566,7 +565,6 @@ ${locks || '- Keep shell unchanged.'}
 Risk notes:
 ${risks || '- No extra risks reported.'}`;
 };
-
 export const generateRenovation = async (
   bathroomBase64: string,
   bathroomMimeType: string,
