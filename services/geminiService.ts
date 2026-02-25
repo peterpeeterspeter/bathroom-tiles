@@ -780,9 +780,11 @@ Generate the final image.
     console.log('[generateRenovation] Starting Seedream v5 lite edit pipeline...');
     return generateSeedreamRenovation({
       bathroomImageUrl: options.bathroomImageUrl,
-      prompt,
       styleProfile,
       selectedProducts,
+      productActions,
+      spec,
+      roomNotes,
     });
   }
 
