@@ -61,219 +61,149 @@ const buildSeedreamPrompt = (
   params: Omit<SeedreamRenderParams, 'bathroomImageUrl'>,
   imageLayout: { inspirationCount: number; productFigures: { figureIdx: number; product: DatabaseProduct; action: string }[] }
 ): string => {
-  const { styleProfile, productActions, spec, roomNotes } = params;
-  const hasInspiration = imageLayout.inspirationCount > 0;
+  const { styleProfile, productActions, spec } = params;
   const presetName = styleProfile.presetName || 'Modern';
-  const lines: string[] = [];
-
-  const B = '\t•\t';
-  const DIV = '\n\u2E3B\n';
-
-  lines.push(`ROLE`);
-  lines.push(`You are a professional architectural image editor specializing in high-fidelity bathroom renovations.`);
-  lines.push(DIV);
-
-  lines.push(`\u{1F512} NON-NEGOTIABLE LOCKS`);
-  lines.push(`${B}IMAGE 1 is the single source of truth for room geometry and perspective.`);
-  lines.push(`${B}Camera position, angle, lens distortion, wall boundaries, ceiling height, door and window positions must remain identical.`);
-  lines.push(`${B}Do not move structural elements.`);
-  lines.push(`${B}Do not add or remove walls, windows, or doors.`);
-  lines.push(`${B}Only renovate finishes and fixtures.`);
-  lines.push(``);
-  lines.push(`If any instruction conflicts with IMAGE 1, follow IMAGE 1.`);
-  lines.push(DIV);
-
-  lines.push(`STEP 1 — STUDY THE EXISTING ROOM`);
-  lines.push(``);
-  lines.push(`Carefully analyze IMAGE 1.`);
-  lines.push(`Identify:`);
-  lines.push(`${B}Exact camera viewpoint`);
-  lines.push(`${B}Wall layout`);
-  lines.push(`${B}Floor layout`);
-  lines.push(`${B}Plumbing wall`);
-  lines.push(`${B}Natural light direction`);
-  lines.push(`${B}Existing fixture placement`);
-  lines.push(``);
-  lines.push(`This viewpoint must remain unchanged.`);
-  lines.push(DIV);
-
-  lines.push(`STEP 2 — STRIP TO SHELL`);
-  lines.push(``);
-  lines.push(`Mentally remove:`);
-  const removeList: string[] = ['Existing tiles', 'Decorative elements'];
+  const topTags = styleProfile.tags.slice(0, 6).map(t => t.tag);
   const categories = ['Vanity', 'Bathtub', 'Shower', 'Toilet', 'Faucet', 'Mirror', 'Lighting'];
-  for (const cat of categories) {
-    const action = productActions[cat] || 'replace';
-    if (action !== 'keep') {
-      removeList.push(`Existing ${cat.toLowerCase()}`);
-    }
-  }
-  for (const item of removeList) {
-    lines.push(`${B}${item}`);
-  }
-  lines.push(``);
-
-  const keepItems: string[] = [];
-  for (const cat of categories) {
-    if (productActions[cat] === 'keep') keepItems.push(cat.toLowerCase());
-  }
-  lines.push(`Keep:`);
-  lines.push(`${B}Same room shape`);
-  lines.push(`${B}Same layout`);
-  lines.push(`${B}Same plumbing locations`);
-  lines.push(`${B}Same perspective`);
-  if (keepItems.length > 0) {
-    lines.push(`${B}Existing ${keepItems.join(', ')} exactly as in IMAGE 1`);
-  }
-  lines.push(DIV);
-
-  lines.push(`STEP 3 — PLACE NEW FIXTURES (USE PRODUCT REFERENCES EXACTLY)`);
-  lines.push(``);
-
   const fixtureProducts = imageLayout.productFigures.filter(pf => pf.product.category !== 'Tile');
   const tileProduct = imageLayout.productFigures.find(pf => pf.product.category === 'Tile');
+  const D = '\n\u2E3B\n';
+  const B = '\t\u2022\t';
+
+  const removeItems = categories.filter(c => (productActions[c] || 'replace') !== 'keep');
+  const keepItems = categories.filter(c => productActions[c] === 'keep');
+
+  let prompt = `ROLE
+You are a professional architectural image editor specializing in high-fidelity bathroom renovations.
+${D}
+\uD83D\uDD12 NON-NEGOTIABLE LOCKS
+${B}IMAGE 1 is the single source of truth for room geometry and perspective.
+${B}Camera position, angle, lens distortion, wall boundaries, ceiling height, door and window positions must remain identical.
+${B}Do not move structural elements.
+${B}Do not add or remove walls, windows, or doors.
+${B}Only renovate finishes and fixtures.
+
+If any instruction conflicts with IMAGE 1, follow IMAGE 1.
+${D}
+STEP 1 \u2014 STUDY THE EXISTING ROOM
+
+Carefully analyze IMAGE 1.
+Identify:
+${B}Exact camera viewpoint
+${B}Wall layout
+${B}Floor layout
+${B}Plumbing wall
+${B}Natural light direction
+${B}Existing fixture placement
+
+This viewpoint must remain unchanged.
+${D}
+STEP 2 \u2014 STRIP TO SHELL
+
+Mentally remove:
+${B}Existing tiles
+${removeItems.map(c => `${B}${c}`).join('\n')}
+${B}Decorative elements
+
+Keep:
+${B}Same room shape
+${B}Same layout
+${B}Same plumbing locations
+${B}Same perspective${keepItems.length > 0 ? `\n${B}Existing ${keepItems.join(', ').toLowerCase()} exactly as in IMAGE 1` : ''}
+${D}
+STEP 3 \u2014 PLACE NEW FIXTURES (USE PRODUCT REFERENCES EXACTLY)
+`;
 
   let productNum = 1;
   for (const pf of fixtureProducts) {
     const p = pf.product;
     const emoji = CATEGORY_EMOJI[p.category] || '';
     const placement = getFixturePlacement(spec, p.category);
+    const placementLine = placement
+      ? placement
+      : pf.action === 'add'
+        ? `Place in the most logical location in IMAGE 1.`
+        : `Place where original ${p.category.toLowerCase()} existed in IMAGE 1.`;
 
-    lines.push(`${emoji} PRODUCT ${productNum} — ${p.name}`);
-    lines.push(``);
-    lines.push(`Use PRODUCT ${productNum} exactly as reference:`);
-    if (placement) {
-      lines.push(`${placement}`);
-    } else if (pf.action === 'add') {
-      lines.push(`Install in the most logical location based on room layout in IMAGE 1.`);
-    } else {
-      lines.push(`Place where the original ${p.category.toLowerCase()} existed in IMAGE 1.`);
-    }
-    lines.push(`Maintain realistic scale and plumbing alignment.`);
-    lines.push(``);
-    lines.push(`Do not change room proportions to fit it — scale correctly.`);
-    lines.push(``);
+    prompt += `
+${emoji} PRODUCT ${productNum} \u2014 ${p.name}
+
+Use PRODUCT ${productNum} exactly as reference:
+${B}${placementLine}
+${B}Maintain realistic scale and plumbing alignment.
+
+Do not change room proportions to fit it \u2014 scale correctly.
+`;
     productNum++;
   }
 
-  const removeCategories: string[] = [];
-  for (const cat of [...categories, 'Tile']) {
-    const action = productActions[cat] || 'replace';
-    const hasProductFigure = imageLayout.productFigures.some(pf => pf.product.category === cat);
-    if (hasProductFigure || action === 'keep') continue;
-    if (action === 'remove') {
-      removeCategories.push(cat.toLowerCase());
-    }
-  }
-  lines.push(DIV);
+  prompt += `${D}
+STEP 4 \u2014 APPLY MATERIALS`;
 
-  lines.push(`STEP 4 — APPLY MATERIALS`);
-  lines.push(``);
-
-  const topTags = styleProfile.tags.slice(0, 8).map(t => t.tag);
   if (tileProduct) {
-    const tp = tileProduct.product;
-    const tileEmoji = CATEGORY_EMOJI['Tile'] || '';
-    lines.push(`${tileEmoji} PRODUCT ${productNum} — ${tp.name}`);
-    lines.push(``);
-    lines.push(`Use PRODUCT ${productNum} exactly as reference:`);
-    lines.push(`${B}Apply as feature wall behind vanity OR bathtub`);
-    lines.push(`${B}Match the exact tile pattern, color, and texture from the product image`);
-    lines.push(``);
-    lines.push(`Do not change wall dimensions.`);
-    lines.push(``);
+    prompt += `
+
+\uD83E\uDDF1 PRODUCT ${productNum} \u2014 ${tileProduct.product.name}
+
+Use PRODUCT ${productNum} exactly as reference:
+${B}Apply as feature wall behind vanity OR bathtub
+${B}Match exact tile pattern, color, and texture
+
+Do not change wall dimensions.`;
   } else {
     const tileAction = productActions['Tile'] || 'replace';
     if (tileAction === 'replace') {
-      const hasTileTags = topTags.some(t => /tile|marble|stone|ceramic|zellige/i.test(t));
-      if (hasTileTags) {
-        const tileTags = topTags.filter(t => /tile|marble|stone|ceramic|zellige|pattern|texture/i.test(t)).join(', ');
-        lines.push(`Wall tiles: replace with ${tileTags || 'modern tiles matching the renovation style'}.`);
-      } else {
-        lines.push(`Wall tiles: replace with modern tiles matching the renovation style.`);
-      }
-      lines.push(`Do not change wall dimensions.`);
-      lines.push(``);
+      const tileTags = topTags.filter(t => /tile|marble|stone|ceramic|zellige|pattern/i.test(t));
+      prompt += `
+
+Wall tiles: replace with ${tileTags.length > 0 ? tileTags.join(', ') : 'modern tiles matching the style'}.
+Do not change wall dimensions.`;
     }
   }
 
-  lines.push(`Other walls:`);
   const hasMarble = topTags.some(t => /marble/i.test(t));
-  const hasNeutral = topTags.some(t => /neutral|warm|soft/i.test(t));
-  if (hasMarble) {
-    lines.push(`${B}Warm off-white or marble-toned finish`);
-  } else if (hasNeutral) {
-    lines.push(`${B}Warm off-white or neutral plaster finish`);
-  } else {
-    lines.push(`${B}Clean neutral finish matching the style direction`);
-  }
-  lines.push(``);
-  lines.push(`Floor:`);
-  lines.push(`${B}Large-format light stone or neutral tile`);
-  lines.push(`${B}Minimal grout`);
-  lines.push(``);
+  prompt += `
 
-  if (removeCategories.length > 0) {
-    lines.push(`Remove completely: ${removeCategories.join(', ')}. Fill the space seamlessly with matching wall/floor material.`);
-    lines.push(``);
-  }
-  lines.push(DIV);
+Other walls:
+${B}${hasMarble ? 'Warm off-white or marble-toned finish' : 'Warm off-white neutral plaster finish'}
 
-  lines.push(`STEP 5 — ${presetName.toUpperCase()} STYLE DIRECTION`);
-  lines.push(``);
+Floor:
+${B}Large-format light stone tile
+${B}Minimal grout
+${D}
+STEP 5 \u2014 ${presetName.toUpperCase()} STYLE DIRECTION
 
-  lines.push(`Design principles:`);
-  lines.push(`${B}${topTags.slice(0, 4).join(', ')}`);
-  lines.push(`${B}Soft diffused lighting (3000K)`);
-  lines.push(`${B}Clean lines, functional simplicity`);
-  lines.push(`${B}No clutter`);
-  lines.push(`${B}Max 1 folded towel`);
-  lines.push(`${B}No decorative objects`);
-  lines.push(`${B}No plants`);
-  lines.push(`${B}No artwork`);
-  lines.push(``);
+Design principles:
+${B}${topTags.slice(0, 3).join(', ')}
+${B}Soft diffused lighting (3000K)
+${B}Clean lines
+${B}Functional simplicity
+${B}No clutter
+${B}Max 1 folded towel
+${B}No decorative objects
+${B}No plants
+${B}No artwork
 
-  if (hasInspiration) {
-    if (imageLayout.inspirationCount === 1) {
-      lines.push(`Use the style visible in Figure 2 as additional aesthetic reference.`);
-    } else {
-      const figs = Array.from({ length: imageLayout.inspirationCount }, (_, i) => `Figure ${i + 2}`).join(', ');
-      lines.push(`Use the styles visible in ${figs} as additional aesthetic references.`);
-    }
-    lines.push(``);
-  }
+Atmosphere: calm, serene, high-end spa aesthetic.
+${D}
+STEP 6 \u2014 VERIFY BEFORE GENERATING
 
-  if (styleProfile.moodDescription) {
-    lines.push(`Homeowner's vision: "${styleProfile.moodDescription}"`);
-    lines.push(``);
-  }
-  if (roomNotes) {
-    lines.push(`Homeowner notes: ${roomNotes}`);
-    lines.push(``);
-  }
+Confirm internally:
+${B}Perspective matches IMAGE 1 exactly
+${B}Walls, windows, doors unchanged
+${B}${fixtureProducts.length > 0 ? fixtureProducts.map(pf => pf.product.category).join(' and ') + ' scaled realistically' : 'All fixtures scaled realistically'}
+${B}Tiles follow wall geometry correctly
+${B}No additional architectural changes
+${D}
+OUTPUT
 
-  lines.push(`Atmosphere: calm, serene, high-end spa aesthetic.`);
-  lines.push(DIV);
+Generate a photorealistic, magazine-quality ${presetName} bathroom renovation of IMAGE 1 using the specified products.
+Return IMAGE only.`;
 
-  lines.push(`STEP 6 — VERIFY BEFORE GENERATING`);
-  lines.push(``);
-  lines.push(`Confirm internally:`);
-  const placedCategories = fixtureProducts.map(pf => pf.product.category.toLowerCase());
-  lines.push(`${B}Perspective matches IMAGE 1 exactly`);
-  lines.push(`${B}Walls, windows, doors unchanged`);
-  if (placedCategories.length > 0) {
-    lines.push(`${B}${placedCategories.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(' and ')} scaled realistically`);
-  }
-  lines.push(`${B}Tiles follow wall geometry correctly`);
-  lines.push(`${B}No additional architectural changes`);
-  lines.push(DIV);
+  const wordCount = prompt.split(/\s+/).filter(w => w.length > 0).length;
+  console.log(`[Seedream] Prompt word count: ${wordCount}`);
 
-  lines.push(`OUTPUT`);
-  lines.push(``);
-  lines.push(`Generate a photorealistic, magazine-quality ${presetName} bathroom renovation of IMAGE 1 using the specified products.`);
-  lines.push(`Return IMAGE only.`);
-
-  return lines.join('\n');
+  return prompt;
 };
 
 export const generateSeedreamRenovation = async (params: SeedreamRenderParams): Promise<string> => {
