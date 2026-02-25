@@ -17,6 +17,8 @@ export default defineConfig(({ mode }) => {
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || ''),
         'process.env.GEMINI_BASE_URL': JSON.stringify(env.GEMINI_BASE_URL || env.VITE_GEMINI_BASE_URL || ''),
         'process.env.GOOGLE_AI_API_KEY': JSON.stringify(env.GOOGLE_AI_API_KEY || ''),
+        'process.env.FAL_KEY': JSON.stringify(env.FAL_KEY || ''),
+        'process.env.OPENAI_API_KEY': JSON.stringify(env.OPENAI_API_KEY || ''),
       },
       resolve: {
         alias: {

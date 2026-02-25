@@ -39,10 +39,22 @@ The AI planner workflow involves:
     -   Photos are compressed to 1500px before API calls.
     -   Product reference images (up to 14) are sent as inline base64 parts.
 
+### Multi-Approach Rendering
+The planner generates up to 5 renovation renders in parallel, each using a different approach:
+-   **Aanpak A (baseline)**: Standard INSTRUCT prompt via Gemini proxy.
+-   **Aanpak B (structure_locked)**: Locked approach with lower temperature (0.15) for higher fidelity.
+-   **Aanpak C (two_pass_locked)**: Two-pass pipeline — first a text-only layout guardrail check, then the locked render.
+-   **Aanpak D (openai_gpt_image_1_5)**: OpenAI GPT Image 1.5 edit pipeline (requires `OPENAI_API_KEY`).
+-   **Aanpak E (seedream_5_lite_edit)**: ByteDance Seedream v5 Lite via fal.ai (requires `FAL_KEY`, gated by `VITE_ENABLE_SEEDREAM_LITE=true`). Uses URL-based image input from Supabase signed URLs.
+All approaches are fault-tolerant — if one fails, the others still return. The user sees all successful variants.
+
 ### AI API Configuration and Routing
--   **LaoZhang proxy (`GEMINI_API_KEY`, `GEMINI_BASE_URL`)**: Exclusively for `generateRenovation` (image generation).
+-   **LaoZhang proxy (`GEMINI_API_KEY`, `GEMINI_BASE_URL`)**: For `generateRenovation` image generation (approaches A/B/C).
 -   **Google direct API (`GOOGLE_AI_API_KEY`)**: First choice for all text/analysis calls, with the proxy as fallback.
+-   **OpenAI API (`OPENAI_API_KEY`)**: For GPT Image 1.5 edit pipeline (approach D).
+-   **fal.ai (`FAL_KEY`)**: For Seedream v5 Lite edit pipeline (approach E). Endpoint: `https://fal.run/fal-ai/bytedance/seedream/v5/lite/edit`.
 -   Routing uses `withRetry` with `'direct-first'` as the default (Google API first, proxy fallback) or `'proxy-only'` for specific functions.
+-   All API keys are injected into the client bundle via `vite.config.ts` `define` block.
 
 ### Other Technical Implementations
 -   **PDF Generation**: `jspdf` and `html2canvas` are used to create detailed PDF dossiers for projects.
@@ -59,4 +71,6 @@ The AI planner workflow involves:
 -   **jspdf**: JavaScript library for generating PDFs client-side.
 -   **html2canvas**: Library to take screenshots of webpages or parts of them, used for PDF generation.
 -   **react-router-dom**: For client-side routing in the React application.
+-   **fal.ai**: AI inference platform used for Seedream v5 Lite image editing pipeline.
+-   **OpenAI API**: For GPT Image 1.5 edit pipeline (approach D).
 -   **rorix.nl CDN**: Hosts product images directly.
