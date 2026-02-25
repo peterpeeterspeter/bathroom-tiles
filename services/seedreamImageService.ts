@@ -35,14 +35,11 @@ const toDataUrl = async (url: string): Promise<string> => {
   return `data:${blob.type || 'image/png'};base64,${base64}`;
 };
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  Vanity: '\u{1FAB5}', Bathtub: '\u{1F6C1}', Shower: '\u{1F6BF}', Toilet: '\u{1F6BD}',
-  Faucet: '\u{1F6B0}', Mirror: '\u{1FA9E}', Tile: '\u{1F9F1}', Lighting: '\u{1F4A1}',
-};
-
 const WALL_LABELS = ['far wall', 'right wall', 'wall behind camera', 'left wall'];
 
-const getFixturePlacement = (spec: ProjectSpec | undefined, category: string): string => {
+const SEP = '----------------------------------------------------';
+
+const getPlacementHint = (spec: ProjectSpec | undefined, category: string): string => {
   if (!spec?.existingFixtures) return '';
   const typeMap: Record<string, string> = {
     Vanity: 'SINK', Bathtub: 'BATHTUB', Shower: 'SHOWER', Toilet: 'TOILET',
@@ -51,10 +48,8 @@ const getFixturePlacement = (spec: ProjectSpec | undefined, category: string): s
   const fixtureType = typeMap[category];
   if (!fixtureType) return '';
   const fixture = spec.existingFixtures.find(f => f.type === fixtureType);
-  if (!fixture) return '';
-  const wallLabel = fixture.wallIndex !== undefined ? WALL_LABELS[fixture.wallIndex] || `wall ${fixture.wallIndex}` : '';
-  if (wallLabel) return `Place where the original ${category.toLowerCase()} exists on the ${wallLabel} in IMAGE 1.`;
-  return `Place where the original ${category.toLowerCase()} exists in IMAGE 1.`;
+  if (!fixture || fixture.wallIndex === undefined) return '';
+  return WALL_LABELS[fixture.wallIndex] || '';
 };
 
 const buildSeedreamPrompt = (
@@ -63,142 +58,104 @@ const buildSeedreamPrompt = (
 ): string => {
   const { styleProfile, productActions, spec } = params;
   const presetName = styleProfile.presetName || 'Modern';
-  const topTags = styleProfile.tags.slice(0, 6).map(t => t.tag);
-  const categories = ['Vanity', 'Bathtub', 'Shower', 'Toilet', 'Faucet', 'Mirror', 'Lighting'];
+  const topTags = styleProfile.tags.slice(0, 4).map(t => t.tag);
   const fixtureProducts = imageLayout.productFigures.filter(pf => pf.product.category !== 'Tile');
   const tileProduct = imageLayout.productFigures.find(pf => pf.product.category === 'Tile');
-  const D = '\n\u2E3B\n';
-  const B = '\t\u2022\t';
+  const keepCategories = ['Vanity', 'Bathtub', 'Shower', 'Toilet', 'Faucet', 'Mirror', 'Lighting']
+    .filter(c => productActions[c] === 'keep');
 
-  const removeItems = categories.filter(c => (productActions[c] || 'replace') !== 'keep');
-  const keepItems = categories.filter(c => productActions[c] === 'keep');
-
-  let prompt = `ROLE
-You are a professional architectural image editor specializing in high-fidelity bathroom renovations.
-${D}
-\uD83D\uDD12 NON-NEGOTIABLE LOCKS
-${B}IMAGE 1 is the single source of truth for room geometry and perspective.
-${B}Camera position, angle, lens distortion, wall boundaries, ceiling height, door and window positions must remain identical.
-${B}Do not move structural elements.
-${B}Do not add or remove walls, windows, or doors.
-${B}Only renovate finishes and fixtures.
-
-If any instruction conflicts with IMAGE 1, follow IMAGE 1.
-${D}
-STEP 1 \u2014 STUDY THE EXISTING ROOM
-
-Carefully analyze IMAGE 1.
-Identify:
-${B}Exact camera viewpoint
-${B}Wall layout
-${B}Floor layout
-${B}Plumbing wall
-${B}Natural light direction
-${B}Existing fixture placement
-
-This viewpoint must remain unchanged.
-${D}
-STEP 2 \u2014 STRIP TO SHELL
-
-Mentally remove:
-${B}Existing tiles
-${removeItems.map(c => `${B}${c}`).join('\n')}
-${B}Decorative elements
-
-Keep:
-${B}Same room shape
-${B}Same layout
-${B}Same plumbing locations
-${B}Same perspective${keepItems.length > 0 ? `\n${B}Existing ${keepItems.join(', ').toLowerCase()} exactly as in IMAGE 1` : ''}
-${D}
-STEP 3 \u2014 PLACE NEW FIXTURES (USE PRODUCT REFERENCES EXACTLY)
-`;
-
-  let productNum = 1;
+  let productLines = '';
   for (const pf of fixtureProducts) {
-    const p = pf.product;
-    const emoji = CATEGORY_EMOJI[p.category] || '';
-    const placement = getFixturePlacement(spec, p.category);
-    const placementLine = placement
-      ? placement
-      : pf.action === 'add'
-        ? `Place in the most logical location in IMAGE 1.`
-        : `Place where original ${p.category.toLowerCase()} existed in IMAGE 1.`;
+    const cat = pf.product.category;
+    const imgNum = pf.figureIdx;
+    const wallHint = getPlacementHint(spec, cat);
+    const placeLine = pf.action === 'add'
+      ? 'Install in most logical position.'
+      : wallHint
+        ? `Maintain same ${wallHint} position.`
+        : 'Place in original position.';
 
-    prompt += `
-${emoji} PRODUCT ${productNum} \u2014 ${p.name}
-
-Use PRODUCT ${productNum} exactly as reference:
-${B}${placementLine}
-${B}Maintain realistic scale and plumbing alignment.
-
-Do not change room proportions to fit it \u2014 scale correctly.
+    productLines += `
+\u2022 ${cat} = Image ${imgNum}
+  ${placeLine}
+  Scale realistically to room size.
 `;
-    productNum++;
   }
 
-  prompt += `${D}
-STEP 4 \u2014 APPLY MATERIALS`;
-
+  let materialLines = '';
   if (tileProduct) {
-    prompt += `
-
-\uD83E\uDDF1 PRODUCT ${productNum} \u2014 ${tileProduct.product.name}
-
-Use PRODUCT ${productNum} exactly as reference:
-${B}Apply as feature wall behind vanity OR bathtub
-${B}Match exact tile pattern, color, and texture
-
-Do not change wall dimensions.`;
+    materialLines += `- Apply Image ${tileProduct.figureIdx} as feature wall tile behind vanity or bathtub.\n`;
   } else {
-    const tileAction = productActions['Tile'] || 'replace';
-    if (tileAction === 'replace') {
-      const tileTags = topTags.filter(t => /tile|marble|stone|ceramic|zellige|pattern/i.test(t));
-      prompt += `
-
-Wall tiles: replace with ${tileTags.length > 0 ? tileTags.join(', ') : 'modern tiles matching the style'}.
-Do not change wall dimensions.`;
+    const tileTags = topTags.filter(t => /tile|marble|stone|ceramic|zellige/i.test(t));
+    if (tileTags.length > 0) {
+      materialLines += `- Replace wall tiles with ${tileTags.join(', ')}.\n`;
+    } else {
+      materialLines += `- Replace wall tiles with modern tiles matching the style.\n`;
     }
   }
-
   const hasMarble = topTags.some(t => /marble/i.test(t));
-  prompt += `
+  materialLines += `- ${hasMarble ? 'Warm off-white or marble-toned' : 'Smooth warm plaster on non-tiled'} walls.\n`;
+  materialLines += `- Large-format neutral floor tiles.\n`;
 
-Other walls:
-${B}${hasMarble ? 'Warm off-white or marble-toned finish' : 'Warm off-white neutral plaster finish'}
+  const prompt = `You are redesigning Image 1 while preserving its exact architecture.
 
-Floor:
-${B}Large-format light stone tile
-${B}Minimal grout
-${D}
-STEP 5 \u2014 ${presetName.toUpperCase()} STYLE DIRECTION
+PRIORITY ORDER:
+1. Room geometry and camera fidelity (highest priority)
+2. Product replacement accuracy
+3. Style and material redesign (surface level only)
 
-Design principles:
-${B}${topTags.slice(0, 3).join(', ')}
-${B}Soft diffused lighting (3000K)
-${B}Clean lines
-${B}Functional simplicity
-${B}No clutter
-${B}Max 1 folded towel
-${B}No decorative objects
-${B}No plants
-${B}No artwork
+${SEP}
 
-Atmosphere: calm, serene, high-end spa aesthetic.
-${D}
-STEP 6 \u2014 VERIFY BEFORE GENERATING
+ARCHITECTURE LOCK (NON-NEGOTIABLE)
 
-Confirm internally:
-${B}Perspective matches IMAGE 1 exactly
-${B}Walls, windows, doors unchanged
-${B}${fixtureProducts.length > 0 ? fixtureProducts.map(pf => pf.product.category).join(' and ') + ' scaled realistically' : 'All fixtures scaled realistically'}
-${B}Tiles follow wall geometry correctly
-${B}No additional architectural changes
-${D}
-OUTPUT
+Image 1 defines:
+- Camera position and lens distortion
+- Wall positions and angles
+- Ceiling height
+- Window and door size and placement
+- Floor layout
 
-Generate a photorealistic, magazine-quality ${presetName} bathroom renovation of IMAGE 1 using the specified products.
-Return IMAGE only.`;
+These must remain IDENTICAL.
+Do not move or resize architectural elements.${keepCategories.length > 0 ? `\nKeep existing ${keepCategories.join(', ').toLowerCase()} unchanged.` : ''}
+
+${SEP}
+
+PRODUCT REPLACEMENTS
+
+Use reference images exactly for design only:
+${productLines}
+Do not move fixtures to different walls.
+
+${SEP}
+
+STYLE REDESIGN (SURFACE LEVEL ONLY)
+
+Apply the user\u2019s style preference as material and mood only.
+Do NOT change layout.
+
+Style direction:
+${presetName}. ${topTags.join('. ')}.
+Soft diffused 3000K lighting.
+Minimal and calm atmosphere.
+
+Material updates:
+${materialLines}
+Maximum 1 folded towel.
+No plants. No artwork. No decorative clutter.
+
+${SEP}
+
+CRITICAL CONSTRAINTS
+
+The result must clearly be the SAME bathroom as Image 1.
+Only improved finishes and updated fixtures.
+No layout redesign.
+No perspective change.
+No structural alteration.
+
+Photorealistic.
+Magazine-quality.
+Return image only.`;
 
   const wordCount = prompt.split(/\s+/).filter(w => w.length > 0).length;
   console.log(`[Seedream] Prompt word count: ${wordCount}`);

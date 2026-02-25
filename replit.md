@@ -39,14 +39,13 @@ The AI planner workflow involves:
     -   Photos are compressed to 1500px before API calls.
     -   Product reference images (up to 14) are sent as inline base64 parts.
 
-### Multi-Approach Rendering
-The planner generates up to 5 renovation renders in parallel, each using a different approach:
--   **Aanpak A (baseline)**: Standard INSTRUCT prompt via Gemini proxy.
--   **Aanpak B (structure_locked)**: Locked approach with lower temperature (0.15) for higher fidelity.
--   **Aanpak C (two_pass_locked)**: Two-pass pipeline — first a text-only layout guardrail check, then the locked render.
--   **Aanpak D (openai_gpt_image_1_5)**: OpenAI GPT Image 1.5 edit pipeline (requires `OPENAI_API_KEY`).
--   **Aanpak E (seedream_5_lite_edit)**: ByteDance Seedream v5 Lite via fal.ai (requires `FAL_KEY`, gated by `VITE_ENABLE_SEEDREAM_LITE=true`). Uses URL-based image input from Supabase signed URLs. Prompt uses photographic/architectural language and example-based editing: inspiration images are framed as style exemplars ("apply the style in Figure 2 to Figure 1") leveraging Seedream's ability to infer transformations from before/after pairs. Image ordering: Figure 1 = bathroom photo, Figure 2-N = inspiration images (up to 3, uploaded to Supabase for signed URLs), Figure N+1... = product images (CDN URLs). The `naturalDescription` from analysis is passed as spatial context. Inspiration images (originally base64 data URLs from user uploads) are uploaded to Supabase storage during the Seedream prep phase to obtain HTTP signed URLs. Prompt follows a 6-step cognitive structure: ROLE → NON-NEGOTIABLE LOCKS (IMAGE 1 = source of truth) → STEP 1 STUDY (analyze room geometry with naturalDescription) → STEP 2 STRIP (mentally remove fixtures) → STEP 3 PLACE FIXTURES (detailed per-product blocks with descriptions, placement context from fixture analysis, and scale instructions) → STEP 4 MATERIALS (tiles, wall/floor finishes from style tags) → STEP 5 STYLE (design principles, mood, no-clutter rules) → STEP 6 VERIFY (self-check before generating) → OUTPUT.
-All approaches are fault-tolerant — if one fails, the others still return. The user sees all successful variants.
+### Seedream-Only Rendering
+Only Seedream v5 Lite (fal.ai) is active. All other approaches (Gemini A/B/C, OpenAI D) are disabled.
+-   **Seedream v5 Lite edit** (`FAL_KEY`, `VITE_ENABLE_SEEDREAM_LITE=true`): Uses flat, direct edit-style prompt optimized for Seedream's behavior. No step-by-step reasoning scaffolding — Seedream performs better with short, direct instructions.
+-   **Prompt structure**: PRIORITY ORDER (geometry > products > style) → ARCHITECTURE LOCK (Image 1 defines room) → PRODUCT REPLACEMENTS (• Category = Image N, placement, scale) → STYLE REDESIGN (surface-level materials and mood only) → CRITICAL CONSTRAINTS (same bathroom, photorealistic). Target ~250 words.
+-   **Image ordering**: Image 1 = bathroom photo (ground truth), Image 2+ = product reference images (CDN URLs). Inspiration images uploaded to Supabase for signed URLs if present.
+-   **Key Seedream behaviors**: Multi-image inputs are blended unless roles/priority are explicitly defined. Short prompts (<600 words) produce better results. No "mentally remove" or "verify internally" blocks — direct edit instructions only.
+-   Timeout: 6 minutes (TIMEOUT_MS=360_000). Generates 2 parallel renders.
 
 ### AI API Configuration and Routing
 -   **LaoZhang proxy (`GEMINI_API_KEY`, `GEMINI_BASE_URL`)**: For `generateRenovation` image generation (approaches A/B/C).
