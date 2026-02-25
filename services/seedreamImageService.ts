@@ -175,7 +175,7 @@ export const generateSeedreamRenovation = async (params: SeedreamRenderParams): 
     num_images: 1,
     max_images: 1,
     enable_safety_checker: true,
-    enhance_prompt_mode: 'fast' as const,
+    enhance_prompt_mode: 'standard' as const,
   };
 
   const response = await fetch(FAL_ENDPOINT, {
