@@ -1,0 +1,74 @@
+What to Improve
+1) Reduce instruction collisions in style section
+You still have conflicting style intents:
+
+Modern Klassiek + marble/brushed nickel/spa
+
+Homeowner vision asks landelijke + retro + eiken meubel
+
+This causes model averaging. Pick a primary style and make the other “secondary accents only.”
+
+2) Remove uncertain fixture-location claims
+You repeatedly say “place where original X existed,” but your own room analysis may not confidently establish every fixture location (e.g., toilet/bathtub might be occluded or ambiguous).
+Better: “place at existing plumbing-compatible position nearest original function zone.”
+
+Why this matters: forcing exact placement on uncertain detections causes structural drift or invented geometry.
+
+3) Limit product count per pass
+You ask exact replacement for 5 products in one shot. That’s still heavy.
+The better-performing pattern is usually 2–3 hard replacements + rest style/material constraints (or staged editing).
+
+This aligns with current pipeline risk: many category-level replacement instructions are generated at once in scope lines.
+
+4) Shorten and sharpen Step 1 room-analysis prose
+The long narrative paragraph is useful, but too verbose. Compress to hard facts:
+
+camera lock
+
+wall topology
+
+plumbing wall
+
+visible fixed anchors
+
+occluded zones
+
+Long prose increases chance of semantic drift.
+
+5) Add explicit occlusion guard
+Add one line:
+
+“If an area is not visible in IMAGE 1, do not invent architectural details.”
+
+You already do this in your app’s internal prompt logic and it helps fidelity.
+
+6) Make hierarchy explicit (priority ladder)
+Add at top:
+
+Geometry/camera locks
+
+Plumbing realism + fixture feasibility
+
+Product fidelity
+
+Materials/style mood
+
+Without this, style and product requests can overpower geometry.
+
+7) Clarify Figure mapping deterministically
+Your prompt assumes Product 1..5 ↔ Figure 2..6. Keep this, but enforce deterministic input ordering in orchestration (or restate mapping at end as a compact table).
+This is important because current pipeline dynamically appends product references and labels.。
+
+8) Avoid “marble everywhere” with strict structural lock
+“Wall tiles replace with subtle patterns, marble” + “other walls warm off-white or marble-toned” is broad and can over-transform.
+Constrain to specific walls/zones only (e.g., feature wall + wet zone).
+
+9) Keep Seedream wrapper from reinterpreting too much
+Your Seedream path wraps the base prompt again with additional instructions (“You are editing Figure 1…” etc.), which can dilute your crafted hierarchy if too verbose.
+
+10) Add one hard fail-safe sentence in OUTPUT
+Something like:
+
+“If all constraints cannot be satisfied simultaneously, prefer minimal faithful edit preserving IMAGE 1 geometry.”
+
+This improves worst-case behavior significantly.
