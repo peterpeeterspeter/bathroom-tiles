@@ -1,0 +1,327 @@
+Overview
+One plan covering all pending changes to the Seedream pipeline. Iterates on existing code — no new service files, no pipeline restructuring. Three workstreams:
+A. Prompt & Image Governance — Compress prompt, add image budget
+B. User Input Fields — moodDescription (Step 1), roomNotes (Step 2) → prompt + lead data
+C. Product Actions UI — Behouden/Vervangen/Verwijderen per category → prompt + lead data
+Plus: render logging, config hardening.
+
+A. Prompt & Image Governance
+A1. Compress buildSeedreamPrompt() (~400 → ~200 words)
+File: services/seedreamImageService.ts
+Remove redundancy. Same constraint is currently said 3x:
+
+ARCHITECTURE LOCK: "Do not move or resize"
+PRODUCTS: "Do not move fixtures to different walls"
+CRITICAL CONSTRAINTS: "No layout redesign. No perspective change."
+
+Also remove: PRIORITY ORDER header (implicit), separator lines, verbose STYLE filler, VERIFY step.
+Compressed template:
+ARCHITECTURE LOCK — Image 1 is ground truth.
+Keep all walls, windows, doors, ceiling, and floor geometry IDENTICAL.
+Same camera position. Same perspective. Same lens distortion.
+Do not move, resize, or add structural elements.
+If any instruction conflicts with Image 1, follow Image 1.
+{keepLine}
+
+REPLACEMENTS:
+{productLines}
+
+MATERIALS:
+{materialLines}
+
+STYLE: {presetName}. {topTags}.
+{moodDescription}
+Soft 3000K lighting. No clutter. No plants. No artwork.
+{roomNotes}
+
+Photorealistic. Magazine-quality. Return image only.
+~150-200 words. {moodDescription} and {roomNotes} are the new user input fields (from workstream B).
+A2. Image Budget: Priority Ordering + Inspiration Demotion
+File: services/seedreamImageService.ts → generateSeedreamRenovation()
+Current order: [room, ...inspiration(0-3), ...products(arbitrary)]
+New order: [room, ...products(by priority), ...inspiration(0-1)]
+Products are what Seedream needs to render. Inspiration is mood. Earlier slots get more attention.
+typescriptconst PRODUCT_PRIORITY = ['Vanity', 'Bathtub', 'Shower', 'Toilet', 'Tile', 'Faucet', 'Mirror', 'Lighting'];
+
+// Sort products by visual impact before assigning image slots
+const sorted = [...eligibleProducts].sort((a, b) =>
+  PRODUCT_PRIORITY.indexOf(a.product.category) - PRODUCT_PRIORITY.indexOf(b.product.category)
+);
+
+// Build URLs: room first, then sorted products, then max 1 inspiration last
+const imageUrls = [roomPhotoUrl, ...sorted.map(p => p.url)];
+if (inspirationUrls[0]) imageUrls.push(inspirationUrls[0]); // max 1
+if (imageUrls.length > 10) imageUrls.splice(10);
+Assign figureIdx AFTER sorting so prompt "Image N" always matches URL position.
+Cap inspiration from 3 → 1. Inspiration still serves dual purpose:
+
+Analyzed by Gemini for style tags (Step 1, unchanged)
+Passed to Seedream as final visual reference (lower priority than products)
+
+
+B. User Input Fields
+B1. moodDescription textarea in Step 1
+File: components/StyleInspiration.tsx
+Add a textarea between the preset selection and the reference images section. Label: "Beschrijf uw droomkamer" (Describe your dream bathroom).
+tsx<textarea
+  value={moodDescription}
+  onChange={e => setMoodDescription(e.target.value)}
+  placeholder="Bijv: Warme rustige sfeer met natuurlijke materialen, matte zwarte accenten, veel licht..."
+  maxLength={500}
+  rows={3}
+  className="w-full bg-surface border-2 border-neutral-300/50 rounded-xl p-4 text-sm font-bold outline-none focus:border-primary resize-none"
+/>
+Data flow:
+
+User types description → moodDescription state
+Passed through onStyleResolved() → add moodDescription field to StyleProfile
+Flows into SeedreamRenderParams → used in buildSeedreamPrompt() STYLE section
+Flows into leadService.ts → stored in lead row as mood_description
+
+Type change: Add to StyleProfile in types.ts:
+typescriptexport interface StyleProfile {
+  tags: StyleTag[];
+  summary: string;
+  source: 'preset' | 'ai_vision' | 'combined';
+  presetId?: number;
+  presetName?: string;
+  referenceImageUrls?: string[];
+  moodDescription?: string;  // NEW
+}
+How it combines with existing style inputs:
+
+Preset = base style direction (e.g., "Modern Minimalist")
+Reference images = visual inspiration (analyzed for tags + passed to Seedream)
+moodDescription = user's own words about what they want
+All three flow into the Seedream prompt's STYLE section independently
+All three are optional — any combination works
+
+B2. roomNotes textarea in Step 2
+File: components/DimensionsPhoto.tsx
+Add a textarea below the dimensions inputs. Label: "Notities over uw ruimte" (Notes about your space).
+tsx<textarea
+  value={roomNotes}
+  onChange={e => onRoomNotesChange(e.target.value)}
+  placeholder="Bijv: Radiator mag weg, douche moet groter, raam mag niet veranderen..."
+  maxLength={500}
+  rows={3}
+  className="w-full bg-surface border-2 border-neutral-300/50 rounded-xl p-4 text-sm font-bold outline-none focus:border-primary resize-none"
+/>
+```
+
+**Data flow:**
+1. User types notes → passed up via new `onRoomNotesChange` prop
+2. Stored in `PlannerPage.tsx` state as `roomNotes`
+3. Passed to `SeedreamRenderParams.roomNotes` (already exists in the interface!)
+4. Used in `buildSeedreamPrompt()` — already has `params.roomNotes` but it's unused in the current prompt. Add it to the STYLE section.
+5. Passed to `leadService.ts` → stored as `room_notes`
+
+**In the prompt:**
+```
+STYLE: {presetName}. {topTags}.
+{moodDescription ? `User wants: ${moodDescription}` : ''}
+Soft 3000K lighting. No clutter. No plants. No artwork.
+{roomNotes ? `Room notes: ${roomNotes}` : ''}
+```
+
+Room notes are especially valuable because they capture structural intent (what to keep, what to change) that can't be expressed through product selection alone.
+
+---
+
+## C. Product Actions UI (Behouden / Vervangen / Verwijderen)
+
+### C1. Per-category action toggle
+
+**File:** `components/ProductConfiguration.tsx`
+
+Add a 3-option toggle above each category's product grid:
+```
+┌──────────────────────────────────────────────┐
+│  Wastafelmeubel                              │
+│  ┌──────────┐ ┌──────────┐ ┌──────────────┐  │
+│  │ Vervangen│ │ Behouden │ │ Verwijderen  │  │
+│  └──────────┘ └──────────┘ └──────────────┘  │
+│  [Product grid — shown only when Vervangen]  │
+└──────────────────────────────────────────────┘
+
+Vervangen (default) → show product grid, user picks a product → action = 'replace'
+Behouden → hide product grid, keep what's in the room → action = 'keep'
+Verwijderen → hide product grid, remove from room → action = 'remove'
+
+New state in PlannerPage.tsx:
+typescriptconst [productActions, setProductActions] = useState<Record<string, string>>(
+  Object.fromEntries(CATEGORIES.map(c => [c, 'replace']))  // default all to replace
+);
+New prop on ProductConfiguration:
+typescriptinterface ProductConfigurationProps {
+  styleProfile: StyleProfile;
+  selectedProductIds: Record<string, string>;
+  productActions: Record<string, string>;       // NEW
+  onProductSelect: (category: string, product: DatabaseProduct) => void;
+  onActionChange: (category: string, action: string) => void;  // NEW
+  onNext: () => void;
+}
+Per-category rendering:
+tsx{CATEGORIES.map(cat => (
+  <div key={cat}>
+    <h4>{CATEGORY_LABELS[cat]}</h4>
+
+    {/* Action toggle */}
+    <div className="flex gap-2 mb-4">
+      {['replace', 'keep', 'remove'].map(action => (
+        <button
+          key={action}
+          onClick={() => onActionChange(cat, action)}
+          className={`px-4 py-2 rounded-xl text-xs font-bold uppercase ${
+            productActions[cat] === action ? 'bg-neutral-900 text-white' : 'bg-surface text-neutral-500'
+          }`}
+        >
+          {{ replace: 'Vervangen', keep: 'Behouden', remove: 'Verwijderen' }[action]}
+        </button>
+      ))}
+    </div>
+
+    {/* Product grid — only shown for 'replace' */}
+    {productActions[cat] === 'replace' && (
+      <CategoryProductSelector
+        products={productsByCategory[cat] || []}
+        selectedId={selectedProductIds[cat]}
+        onSelect={(p) => onProductSelect(cat, p)}
+      />
+    )}
+
+    {/* Keep/Remove feedback */}
+    {productActions[cat] === 'keep' && (
+      <p className="text-xs text-neutral-500 italic p-4 bg-surface rounded-xl">
+        Huidig(e) {CATEGORY_LABELS[cat].toLowerCase()} wordt behouden.
+      </p>
+    )}
+    {productActions[cat] === 'remove' && (
+      <p className="text-xs text-neutral-500 italic p-4 bg-surface rounded-xl">
+        Huidig(e) {CATEGORY_LABELS[cat].toLowerCase()} wordt verwijderd.
+      </p>
+    )}
+  </div>
+))}
+C2. Pass productActions through the pipeline
+PlannerPage.tsx → SeedreamRenderParams:
+typescript// In startProcessing():
+generateSeedreamRenovation({
+  bathroomImageUrl: photoUrl,
+  inspirationImageUrls: styleProfile.referenceImageUrls,
+  styleProfile,
+  selectedProducts: allProducts.filter(p => selectedProductIds[p.category] === p.id),
+  productActions,          // ← already in SeedreamRenderParams interface
+  spec,
+  roomNotes,               // ← already in SeedreamRenderParams interface
+});
+The backend already handles this. In buildSeedreamPrompt():
+
+keep → "Keep existing {category} unchanged" (in ARCHITECTURE LOCK)
+replace → product image + "Replace {category} with Image N" (in REPLACEMENTS)
+remove → no image, could add "Remove existing {category}" to prompt
+add → product image + "Install in most logical position" (existing logic)
+
+One gap: The current prompt doesn't handle remove explicitly. Add:
+typescriptconst removeCategories = Object.entries(productActions)
+  .filter(([_, action]) => action === 'remove')
+  .map(([cat]) => cat.toLowerCase());
+
+if (removeCategories.length > 0) {
+  // Add to prompt: "Remove existing {categories}."
+}
+C3. Lead data capture
+File: lib/leadService.ts
+Add new fields to LeadPayload and the insert row:
+typescriptinterface LeadPayload {
+  // ... existing fields ...
+  moodDescription?: string;     // NEW — from Step 1
+  roomNotes?: string;           // NEW — from Step 2
+  productActions?: Record<string, string>;  // NEW — from Step 3
+}
+In submitLead():
+typescriptif (payload.moodDescription) row.mood_description = payload.moodDescription;
+if (payload.roomNotes) row.room_notes = payload.roomNotes;
+if (payload.productActions) row.product_actions = payload.productActions;
+Supabase migration: Add columns to leads table:
+sqlALTER TABLE leads ADD COLUMN IF NOT EXISTS mood_description TEXT;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS room_notes TEXT;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS product_actions JSONB;
+
+D. Render Logging + Config
+D1. Render log tables
+New Supabase migration:
+sqlCREATE TABLE render_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  project_id UUID,
+  provider TEXT NOT NULL DEFAULT 'seedream',
+  prompt_version TEXT NOT NULL,
+  prompt_word_count INT,
+  enhance_mode TEXT DEFAULT 'standard',
+  image_size TEXT DEFAULT 'auto_2K',
+  image_count INT,
+  product_ref_count INT,
+  product_categories TEXT[],
+  inspiration_ref_count INT,
+  has_mood_description BOOLEAN DEFAULT false,
+  has_room_notes BOOLEAN DEFAULT false,
+  success BOOLEAN NOT NULL,
+  latency_ms INT,
+  error_message TEXT,
+  render_url TEXT,
+  input_photo_url TEXT
+);
+
+ALTER TABLE render_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "anon_insert_render_logs" ON render_logs FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_select_render_logs" ON render_logs FOR SELECT TO anon USING (true);
+
+CREATE TABLE render_evals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  render_log_id UUID REFERENCES render_logs(id),
+  geometry_score INT CHECK (geometry_score BETWEEN 1 AND 5),
+  product_score INT CHECK (product_score BETWEEN 1 AND 5),
+  style_score INT CHECK (style_score BETWEEN 1 AND 5),
+  realism_score INT CHECK (realism_score BETWEEN 1 AND 5),
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE render_evals ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "anon_insert_render_evals" ON render_evals FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_select_render_evals" ON render_evals FOR SELECT TO anon USING (true);
+D2. Config object
+typescriptinterface RenderConfig {
+  promptVersion: string;
+  enhanceMode: 'standard' | 'fast';
+  imageSize: string;
+  maxProductImages: number;
+  maxInspirationImages: number;
+}
+
+const DEFAULT_CONFIG: RenderConfig = {
+  promptVersion: 'v2-compressed',
+  enhanceMode: 'standard',
+  imageSize: 'auto_2K',
+  maxProductImages: 7,
+  maxInspirationImages: 1,
+};
+URL param overrides for dev: ?promptVersion=v3&enhanceMode=fast
+
+Files to Modify
+FileWorkstreamChangeservices/seedreamImageService.tsA, BCompress prompt, add image budget, add {moodDescription} + {roomNotes} to template, add render logging, add configcomponents/StyleInspiration.tsxBAdd moodDescription textarea, pass through onStyleResolved()components/DimensionsPhoto.tsxBAdd roomNotes textarea, new onRoomNotesChange propcomponents/ProductConfiguration.tsxCAdd per-category action toggle (Behouden/Vervangen/Verwijderen)pages/PlannerPage.tsxB, CAdd roomNotes + productActions state, wire through to render + leadtypes.tsBAdd moodDescription to StyleProfilelib/leadService.tsB, CAdd moodDescription, roomNotes, productActions to payloadsupabase/migrations/B, C, DNew columns on leads, new render_logs + render_evals tables
+
+Execution Order
+
+Prompt compression (A1) — highest quality ROI, modifies existing function only
+Image budget (A2) — quick reorder, ~20 lines changed
+moodDescription + roomNotes (B1, B2) — UI textareas + pipe through to prompt
+Product actions UI (C1-C2) — toggle buttons + conditional product grid display
+Lead data (B, C) — add new fields to payload + migration
+Render logging (D1-D2) — migration + fire-and-forget logging
+Benchmark — 5 test renders old vs new, score manually
+
+Steps 1-2 are backend-only (prompt/image changes in seedreamImageService).
+Steps 3-5 are UI + data changes.
+Steps 6-7 are observability.
