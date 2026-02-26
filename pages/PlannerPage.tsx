@@ -382,7 +382,7 @@ export default function PlannerPage() {
             productImageMap,
             mergedSpec,
             roomNotes || undefined,
-            { approach: 'seedream_5_lite_edit', bathroomImageUrl: originalPhotoSignedUrl, inspirationImageUrls: inspirationSignedUrls.length > 0 ? inspirationSignedUrls : undefined }
+            { approach: 'seedream_5_lite_edit', bathroomImageUrl: originalPhotoSignedUrl, inspirationImageUrls: inspirationSignedUrls.length > 0 ? inspirationSignedUrls : undefined, projectId: projectId || undefined }
           ).catch((err) => {
             console.error('Seedream v5 lite render failed:', err);
             trackEvent('generation_approach_failed', { approach: 'seedream_5_lite_edit', error: String(err) });

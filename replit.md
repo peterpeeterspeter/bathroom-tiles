@@ -42,8 +42,11 @@ The AI planner workflow involves:
 ### Seedream-Only Rendering
 Only Seedream v5 Lite (fal.ai) is active. All other approaches (Gemini A/B/C, OpenAI D) are disabled.
 -   **Seedream v5 Lite edit** (`FAL_KEY`, `VITE_ENABLE_SEEDREAM_LITE=true`): Uses flat, direct edit-style prompt optimized for Seedream's behavior. No step-by-step reasoning scaffolding — Seedream performs better with short, direct instructions.
--   **Prompt structure**: PRIORITY ORDER (geometry > products > style) → ARCHITECTURE LOCK (Image 1 defines room) → PRODUCT REPLACEMENTS (• Category = Image N, placement, scale) → STYLE REDESIGN (surface-level materials and mood only) → CRITICAL CONSTRAINTS (same bathroom, photorealistic). Target ~250 words.
--   **Image ordering**: Image 1 = bathroom photo (ground truth), Image 2+ = product reference images (CDN URLs). Inspiration images uploaded to Supabase for signed URLs if present.
+-   **Prompt structure (v3-flat)**: PRIORITY ORDER (geometry > products > style) → ARCHITECTURE LOCK (Image 1 defines room, includes keep/remove actions) → REPLACEMENTS (• Category = Image N, placement, scale) → STYLE line (presetName, tags, moodDescription, inspiration ref, roomNotes) → CRITICAL CONSTRAINTS. Target ~200 words.
+-   **Image ordering**: Image 1 = bathroom photo (ground truth), Image 2–8 = product reference images sorted by priority (Vanity > Bathtub > Shower > Toilet > Tile > Faucet > Mirror > Lighting), Image 9 = inspiration (max 1, capped, placed AFTER products). CDN URLs for products; Supabase signed URLs for inspiration.
+-   **User intent injection**: `moodDescription` (from StyleProfile) and `roomNotes` are injected into the prompt when non-empty. `remove` actions generate explicit "Remove existing {categories}" instructions.
+-   **Config**: Centralized `RenderConfig` object (`promptVersion`, `enhanceMode`, `imageSize`, `maxProductImages: 7`, `maxInspirationImages: 1`).
+-   **Render logging**: Fire-and-forget logging to Supabase `render_logs` table (project_id, prompt metrics, image counts, latency, success/error). `render_evals` table for manual quality scoring (geometry/product/style/realism 1-5). Logging failures never block renders.
 -   **Key Seedream behaviors**: Multi-image inputs are blended unless roles/priority are explicitly defined. Short prompts (<600 words) produce better results. No "mentally remove" or "verify internally" blocks — direct edit instructions only.
 -   Timeout: 6 minutes (TIMEOUT_MS=360_000). Generates 2 parallel renders.
 

@@ -576,7 +576,7 @@ export const generateRenovation = async (
   productImages: Map<string, { base64: string; mimeType: string }>,
   spec?: ProjectSpec,
   roomNotes?: string,
-  options?: { approach?: RenovationApproach; bathroomImageUrl?: string; inspirationImageUrls?: string[] }
+  options?: { approach?: RenovationApproach; bathroomImageUrl?: string; inspirationImageUrls?: string[]; projectId?: string }
 ): Promise<string> => {
   const model = "gemini-3-pro-image-preview";
   const approach: RenovationApproach = options?.approach || "baseline";
@@ -786,6 +786,7 @@ Generate the final image.
       productActions,
       spec,
       roomNotes,
+      projectId: options.projectId,
     });
   }
 

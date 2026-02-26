@@ -1,4 +1,5 @@
 import { DatabaseProduct, StyleProfile, ProjectSpec } from "../types";
+import { supabase } from "../lib/supabase";
 
 export interface SeedreamRenderParams {
   bathroomImageUrl: string;
@@ -8,9 +9,28 @@ export interface SeedreamRenderParams {
   productActions: Record<string, string>;
   spec?: ProjectSpec;
   roomNotes?: string;
+  projectId?: string;
 }
 
+interface RenderConfig {
+  promptVersion: string;
+  enhanceMode: 'standard' | 'fast';
+  imageSize: string;
+  maxProductImages: number;
+  maxInspirationImages: number;
+}
+
+const DEFAULT_CONFIG: RenderConfig = {
+  promptVersion: 'v3-flat',
+  enhanceMode: 'standard',
+  imageSize: 'auto_2K',
+  maxProductImages: 7,
+  maxInspirationImages: 1,
+};
+
 const FAL_ENDPOINT = "https://fal.run/fal-ai/bytedance/seedream/v5/lite/edit";
+
+const PRODUCT_PRIORITY = ['Vanity', 'Bathtub', 'Shower', 'Toilet', 'Tile', 'Faucet', 'Mirror', 'Lighting'];
 
 const getFalApiKey = (): string => {
   const key = process.env.FAL_KEY || process.env.FAL_API_KEY || '';
@@ -52,17 +72,33 @@ const getPlacementHint = (spec: ProjectSpec | undefined, category: string): stri
   return WALL_LABELS[fixture.wallIndex] || '';
 };
 
+interface ProductFigure {
+  figureIdx: number;
+  product: DatabaseProduct;
+  action: string;
+  url: string;
+}
+
 const buildSeedreamPrompt = (
   params: Omit<SeedreamRenderParams, 'bathroomImageUrl'>,
-  imageLayout: { inspirationCount: number; productFigures: { figureIdx: number; product: DatabaseProduct; action: string }[] }
+  imageLayout: { inspirationCount: number; inspirationIdx: number; productFigures: ProductFigure[] }
 ): string => {
-  const { styleProfile, productActions, spec } = params;
+  const { styleProfile, productActions, spec, roomNotes } = params;
   const presetName = styleProfile.presetName || 'Modern';
   const topTags = styleProfile.tags.slice(0, 4).map(t => t.tag);
+  const moodDescription = styleProfile.moodDescription || '';
+  const allCategories = ['Vanity', 'Bathtub', 'Shower', 'Toilet', 'Faucet', 'Mirror', 'Lighting'];
+
   const fixtureProducts = imageLayout.productFigures.filter(pf => pf.product.category !== 'Tile');
   const tileProduct = imageLayout.productFigures.find(pf => pf.product.category === 'Tile');
-  const keepCategories = ['Vanity', 'Bathtub', 'Shower', 'Toilet', 'Faucet', 'Mirror', 'Lighting']
-    .filter(c => productActions[c] === 'keep');
+
+  const keepCategories = allCategories.filter(c => productActions[c] === 'keep');
+  const removeCategories = allCategories.filter(c => productActions[c] === 'remove');
+
+  let keepLine = '';
+  if (keepCategories.length > 0) {
+    keepLine = `\nKeep existing ${keepCategories.join(', ').toLowerCase()} unchanged.`;
+  }
 
   let productLines = '';
   for (const pf of fixtureProducts) {
@@ -75,11 +111,12 @@ const buildSeedreamPrompt = (
         ? `Maintain same ${wallHint} position.`
         : 'Place in original position.';
 
-    productLines += `
-\u2022 ${cat} = Image ${imgNum}
-  ${placeLine}
-  Scale realistically to room size.
-`;
+    productLines += `\n\u2022 ${cat} = Image ${imgNum}\n  ${placeLine}\n  Scale realistically to room size.\n`;
+  }
+
+  let removeLine = '';
+  if (removeCategories.length > 0) {
+    removeLine = `\nRemove existing ${removeCategories.join(', ').toLowerCase()}. Fill space with matching wall/floor material.`;
   }
 
   let materialLines = '';
@@ -87,15 +124,26 @@ const buildSeedreamPrompt = (
     materialLines += `- Apply Image ${tileProduct.figureIdx} as feature wall tile behind vanity or bathtub.\n`;
   } else {
     const tileTags = topTags.filter(t => /tile|marble|stone|ceramic|zellige/i.test(t));
-    if (tileTags.length > 0) {
-      materialLines += `- Replace wall tiles with ${tileTags.join(', ')}.\n`;
-    } else {
-      materialLines += `- Replace wall tiles with modern tiles matching the style.\n`;
-    }
+    materialLines += `- Replace wall tiles with ${tileTags.length > 0 ? tileTags.join(', ') : 'modern tiles matching the style'}.\n`;
   }
   const hasMarble = topTags.some(t => /marble/i.test(t));
   materialLines += `- ${hasMarble ? 'Warm off-white or marble-toned' : 'Smooth warm plaster on non-tiled'} walls.\n`;
   materialLines += `- Large-format neutral floor tiles.\n`;
+
+  let moodLine = '';
+  if (moodDescription.trim()) {
+    moodLine = `\nUser wants: ${moodDescription.trim()}`;
+  }
+
+  let notesLine = '';
+  if (roomNotes && roomNotes.trim()) {
+    notesLine = `\nRoom notes: ${roomNotes.trim()}`;
+  }
+
+  let inspirationLine = '';
+  if (imageLayout.inspirationCount > 0) {
+    inspirationLine = `\nUse Image ${imageLayout.inspirationIdx} as additional style reference.`;
+  }
 
   const prompt = `You are redesigning Image 1 while preserving its exact architecture.
 
@@ -116,82 +164,122 @@ Image 1 defines:
 - Floor layout
 
 These must remain IDENTICAL.
-Do not move or resize architectural elements.${keepCategories.length > 0 ? `\nKeep existing ${keepCategories.join(', ').toLowerCase()} unchanged.` : ''}
+Do not move or resize architectural elements.${keepLine}
 
 ${SEP}
 
-PRODUCT REPLACEMENTS
+REPLACEMENTS
 
 Use reference images exactly for design only:
-${productLines}
+${productLines}${removeLine}
 Do not move fixtures to different walls.
 
 ${SEP}
 
-STYLE REDESIGN (SURFACE LEVEL ONLY)
-
-Apply the user\u2019s style preference as material and mood only.
-Do NOT change layout.
-
-Style direction:
-${presetName}. ${topTags.join('. ')}.
-Soft diffused 3000K lighting.
-Minimal and calm atmosphere.
+STYLE: ${presetName}. ${topTags.join('. ')}.${moodLine}${inspirationLine}
+Soft 3000K lighting. No clutter. No plants. No artwork.${notesLine}
 
 Material updates:
 ${materialLines}
-Maximum 1 folded towel.
-No plants. No artwork. No decorative clutter.
-
 ${SEP}
-
-CRITICAL CONSTRAINTS
 
 The result must clearly be the SAME bathroom as Image 1.
 Only improved finishes and updated fixtures.
-No layout redesign.
-No perspective change.
-No structural alteration.
+No layout redesign. No perspective change. No structural alteration.
 
-Photorealistic.
-Magazine-quality.
-Return image only.`;
+Photorealistic. Magazine-quality. Return image only.`;
 
   const wordCount = prompt.split(/\s+/).filter(w => w.length > 0).length;
-  console.log(`[Seedream] Prompt word count: ${wordCount}`);
+  console.log(`[Seedream][${DEFAULT_CONFIG.promptVersion}] Prompt word count: ${wordCount}`);
 
   return prompt;
+};
+
+const logRender = async (data: {
+  projectId?: string;
+  promptWordCount: number;
+  imageCount: number;
+  productRefCount: number;
+  productCategories: string[];
+  inspirationRefCount: number;
+  hasMoodDescription: boolean;
+  hasRoomNotes: boolean;
+  success: boolean;
+  latencyMs: number;
+  errorMessage?: string;
+  renderUrl?: string;
+  inputPhotoUrl?: string;
+}) => {
+  try {
+    await supabase.from('render_logs').insert({
+      project_id: data.projectId || null,
+      provider: 'seedream',
+      prompt_version: DEFAULT_CONFIG.promptVersion,
+      prompt_word_count: data.promptWordCount,
+      enhance_mode: DEFAULT_CONFIG.enhanceMode,
+      image_size: DEFAULT_CONFIG.imageSize,
+      image_count: data.imageCount,
+      product_ref_count: data.productRefCount,
+      product_categories: data.productCategories,
+      inspiration_ref_count: data.inspirationRefCount,
+      has_mood_description: data.hasMoodDescription,
+      has_room_notes: data.hasRoomNotes,
+      success: data.success,
+      latency_ms: data.latencyMs,
+      error_message: data.errorMessage || null,
+      render_url: data.renderUrl || null,
+      input_photo_url: data.inputPhotoUrl || null,
+    });
+  } catch (e) {
+    console.warn('[Seedream] Render log failed (non-blocking):', e);
+  }
 };
 
 export const generateSeedreamRenovation = async (params: SeedreamRenderParams): Promise<string> => {
   const apiKey = getFalApiKey();
   if (!apiKey) throw new Error('FAL_KEY is not configured');
+  const startTime = Date.now();
 
   const imageUrls: string[] = [params.bathroomImageUrl];
 
-  const inspirationUrls = (params.inspirationImageUrls || []).filter(url => /^https?:\/\//.test(url)).slice(0, 3);
-  imageUrls.push(...inspirationUrls);
-
-  const cappedInspirationCount = inspirationUrls.length;
-  const productFigures: { figureIdx: number; product: DatabaseProduct; action: string }[] = [];
-  let figureIdx = 1 + cappedInspirationCount + 1;
-
+  const eligibleProducts: { product: DatabaseProduct; action: string; url: string }[] = [];
   for (const product of params.selectedProducts) {
     const action = params.productActions[product.category] || 'replace';
     if (action === 'keep' || action === 'remove') continue;
-
     const url = product.image_url || (product.images && product.images.length > 0 ? product.images[0] : null);
     if (url && /^https?:\/\//.test(url)) {
-      imageUrls.push(url);
-      productFigures.push({ figureIdx, product, action });
-      figureIdx++;
+      eligibleProducts.push({ product, action, url });
     }
   }
 
+  eligibleProducts.sort((a, b) =>
+    PRODUCT_PRIORITY.indexOf(a.product.category) - PRODUCT_PRIORITY.indexOf(b.product.category)
+  );
+
+  if (eligibleProducts.length > DEFAULT_CONFIG.maxProductImages) {
+    eligibleProducts.splice(DEFAULT_CONFIG.maxProductImages);
+  }
+
+  const productFigures: ProductFigure[] = [];
+  let figureIdx = 2;
+  for (const ep of eligibleProducts) {
+    imageUrls.push(ep.url);
+    productFigures.push({ figureIdx, product: ep.product, action: ep.action, url: ep.url });
+    figureIdx++;
+  }
+
+  const inspirationUrls = (params.inspirationImageUrls || [])
+    .filter(url => /^https?:\/\//.test(url))
+    .slice(0, DEFAULT_CONFIG.maxInspirationImages);
+  let inspirationIdx = 0;
+  if (inspirationUrls.length > 0 && imageUrls.length < 10) {
+    imageUrls.push(inspirationUrls[0]);
+    inspirationIdx = imageUrls.length;
+  }
+  const cappedInspirationCount = inspirationIdx > 0 ? 1 : 0;
+
   if (imageUrls.length > 10) {
-    const maxProducts = 10 - 1 - cappedInspirationCount;
     imageUrls.splice(10);
-    productFigures.splice(maxProducts);
   }
 
   const prompt = buildSeedreamPrompt(
@@ -203,40 +291,83 @@ export const generateSeedreamRenovation = async (params: SeedreamRenderParams): 
       spec: params.spec,
       roomNotes: params.roomNotes,
     },
-    { inspirationCount: cappedInspirationCount, productFigures }
+    { inspirationCount: cappedInspirationCount, inspirationIdx, productFigures }
   );
 
-  console.log(`[Seedream] Sending ${imageUrls.length} images (1 bathroom, ${cappedInspirationCount} inspiration, ${productFigures.length} products), prompt ${prompt.length} chars`);
+  const productCategories = productFigures.map(pf => pf.product.category);
+  const promptWordCount = prompt.split(/\s+/).filter(w => w.length > 0).length;
+
+  console.log(`[Seedream] Sending ${imageUrls.length} images (1 room, ${productFigures.length} products, ${cappedInspirationCount} inspiration), prompt ${promptWordCount} words / ${prompt.length} chars`);
 
   const payload = {
     prompt,
     image_urls: imageUrls,
-    image_size: 'auto_2K' as const,
+    image_size: DEFAULT_CONFIG.imageSize,
     num_images: 1,
     max_images: 1,
     enable_safety_checker: true,
-    enhance_prompt_mode: 'standard' as const,
+    enhance_prompt_mode: DEFAULT_CONFIG.enhanceMode,
   };
 
-  const response = await fetch(FAL_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      Authorization: `Key ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+  let renderUrl: string | undefined;
+  try {
+    const response = await fetch(FAL_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        Authorization: `Key ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Seedream edit failed (${response.status}): ${errorText}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Seedream edit failed (${response.status}): ${errorText}`);
+    }
+
+    const json = await response.json();
+    const outputUrl = json?.images?.[0]?.url;
+    if (!outputUrl) {
+      throw new Error('Seedream edit returned no image URL');
+    }
+
+    renderUrl = outputUrl;
+    const latencyMs = Date.now() - startTime;
+
+    logRender({
+      projectId: params.projectId,
+      promptWordCount,
+      imageCount: imageUrls.length,
+      productRefCount: productFigures.length,
+      productCategories,
+      inspirationRefCount: cappedInspirationCount,
+      hasMoodDescription: !!(params.styleProfile.moodDescription),
+      hasRoomNotes: !!(params.roomNotes),
+      success: true,
+      latencyMs,
+      renderUrl: outputUrl,
+      inputPhotoUrl: params.bathroomImageUrl,
+    });
+
+    return toDataUrl(outputUrl);
+  } catch (error: any) {
+    const latencyMs = Date.now() - startTime;
+
+    logRender({
+      projectId: params.projectId,
+      promptWordCount,
+      imageCount: imageUrls.length,
+      productRefCount: productFigures.length,
+      productCategories,
+      inspirationRefCount: cappedInspirationCount,
+      hasMoodDescription: !!(params.styleProfile.moodDescription),
+      hasRoomNotes: !!(params.roomNotes),
+      success: false,
+      latencyMs,
+      errorMessage: error.message,
+      inputPhotoUrl: params.bathroomImageUrl,
+    });
+
+    throw error;
   }
-
-  const json = await response.json();
-  const outputUrl = json?.images?.[0]?.url;
-  if (!outputUrl) {
-    throw new Error('Seedream edit returned no image URL');
-  }
-
-  return toDataUrl(outputUrl);
 };
