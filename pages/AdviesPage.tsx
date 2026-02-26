@@ -60,7 +60,7 @@ export default function AdviesPage() {
                 <Link to="/planner" className="inline-flex items-center gap-2 text-primary font-semibold hover:underline">
                   <Sparkles size={14} /> Probeer de AI Planner
                 </Link>
-                <Link to="/offerte-aanvragen" className="inline-flex items-center gap-2 text-primary font-semibold hover:underline">
+                <Link to="/get-quote" className="inline-flex items-center gap-2 text-primary font-semibold hover:underline">
                   Gratis offerte aanvragen <ArrowRight size={14} />
                 </Link>
               </div>
@@ -70,7 +70,7 @@ export default function AdviesPage() {
               {articles.map((article) => (
                 <Link
                   key={article.id}
-                  to={`/advies/${article.slug}`}
+                  to={`/advice/${article.slug}`}
                   className="group bg-white rounded-2xl border border-neutral-300/50 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all"
                 >
                   {article.image_url && (

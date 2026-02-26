@@ -9,62 +9,62 @@ interface LegalModalProps {
 }
 
 const privacyContent = `
-DeBadkamer.com hecht groot belang aan de bescherming van uw persoonsgegevens.
+Bathroom Tiles values the protection of your personal data.
 
-Welke gegevens verzamelen wij?
-- Naam, e-mailadres, telefoonnummer en postcode (bij invulling van het contactformulier)
-- Foto's die u uploadt van uw badkamer
-- Uw stijlvoorkeuren en productkeuzes
-- Technische sessiegegevens (geanonimiseerd)
+What data do we collect?
+- Name, email, phone and ZIP code (when you fill in the contact form)
+- Photos you upload of your bathroom
+- Your style preferences and product choices
+- Technical session data (anonymized)
 
-Waarvoor gebruiken wij uw gegevens?
-- Om u een gepersonaliseerd renovatievoorstel te bezorgen
-- Om contact met u op te nemen voor een vrijblijvend adviesgesprek
-- Om onze dienstverlening te verbeteren (geanonimiseerde analyses)
+What do we use your data for?
+- To provide you with a personalized renovation proposal
+- To contact you for a no-obligation consultation
+- To improve our service (anonymized analytics)
 
-Uw rechten
-U heeft recht op inzage, correctie en verwijdering van uw persoonsgegevens. Neem hiervoor contact op via privacy@debadkamer.com.
+Your rights
+You have the right to access, correct and delete your personal data. Contact privacy@bathroom-tiles.com for requests.
 
-Bewaartermijn
-Uw gegevens worden maximaal 24 maanden bewaard na uw laatste interactie, tenzij u eerder om verwijdering verzoekt.
+Retention
+Your data is kept for up to 24 months after your last interaction, unless you request earlier deletion.
 
-Gegevens worden niet gedeeld met derden buiten de noodzakelijke dienstverlening.
+Data is not shared with third parties beyond necessary service provision.
 `.trim();
 
 const termsContent = `
-Gebruiksvoorwaarden De Badkamer Digitale Badkamer Tool
+Terms of Use — Bathroom Tiles Digital Tool
 
-Deze tool is een pre-sales instrument bedoeld ter inspiratie en voorbereiding op een persoonlijk verkoopgesprek.
+This tool is a pre-sales instrument for inspiration and preparation for a personal consultation.
 
-Indicatief karakter
-- Alle visualisaties zijn AI-generaties en dienen puur ter inspiratie
-- Afmetingen en productdetails kunnen in de realiteit afwijken
-- Prijsindicaties zijn niet-bindend en gebaseerd op gemiddelde markttarieven
-- Een definitieve opname ter plaatse is steeds noodzakelijk
+Indicative nature
+- All visualizations are AI-generated and for inspiration only
+- Dimensions and product details may differ in reality
+- Price estimates are non-binding and based on average market rates
+- An on-site survey is always required for definitive quotes
 
-Geen offerte
-De getoonde prijzen vormen geen offerte en scheppen geen contractuele verbintenis. Definitieve prijsafspraken worden uitsluitend gemaakt na persoonlijk adviesgesprek en technische opname.
+No quote
+The prices shown do not constitute a quote and create no contractual obligation. Definitive pricing is agreed only after personal consultation and on-site survey.
 
-Productkeuzes
-De getoonde productselecties dienen als inspiratierichting. Definitieve productkeuze gebeurt steeds samen met een De Badkamer-adviseur. Exacte merken, types en afmetingen zijn niet gegarandeerd.
+Product choices
+The product selections shown serve as inspiration. Final product choice is made with a Bathroom Tiles advisor. Exact brands, types and dimensions are not guaranteed.
 
-Aansprakelijkheid
-DeBadkamer.com is niet aansprakelijk voor beslissingen genomen op basis van de indicatieve informatie in deze tool.
+Liability
+Bathroom Tiles is not liable for decisions made based on the indicative information in this tool.
 `.trim();
 
 const cookiesContent = `
-Cookiebeleid
+Cookie Policy
 
-Deze tool maakt gebruik van strikt noodzakelijke cookies voor het correct functioneren van de applicatie.
+This tool uses strictly necessary cookies for the app to function correctly.
 
-Noodzakelijke cookies
-- Sessie-identificatie (voor het bijhouden van uw voortgang in de tool)
-- Geen tracking cookies van derden
-- Geen marketing- of advertentiecookies
+Necessary cookies
+- Session identification (to track your progress in the tool)
+- No third-party tracking cookies
+- No marketing or advertising cookies
 
-Door gebruik te maken van deze tool gaat u akkoord met het plaatsen van strikt noodzakelijke cookies.
+By using this tool you agree to the placement of strictly necessary cookies.
 
-Voor vragen over ons cookiebeleid kunt u contact opnemen via privacy@debadkamer.com.
+For questions about our cookie policy, contact privacy@bathroom-tiles.com.
 `.trim();
 
 const contentMap = {

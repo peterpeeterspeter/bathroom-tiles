@@ -19,7 +19,7 @@ export default function NotFoundPage() {
           <Home size={18} /> Naar Home
         </Link>
         <Link
-          to="/offerte-aanvragen"
+          to="/get-quote"
           className="inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-white font-bold px-8 py-4 rounded-full transition-all"
         >
           Gratis Offerte <ArrowRight size={16} />

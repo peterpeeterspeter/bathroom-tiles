@@ -5,9 +5,9 @@ import { Logo } from './Logo';
 
 const navLinks = [
   { to: '/', label: 'Home' },
-  { to: '/badkamer-inspiratie', label: 'Inspiratie' },
-  { to: '/badkamer-renovatie-kosten', label: 'Kosten' },
-  { to: '/offerte-aanvragen', label: 'Gratis Offerte' },
+  { to: '/inspiration', label: 'Inspiration' },
+  { to: '/tile-costs', label: 'Costs' },
+  { to: '/get-quote', label: 'Get Quote' },
 ];
 
 export const Header = () => {

@@ -54,7 +54,7 @@ export default function ArticlePage() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center">
         <h1 className="text-2xl font-bold text-neutral-900 mb-4">Artikel niet gevonden</h1>
-        <Link to="/advies" className="text-primary font-semibold hover:underline flex items-center justify-center gap-2">
+        <Link to="/advice" className="text-primary font-semibold hover:underline flex items-center justify-center gap-2">
           <ArrowLeft size={14} /> Terug naar overzicht
         </Link>
       </div>
@@ -68,7 +68,7 @@ export default function ArticlePage() {
           <nav className="text-sm text-neutral-500 mb-8">
             <Link to="/" className="hover:text-primary">Home</Link>
             <span className="mx-2">/</span>
-            <Link to="/advies" className="hover:text-primary">Advies</Link>
+            <Link to="/advice" className="hover:text-primary">Advies</Link>
             <span className="mx-2">/</span>
             <span className="text-neutral-900">{article.title}</span>
           </nav>
@@ -105,10 +105,10 @@ export default function ArticlePage() {
 
       <section className="bg-white py-12">
         <div className="max-w-3xl mx-auto px-4 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Link to="/advies" className="text-sm text-neutral-500 hover:text-primary flex items-center gap-2">
+          <Link to="/advice" className="text-sm text-neutral-500 hover:text-primary flex items-center gap-2">
             <ArrowLeft size={14} /> Alle artikelen
           </Link>
-          <Link to="/offerte-aanvragen" className="inline-flex items-center gap-2 text-primary font-semibold text-sm hover:underline">
+          <Link to="/get-quote" className="inline-flex items-center gap-2 text-primary font-semibold text-sm hover:underline">
             Gratis offerte aanvragen <ArrowRight size={14} />
           </Link>
         </div>

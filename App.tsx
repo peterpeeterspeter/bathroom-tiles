@@ -33,14 +33,14 @@ export default function App() {
       />
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
-        <Route path="badkamer-renovatie-kosten" element={<KostenPage />} />
-        <Route path="offerte-aanvragen" element={<QuotePage />} />
-        <Route path="badkamer-inspiratie" element={<InspiratiePage />} />
-        <Route path="advies" element={<AdviesPage />} />
-        <Route path="advies/:slug" element={<ArticlePage />} />
+        <Route path="tile-costs" element={<KostenPage />} />
+        <Route path="get-quote" element={<QuotePage />} />
+        <Route path="inspiration" element={<InspiratiePage />} />
+        <Route path="advice" element={<AdviesPage />} />
+        <Route path="advice/:slug" element={<ArticlePage />} />
         <Route path="privacy" element={<PrivacyPage />} />
-        <Route path="voorwaarden" element={<VoorwaardenPage />} />
-        <Route path="voor-vakmensen" element={<VoorVakmensenPage />} />
+        <Route path="terms" element={<VoorwaardenPage />} />
+        <Route path="for-contractors" element={<VoorVakmensenPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

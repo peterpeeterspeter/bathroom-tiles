@@ -14,8 +14,8 @@ export const CategoryProductSelector = ({
 }) => {
   if (products.length === 0) {
     return (
-       <div className="p-4 bg-surface rounded-xl text-center">
-         <p className="text-[10px] uppercase font-bold text-neutral-500">Geen specifieke opties voor deze stijl.</p>
+         <div className="p-4 bg-surface rounded-xl text-center">
+         <p className="text-[10px] uppercase font-bold text-neutral-500">No specific options for this style.</p>
        </div>
     );
   }

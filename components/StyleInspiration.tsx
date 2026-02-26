@@ -82,7 +82,7 @@ export const StyleInspiration = ({ onStyleSelected, onMoodDescriptionChange }: S
   const handlePinterestAdd = async () => {
     if (!pinterestUrl.trim() || referenceImages.length >= 3) return;
     if (!isPinterestUrl(pinterestUrl)) {
-      setPinError('Voer een geldige Pinterest URL in.');
+      setPinError('Enter a valid Pinterest URL.');
       return;
     }
 
@@ -102,7 +102,7 @@ export const StyleInspiration = ({ onStyleSelected, onMoodDescriptionChange }: S
       });
       setPinterestUrl('');
     } catch (err: any) {
-      setPinError(err.message || 'Kon Pinterest afbeelding niet ophalen.');
+      setPinError(err.message || 'Could not fetch Pinterest image.');
     } finally {
       setFetchingPin(false);
     }
@@ -128,10 +128,10 @@ export const StyleInspiration = ({ onStyleSelected, onMoodDescriptionChange }: S
     <div className="animate-fade-in">
       <div className="text-center max-w-2xl mx-auto mb-10 md:mb-14">
         <h2 className="text-3xl md:text-5xl font-black tracking-tighter mb-4 leading-tight">
-          Wat is uw <span className="text-primary italic">droomstijl</span>?
+          What's your <span className="text-primary italic">dream style</span>?
         </h2>
         <p className="text-neutral-500 font-bold text-base md:text-lg">
-          Beschrijf uw ideale badkamer, upload inspiratie, kies een basisstijl — of combineer alles.
+          Describe your ideal bathroom, upload inspiration, choose a base style — or combine all.
         </p>
       </div>
 
@@ -142,14 +142,14 @@ export const StyleInspiration = ({ onStyleSelected, onMoodDescriptionChange }: S
               <Pen size={18} />
             </div>
             <div>
-              <h3 className="font-black uppercase tracking-widest text-xs text-neutral-700">Beschrijf uw droomstijl</h3>
-              <p className="text-[10px] font-bold text-neutral-400 mt-0.5">Onze AI analyseert uw voorkeuren en past het ontwerp hierop aan</p>
+              <h3 className="font-black uppercase tracking-widest text-xs text-neutral-700">Describe your dream style</h3>
+              <p className="text-[10px] font-bold text-neutral-400 mt-0.5">Our AI analyzes your preferences and adapts the design accordingly</p>
             </div>
           </div>
           <textarea
             value={moodDescription}
             onChange={(e) => { setMoodDescription(e.target.value); onMoodDescriptionChange?.(e.target.value); }}
-            placeholder="Bijv: Ik droom van een lichte, warme badkamer met veel hout en natuursteen. Geen koude witte tegels. Liefst een Scandinavisch gevoel met een vleugje luxe. De douche mag ruim zijn met een regendouchekop."
+            placeholder="E.g.: I dream of a light, warm bathroom with lots of wood and natural stone. No cold white tiles. A Scandinavian feel with a touch of luxury. The shower can be spacious with a rain showerhead."
             rows={4}
             maxLength={500}
             className="w-full bg-surface border-2 border-neutral-300/50 rounded-xl p-4 md:p-5 text-sm md:text-base font-bold outline-none focus:border-primary transition-all resize-none placeholder:text-neutral-300 leading-relaxed"
@@ -166,11 +166,11 @@ export const StyleInspiration = ({ onStyleSelected, onMoodDescriptionChange }: S
                 <ImageIcon size={18} />
               </div>
               <div>
-                <h3 className="font-black uppercase tracking-widest text-xs text-neutral-500">Upload inspiratie</h3>
+                <h3 className="font-black uppercase tracking-widest text-xs text-neutral-500">Upload inspiration</h3>
               </div>
               <span className="text-[10px] font-bold text-neutral-300 ml-auto">{referenceImages.length}/3</span>
             </div>
-            <p className="text-[10px] font-bold text-neutral-400 mb-5 ml-11">Voeg foto's toe van badkamers die u aanspreken</p>
+            <p className="text-[10px] font-bold text-neutral-400 mb-5 ml-11">Add photos of bathrooms that inspire you</p>
 
             <div className="space-y-4">
               {referenceImages.length > 0 && (
@@ -203,8 +203,8 @@ export const StyleInspiration = ({ onStyleSelected, onMoodDescriptionChange }: S
                     <div className="w-12 h-12 bg-surface rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                       <Upload className="text-neutral-500" size={20} />
                     </div>
-                    <p className="font-black uppercase tracking-widest text-[10px] mb-1">Upload foto's</p>
-                    <p className="text-[10px] font-bold text-neutral-500">JPG, PNG - Max 3 beelden</p>
+                    <p className="font-black uppercase tracking-widest text-[10px] mb-1">Upload photos</p>
+                    <p className="text-[10px] font-bold text-neutral-500">JPG, PNG — Max 3 images</p>
                   </button>
                   <input
                     type="file"
@@ -225,10 +225,10 @@ export const StyleInspiration = ({ onStyleSelected, onMoodDescriptionChange }: S
                 <Link2 size={18} />
               </div>
               <div>
-                <h3 className="font-black uppercase tracking-widest text-xs text-neutral-500">Pinterest inspiratie</h3>
+                <h3 className="font-black uppercase tracking-widest text-xs text-neutral-500">Pinterest inspiration</h3>
               </div>
             </div>
-            <p className="text-[10px] font-bold text-neutral-400 mb-5 ml-11">Plak een Pinterest link en wij halen het beeld automatisch op</p>
+            <p className="text-[10px] font-bold text-neutral-400 mb-5 ml-11">Paste a Pinterest link and we'll fetch the image automatically</p>
 
             <div className="space-y-4">
               <div className="bg-white border-2 border-neutral-300/30 rounded-2xl p-5 md:p-6 shadow-sm">
@@ -249,7 +249,7 @@ export const StyleInspiration = ({ onStyleSelected, onMoodDescriptionChange }: S
                     disabled={fetchingPin || !pinterestUrl.trim()}
                     className="px-5 bg-[#E60023] text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#c5001e] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    {fetchingPin ? <Loader2 size={14} className="animate-spin" /> : 'Ophalen'}
+                    {fetchingPin ? <Loader2 size={14} className="animate-spin" /> : 'Fetch'}
                   </button>
                 </div>
                 {pinError && (
@@ -266,11 +266,11 @@ export const StyleInspiration = ({ onStyleSelected, onMoodDescriptionChange }: S
               onClick={handleProceedWithImages}
               className="w-full py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary-dark transition-all flex items-center justify-center gap-3 shadow-xl"
             >
-              <Sparkles size={18} /> Ga verder met inspiratie
+              <Sparkles size={18} /> Continue with inspiration
             </button>
             {selectedPreset && (
               <p className="text-[10px] font-bold text-neutral-500 text-center mt-3">
-                Combineert met {selectedPreset.label_nl} stijl
+                Combines with {selectedPreset.label_nl} style
               </p>
             )}
           </div>
@@ -283,10 +283,10 @@ export const StyleInspiration = ({ onStyleSelected, onMoodDescriptionChange }: S
             <Sparkles size={18} />
           </div>
           <div>
-            <h3 className="font-black uppercase tracking-widest text-xs text-neutral-500">Kies een basisstijl</h3>
+            <h3 className="font-black uppercase tracking-widest text-xs text-neutral-500">Choose a base style</h3>
           </div>
         </div>
-        <p className="text-[10px] font-bold text-neutral-400 mb-6 ml-11">Selecteer een stijl als startpunt — u kunt dit later altijd verfijnen</p>
+        <p className="text-[10px] font-bold text-neutral-400 mb-6 ml-11">Select a style as a starting point — you can always refine it later</p>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {presets.map(preset => (
@@ -325,7 +325,7 @@ export const StyleInspiration = ({ onStyleSelected, onMoodDescriptionChange }: S
           {selectedPreset && (
             <div className="bg-surface border border-neutral-300/50 rounded-2xl p-4 text-center mb-4">
               <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
-                Stijl geselecteerd: <span className="text-primary">{selectedPreset.label_nl}</span> — upload optioneel inspiratiebeelden om te verfijnen.
+                Style selected: <span className="text-primary">{selectedPreset.label_nl}</span> — upload optional inspiration images to refine.
               </p>
             </div>
           )}
@@ -333,7 +333,7 @@ export const StyleInspiration = ({ onStyleSelected, onMoodDescriptionChange }: S
             onClick={handleProceedWithImages}
             className="w-full py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary-dark transition-all flex items-center justify-center gap-3 shadow-xl"
           >
-            <Sparkles size={18} /> Ga verder
+            <Sparkles size={18} /> Continue
           </button>
         </div>
       )}

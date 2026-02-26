@@ -26,8 +26,8 @@ export const DimensionsPhoto = ({ imagePreview, onImageChange, onDimensionChange
   return (
     <div className="max-w-4xl mx-auto animate-fade-in">
       <div className="text-center mb-10 md:mb-16">
-        <h2 className="text-2xl md:text-4xl font-black tracking-tighter mb-4 uppercase">Uw Huidige Ruimte</h2>
-        <p className="text-neutral-500 font-bold text-sm md:text-base">Help ons de visualisatie en prijs op maat te maken.</p>
+        <h2 className="text-2xl md:text-4xl font-black tracking-tighter mb-4 uppercase">Your Current Space</h2>
+        <p className="text-neutral-500 font-bold text-sm md:text-base">Help us tailor the visualization and price estimate.</p>
       </div>
       <div className="grid md:grid-cols-2 gap-8 md:gap-12">
         <div className="space-y-6 md:space-y-8">
@@ -54,9 +54,9 @@ export const DimensionsPhoto = ({ imagePreview, onImageChange, onDimensionChange
               <div className="flex items-start gap-3">
                 <Ruler className="text-primary flex-shrink-0 mt-0.5" size={14} />
                 <div>
-                  <p className="text-[10px] font-black uppercase text-neutral-500 tracking-widest mb-1">Hoe meten?</p>
+                  <p className="text-[10px] font-black uppercase text-neutral-500 tracking-widest mb-1">How to measure?</p>
                   <p className="text-[11px] text-neutral-500 leading-relaxed">
-                    Meet van muur tot muur op de breedste punten. Meet de lengte langs de langste muur. De hoogte nemen we standaard op 2.40m.
+                    Measure wall to wall at the widest points. Measure length along the longest wall. We use 2.4m ceiling height by default.
                   </p>
                 </div>
               </div>
@@ -65,13 +65,13 @@ export const DimensionsPhoto = ({ imagePreview, onImageChange, onDimensionChange
 
           <div className="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] border-2 border-neutral-300/30 shadow-xl">
             <h3 className="font-black uppercase text-xs tracking-widest text-neutral-500 mb-4 flex items-center gap-2">
-              <PenLine size={16}/> 2. Opmerkingen over de ruimte
-              <span className="text-[10px] font-bold text-neutral-300 ml-auto normal-case tracking-normal">Optioneel</span>
+              <PenLine size={16}/> 2. Room notes
+              <span className="text-[10px] font-bold text-neutral-300 ml-auto normal-case tracking-normal">Optional</span>
             </h3>
             <textarea
               value={roomNotes}
               onChange={(e) => onRoomNotesChange(e.target.value)}
-              placeholder="Bijv: De douchecabine is kapot en moet weg. Ik wil graag een inloopdouche. Het raam moet zeker blijven. De vloer is recent gelegd dus die mag behouden blijven."
+              placeholder="E.g.: The shower enclosure is broken and needs to go. I'd like a walk-in shower. The window must stay. The floor was recently installed so it can stay."
               rows={4}
               maxLength={500}
               className="w-full bg-surface border-2 border-neutral-300/50 rounded-xl p-4 text-sm font-bold outline-none focus:border-primary transition-all resize-none placeholder:text-neutral-300"
@@ -83,12 +83,12 @@ export const DimensionsPhoto = ({ imagePreview, onImageChange, onDimensionChange
              <div className="relative z-10 flex items-start gap-4">
                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg flex-shrink-0"><Camera size={20} /></div>
                <div>
-                 <h4 className="font-black uppercase text-xs tracking-widest mb-2">Fototips</h4>
+                 <h4 className="font-black uppercase text-xs tracking-widest mb-2">Photo tips</h4>
                  <ul className="text-[11px] font-bold text-white/60 leading-relaxed space-y-1">
-                   <li>- Sta in de deuropening voor het beste overzicht</li>
-                   <li>- Probeer de hele ruimte in beeld te brengen</li>
-                   <li>- Hou de camera op borsthoogte, horizontaal</li>
-                   <li>- Zorg voor voldoende licht (daglicht is ideaal)</li>
+                   <li>- Stand in the doorway for the best overview</li>
+                   <li>- Try to capture the whole space</li>
+                   <li>- Hold the camera at chest height, horizontal</li>
+                   <li>- Ensure enough light (daylight is ideal)</li>
                  </ul>
                </div>
              </div>
@@ -96,7 +96,7 @@ export const DimensionsPhoto = ({ imagePreview, onImageChange, onDimensionChange
         </div>
 
         <div className="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] border-2 border-neutral-300/30 shadow-xl flex flex-col">
-          <h3 className="font-black uppercase text-xs tracking-widest text-neutral-500 mb-6 md:mb-8 flex items-center gap-2"><ImageIcon size={16}/> 2. Foto van de huidige staat</h3>
+          <h3 className="font-black uppercase text-xs tracking-widest text-neutral-500 mb-6 md:mb-8 flex items-center gap-2"><ImageIcon size={16}/> 2. Photo of current state</h3>
           <div
             onClick={() => fileInputRef.current?.click()}
             className="flex-1 border-4 border-dashed border-neutral-300/30 rounded-2xl md:rounded-[2rem] p-6 md:p-10 cursor-pointer hover:border-primary hover:bg-surface transition-all group flex flex-col items-center justify-center text-center min-h-[200px]"
@@ -108,8 +108,8 @@ export const DimensionsPhoto = ({ imagePreview, onImageChange, onDimensionChange
                 <div className="w-16 h-16 md:w-20 md:h-20 bg-surface rounded-full flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
                   <Upload className="text-neutral-500" size={28} />
                 </div>
-                <p className="font-black uppercase tracking-widest text-xs mb-2">Selecteer of Sleep Foto</p>
-                <p className="text-[10px] font-bold text-neutral-500 uppercase">JPG, PNG - Max 10MB</p>
+                <p className="font-black uppercase tracking-widest text-xs mb-2">Select or drag photo</p>
+                <p className="text-[10px] font-bold text-neutral-500 uppercase">JPG, PNG — Max 10MB</p>
               </>
             )}
             <input
@@ -131,7 +131,7 @@ export const DimensionsPhoto = ({ imagePreview, onImageChange, onDimensionChange
             !imagePreview ? 'bg-neutral-300/50 text-neutral-500 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary-dark hover:scale-105 active:scale-95'
           }`}
         >
-          Ga Verder <ArrowRight size={24}/>
+          Continue <ArrowRight size={24}/>
         </button>
       </div>
     </div>

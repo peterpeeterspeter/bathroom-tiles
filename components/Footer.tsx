@@ -16,22 +16,22 @@ export const Footer = () => (
                 <line x1="22" y1="62" x2="78" y2="62" stroke="white" strokeWidth="3" />
               </svg>
             </div>
-            <span className="text-lg font-black tracking-tight uppercase">De Badkamer</span>
+            <span className="text-lg font-black tracking-tight uppercase">Bathroom Tiles</span>
           </div>
           <p className="text-white/60 text-sm leading-relaxed max-w-xs">
-            De slimme manier om uw badkamerrenovatie te plannen. Visualiseer het eindresultaat met AI en vergelijk vrijblijvende offertes van vakspecialisten bij u in de buurt.
+            Visualise your bathroom with new tiles. Upload a photo, choose your style, and get an AI visualization with a personalized cost estimate.
           </p>
         </div>
 
         <div>
-          <h4 className="font-bold text-sm uppercase tracking-wider mb-6 text-white/80">Navigatie</h4>
+          <h4 className="font-bold text-sm uppercase tracking-wider mb-6 text-white/80">Navigation</h4>
           <nav className="space-y-3">
             <Link to="/" className="block text-sm text-white/60 hover:text-white transition-colors">Home</Link>
-            <Link to="/badkamer-renovatie-kosten" className="block text-sm text-white/60 hover:text-white transition-colors">Kosten Badkamer Renovatie</Link>
-            <Link to="/planner" className="block text-sm text-white/60 hover:text-white transition-colors">AI Badkamer Planner</Link>
-            <Link to="/badkamer-inspiratie" className="block text-sm text-white/60 hover:text-white transition-colors">Inspiratie</Link>
-            <Link to="/offerte-aanvragen" className="block text-sm text-white/60 hover:text-white transition-colors">Gratis Offerte Aanvragen</Link>
-            <Link to="/voor-vakmensen" className="block text-sm text-white/60 hover:text-white transition-colors">Voor Vakmensen</Link>
+            <Link to="/tile-costs" className="block text-sm text-white/60 hover:text-white transition-colors">Tile Costs</Link>
+            <Link to="/planner" className="block text-sm text-white/60 hover:text-white transition-colors">AI Planner</Link>
+            <Link to="/inspiration" className="block text-sm text-white/60 hover:text-white transition-colors">Inspiration</Link>
+            <Link to="/get-quote" className="block text-sm text-white/60 hover:text-white transition-colors">Get Quote</Link>
+            <Link to="/for-contractors" className="block text-sm text-white/60 hover:text-white transition-colors">For Contractors</Link>
           </nav>
         </div>
 
@@ -40,15 +40,15 @@ export const Footer = () => (
           <div className="space-y-4">
             <div className="flex items-center gap-3 text-sm text-white/60">
               <Mail size={16} className="flex-shrink-0" />
-              <span>info@debadkamer.com</span>
+              <span>info@bathroom-tiles.com</span>
             </div>
             <div className="flex items-center gap-3 text-sm text-white/60">
               <Phone size={16} className="flex-shrink-0" />
-              <span>Neem contact op via e-mail</span>
+              <span>Contact us by email</span>
             </div>
             <div className="flex items-center gap-3 text-sm text-white/60">
               <MapPin size={16} className="flex-shrink-0" />
-              <span>Actief in Nederland & België</span>
+              <span>Serving the US</span>
             </div>
           </div>
         </div>
@@ -57,10 +57,10 @@ export const Footer = () => (
 
     <div className="border-t border-white/10">
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
-        <p className="text-xs text-white/40">&copy; {new Date().getFullYear()} DeBadkamer.com. Alle rechten voorbehouden.</p>
+        <p className="text-xs text-white/40">&copy; {new Date().getFullYear()} bathroom-tiles.com. All rights reserved.</p>
         <div className="flex gap-6 text-xs text-white/40">
-          <Link to="/privacy" className="hover:text-white/70 transition-colors">Privacyverklaring</Link>
-          <Link to="/voorwaarden" className="hover:text-white/70 transition-colors">Voorwaarden</Link>
+          <Link to="/privacy" className="hover:text-white/70 transition-colors">Privacy</Link>
+          <Link to="/terms" className="hover:text-white/70 transition-colors">Terms</Link>
         </div>
       </div>
     </div>

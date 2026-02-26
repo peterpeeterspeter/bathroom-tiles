@@ -106,7 +106,7 @@ export interface ExpertAnalysis {
   opportunities: string[];
   recommendations: string[];
   layoutAdvice: string;
-  estimatedComplexity: 'eenvoudig' | 'gemiddeld' | 'complex';
+  estimatedComplexity: 'simple' | 'moderate' | 'complex';
 }
 
 export interface StyleProfile {
@@ -123,7 +123,7 @@ export interface StyleProfile {
 export type PriceTier = 'budget' | 'mid' | 'premium';
 
 export const PRICE_TIER_LABELS: Record<PriceTier, string> = {
-  budget: 'Budget', mid: 'Midden', premium: 'Premium'
+  budget: 'Budget', mid: 'Mid', premium: 'Premium'
 };
 
 export const PRICE_TIER_COLORS: Record<PriceTier, string> = {
@@ -136,7 +136,7 @@ export interface DatabaseProduct {
   id: string;
   brand: string;
   name: string;
-  category: 'Faucet' | 'Toilet' | 'Shower' | 'Vanity' | 'Tile' | 'Lighting' | 'Bathtub' | 'Mirror';
+  category: 'Tile' | 'Faucet' | 'Toilet' | 'Shower' | 'Vanity' | 'Lighting' | 'Bathtub' | 'Mirror';
   price: number;
   currency: string;
   image_url: string;
@@ -174,12 +174,6 @@ export enum BudgetTier {
 export interface MaterialConfig {
   floorTile: string;
   wallTile: string;
-  vanityType: string;
-  faucetFinish: string;
-  toiletType: string;
-  lightingType: string;
-  bathtubType?: string;
-  showerType?: string;
 }
 
 export interface GenerationResult {

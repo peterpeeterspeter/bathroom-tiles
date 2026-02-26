@@ -30,7 +30,7 @@ const DEFAULT_CONFIG: RenderConfig = {
 
 const FAL_ENDPOINT = "https://fal.run/fal-ai/bytedance/seedream/v5/lite/edit";
 
-const PRODUCT_PRIORITY = ['Vanity', 'Bathtub', 'Shower', 'Toilet', 'Tile', 'Faucet', 'Mirror', 'Lighting'];
+const PRODUCT_PRIORITY = ['Tile'];
 
 const getFalApiKey = (): string => {
   const key = process.env.FAL_KEY || process.env.FAL_API_KEY || '';
@@ -87,18 +87,10 @@ const buildSeedreamPrompt = (
   const presetName = styleProfile.presetName || 'Modern';
   const topTags = styleProfile.tags.slice(0, 4).map(t => t.tag);
   const moodDescription = styleProfile.moodDescription || '';
-  const allCategories = ['Vanity', 'Bathtub', 'Shower', 'Toilet', 'Faucet', 'Mirror', 'Lighting'];
-
   const fixtureProducts = imageLayout.productFigures.filter(pf => pf.product.category !== 'Tile');
   const tileProduct = imageLayout.productFigures.find(pf => pf.product.category === 'Tile');
 
-  const keepCategories = allCategories.filter(c => productActions[c] === 'keep');
-  const removeCategories = allCategories.filter(c => productActions[c] === 'remove');
-
-  let keepLine = '';
-  if (keepCategories.length > 0) {
-    keepLine = `\nKeep existing ${keepCategories.join(', ').toLowerCase()} unchanged.`;
-  }
+  const keepLine = '\nKeep ALL existing fixtures (vanity, bathtub, shower, toilet, faucet, mirror, lighting) unchanged. Only update floor and wall tiles.';
 
   let productLines = '';
   for (const pf of fixtureProducts) {
@@ -114,17 +106,13 @@ const buildSeedreamPrompt = (
     productLines += `\n\u2022 ${cat} = Image ${imgNum}\n  ${placeLine}\n  Scale realistically to room size.\n`;
   }
 
-  let removeLine = '';
-  if (removeCategories.length > 0) {
-    removeLine = `\nRemove existing ${removeCategories.join(', ').toLowerCase()}. Fill space with matching wall/floor material.`;
-  }
-
   let materialLines = '';
   if (tileProduct) {
-    materialLines += `- Apply Image ${tileProduct.figureIdx} as feature wall tile behind vanity or bathtub.\n`;
+    materialLines += `- Apply Image ${tileProduct.figureIdx} as floor and wall tile throughout the bathroom.\n`;
+    materialLines += `- Replace existing floor and wall tiles with this product. Keep all fixtures in place.\n`;
   } else {
     const tileTags = topTags.filter(t => /tile|marble|stone|ceramic|zellige/i.test(t));
-    materialLines += `- Replace wall tiles with ${tileTags.length > 0 ? tileTags.join(', ') : 'modern tiles matching the style'}.\n`;
+    materialLines += `- Replace wall and floor tiles with ${tileTags.length > 0 ? tileTags.join(', ') : 'modern tiles matching the style'}.\n`;
   }
   const hasMarble = topTags.some(t => /marble/i.test(t));
   materialLines += `- ${hasMarble ? 'Warm off-white or marble-toned' : 'Smooth warm plaster on non-tiled'} walls.\n`;
@@ -168,11 +156,11 @@ Do not move or resize architectural elements.${keepLine}
 
 ${SEP}
 
-REPLACEMENTS
+REPLACEMENTS (tiles only)
 
-Use reference images exactly for design only:
-${productLines}${removeLine}
-Do not move fixtures to different walls.
+Use reference images exactly for tile design only:
+${productLines}
+Do not move fixtures. Only replace floor and wall tiles.
 
 ${SEP}
 

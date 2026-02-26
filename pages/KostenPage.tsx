@@ -153,7 +153,7 @@ export default function KostenPage() {
           <div className="bg-primary-light/50 rounded-xl p-6 flex items-start gap-4">
             <Info size={20} className="text-primary flex-shrink-0 mt-0.5" />
             <p className="text-sm text-neutral-700">
-              Prijzen zijn indicatief en kunnen afwijken afhankelijk van uw specifieke situatie. Vraag altijd een <Link to="/offerte-aanvragen" className="text-primary font-semibold hover:underline">vrijblijvende offerte</Link> aan voor een exacte prijs.
+              Prijzen zijn indicatief en kunnen afwijken afhankelijk van uw specifieke situatie. Vraag altijd een <Link to="/get-quote" className="text-primary font-semibold hover:underline">vrijblijvende offerte</Link> aan voor een exacte prijs.
             </p>
           </div>
         </div>
@@ -205,7 +205,7 @@ export default function KostenPage() {
               <Sparkles size={18} /> Start AI Planner &mdash; Gratis <ArrowRight size={20} />
             </Link>
             <Link
-              to="/offerte-aanvragen"
+              to="/get-quote"
               className="inline-flex items-center gap-2 bg-white border-2 border-neutral-300/50 text-neutral-700 font-semibold text-lg px-10 py-5 rounded-full transition-all hover:border-primary hover:text-primary"
             >
               Ontvang Offertes <ArrowRight size={20} />

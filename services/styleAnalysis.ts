@@ -32,8 +32,8 @@ export async function analyzeStyleFromReferences(
   const vocabList = tagVocabulary.map(t => `"${t}"`).join(', ');
 
   const systemInstruction = `
-    You are an interior design style analyst for De Badkamer, a premium bathroom renovation company.
-    Analyze the provided reference images and extract the dominant style characteristics.
+    You are an interior design style analyst for Bathroom Tiles, a US tile-focused bathroom renovation company.
+    Analyze the provided reference images and extract the dominant style characteristics for tile selection.
 
     CRITICAL: You must select tags ONLY from this controlled vocabulary:
     [${vocabList}]
@@ -41,13 +41,13 @@ export async function analyzeStyleFromReferences(
     Assign a weight between 0.0 and 1.0 to each tag based on how prominently it appears in the images.
     Only include tags with weight >= 0.3.
 
-    Provide a short Dutch summary (1-2 sentences) describing the overall style.
+    Provide a short English summary (1-2 sentences) describing the overall style for tile choices.
   `;
 
   const parts: any[] = images.map(img => ({
     inlineData: { mimeType: img.mimeType, data: img.base64 }
   }));
-  parts.push({ text: "Analyze the style characteristics of these bathroom/interior reference images." });
+  parts.push({ text: "Analyze the style characteristics of these bathroom reference images for tile selection." });
 
   try {
     const response = await ai.models.generateContent({
@@ -70,7 +70,7 @@ export async function analyzeStyleFromReferences(
                 required: ["tag", "weight"]
               }
             },
-            summary_nl: { type: Type.STRING },
+            summary_nl: { type: Type.STRING, description: "English summary (1-2 sentences)" },
           },
           required: ["tags", "summary_nl"]
         }
@@ -87,7 +87,7 @@ export async function analyzeStyleFromReferences(
 
       return {
         tags,
-        summary: raw.summary_nl || 'Stijlanalyse op basis van referentiebeelden.',
+        summary: raw.summary_nl || 'Style analysis based on reference images.',
         source: 'ai_vision',
       };
     }
@@ -96,7 +96,7 @@ export async function analyzeStyleFromReferences(
     console.error("Style analysis error:", error);
     return {
       tags: tagVocabulary.slice(0, 5).map(tag => ({ tag, weight: 0.5 })),
-      summary: 'Automatische stijlanalyse niet beschikbaar. Standaard profiel toegepast.',
+      summary: 'Style analysis unavailable. Default profile applied.',
       source: 'ai_vision',
     };
   }
@@ -122,104 +122,84 @@ export async function analyzeProjectContext(input: ProjectContextInput): Promise
 
   let styleContext = '';
   if (hasPreset) {
-    styleContext += `De klant heeft als voorkeursstijl "${input.stylePreset!.name}" gekozen (${input.stylePreset!.description}).\nBijbehorende stijltags: ${input.stylePreset!.tags.join(', ')}.`;
+    styleContext += `The customer has chosen style "${input.stylePreset!.name}" (${input.stylePreset!.description}).\nStyle tags: ${input.stylePreset!.tags.join(', ')}.`;
   } else {
-    styleContext += 'De klant heeft geen specifieke voorkeursstijl gekozen.';
+    styleContext += 'The customer has not chosen a specific style preference.';
   }
   if (!hasRefs && hasPreset) {
-    styleContext += `\nDe klant heeft geen inspiratiebeelden geüpload. Baseer je stijladvies volledig op het "${input.stylePreset!.name}" profiel.`;
+    styleContext += `\nThe customer has not uploaded inspiration images. Base your advice entirely on the "${input.stylePreset!.name}" profile.`;
   }
 
-  const systemInstruction = `Je bent een ervaren interieurarchitect bij De Badkamer met 15+ jaar ervaring in badkamerrenovaties in Nederland.
+  const systemInstruction = `You are an experienced interior architect at Bathroom Tiles, a US company focused on bathroom tile renovations.
 
-JOUW OPDRACHT:
-Analyseer de foto van de huidige badkamer stap voor stap. Gebruik eventuele inspiratiebeelden en de stijlvoorkeur als leidraad voor je advies.
+YOUR TASK:
+Analyze the current bathroom photo step by step. Use any inspiration images and style preference as a guide. FOCUS ON TILE WORK — floor and wall tiles only. We do NOT replace fixtures (toilet, vanity, shower, bathtub, faucet, mirror, lighting).
 
 CONTEXT:
 ${styleContext}
-Afmetingen: ${input.dimensions.widthM}m breed × ${input.dimensions.lengthM}m lang × ${input.dimensions.heightM}m hoog (${area} m²).
+Dimensions: ${input.dimensions.widthM}m × ${input.dimensions.lengthM}m × ${input.dimensions.heightM}m (${area} m²).
 
-PRIJSCONTEXT (Nederland, 2026):
-- Arbeidskosten: €40-€70/uur
-- Standaard tegels: €25-€45/m², designtegels: €50-€100/m²
-- Wandpanelen: €60-€90/m² (snellere installatie, geen voegonderhoud)
-- Natuursteen: €80-€150/m² (luxe, hoog onderhoud)
-- Complete renovatie (9m²): marktgemiddelde €14.000-€18.500
-- Budget renovatie: vanaf €8.000 | Luxe: tot €25.000+
-- Trend 2026: wandpanelen winnen terrein, comfort boven luxe, duurzame materialen (25+ jaar levensduur)
+US TILE COST CONTEXT (2026):
+- Labor: $45-$75/hr
+- Standard tiles: $30-$60/m², designer tiles: $65-$130/m²
+- Porcelain large-format: $80-$150/m²
+- Natural stone: $100-$200/m² (luxe, higher maintenance)
+- Tile-only renovation (9m²): typical $4,000-$8,000
+- Budget: from $2,500 | Premium: to $12,000+
 
-WERKWIJZE — volg deze stappen in volgorde:
+WORKFLOW — follow these steps in order:
 
-STAP 1 — HUIDIGE STAAT (currentState)
-Kijk naar de foto. Beschrijf kort:
-- De indeling en grootte (klopt dit met de opgegeven afmetingen?)
-- Materialen die je ziet (tegels, vloer, sanitair)
-- Staat van onderhoud
-- Sterke punten om te behouden
-- Zwakke punten die renovatie nodig hebben
+STEP 1 — CURRENT STATE (currentState)
+Look at the photo. Describe briefly:
+- Layout and size (does it match the given dimensions?)
+- Materials you see (tiles, floor, wall finishes)
+- Condition of existing tiles
+- Strong points to preserve
+- Weak points that need tile work
 
-STAP 2 — CONDITIESCORE (condition_score)
-Geef een score van 1-10:
-1-3 = Verouderd, dringend renovatie nodig
-4-5 = Functioneel maar gedateerd
-6-7 = Redelijke staat, cosmetische update gewenst
-8-10 = Goede staat, luxe upgrade gewenst
+STEP 2 — CONDITION SCORE (condition_score)
+Give a score 1-10:
+1-3 = Dated, tile work needed urgently
+4-5 = Functional but dated
+6-7 = Fair condition, cosmetic tile update desired
+8-10 = Good condition, premium tile upgrade desired
 
-STAP 3 — BEHOUDEN ELEMENTEN (keepElements)
-Welke elementen in de huidige badkamer zijn het waard om te behouden?
-Denk aan: raamkozijn, vloerverwarming, een goed ligbad, recente leidingaansluitingen, etc.
-Noem alleen elementen die je DAADWERKELIJK in de foto ziet. Lege lijst als er niets te behouden is.
+STEP 3 — KEEP ELEMENTS (keepElements)
+Which elements are worth keeping? (e.g., good window frame, heated floor, recent plumbing)
+Only list elements you ACTUALLY see in the photo. Empty list if none.
 
-STAP 4 — KANSEN (opportunities)
-Noem 3-4 concrete kansen die DEZE specifieke ruimte biedt.
-Koppel elke kans aan wat je in de foto ziet:
-"[Wat je ziet] → [De kans die dit biedt]"
+STEP 4 — OPPORTUNITIES (opportunities)
+Name 3-4 concrete opportunities for THIS specific space.
+Format per opportunity: "[What you see] → [The opportunity this offers]"
 
-STAP 5 — AANBEVELINGEN (recommendations)
-Geef 3-4 concrete renovatie-aanbevelingen die passen bij:
-- De stijlvoorkeur van de klant
-- De beschikbare ruimte en afmetingen
-- De bestaande aansluitingen en structuur
-Noem bij elke aanbeveling een indicatieve prijsrange uit de prijscontext hierboven.
+STEP 5 — RECOMMENDATIONS (recommendations)
+Give 3-4 concrete TILE-focused recommendations (floor/wall tiles only):
+- Match the customer's style preference
+- Suit the space and dimensions
+- Include indicative price range from the cost context above
+- Do NOT recommend fixture replacement (vanity, toilet, shower, etc.)
 
-STAP 6 — INDELINGSADVIES (layoutAdvice)
-Geef een kort advies over de optimale indeling:
-- Waar staan de bestaande aansluitingen (voor zover zichtbaar)?
-- Wat is de meest praktische opstelling gegeven de afmetingen?
-- Moet er leidingwerk verplaatst worden (ja/nee en waarom)?
+STEP 6 — LAYOUT ADVICE (layoutAdvice)
+Brief advice on the layout:
+- Where are the existing connections (as far as visible)?
+- Most practical arrangement given dimensions?
+- Does plumbing need to move? (yes/no and why)
 
-STAP 7 — COMPLEXITEIT (estimated_complexity)
-Schat de complexiteit in:
-- "eenvoudig" = Zelfde indeling, nieuwe afwerking en sanitair (2-6 werkdagen)
-- "gemiddeld" = Beperkte indelingswijzigingen, nieuw leidingwerk mogelijk (1-2 weken)
-- "complex" = Structurele wijzigingen, muren verplaatsen, volledige herleiding (2-3+ weken)
+STEP 7 — COMPLEXITY (estimated_complexity)
+Estimate complexity: "simple" (2-6 days), "moderate" (1-2 weeks), or "complex" (2-3+ weeks)
 
-STAP 8 — STIJLTAGS (tags)
-Selecteer tags UITSLUITEND uit deze vocabulaire: [${vocabList}]
-Ken een gewicht toe (0.0-1.0) op basis van hoe goed de tag past bij de GEWENSTE renovatie (niet de huidige staat).
-Alleen tags met gewicht >= 0.3.
+STEP 8 — STYLE TAGS (tags)
+Select tags ONLY from this vocabulary: [${vocabList}]
+Assign weight 0.0-1.0 based on how well the tag fits the DESIRED renovation. Only tags >= 0.3.
 
-STAP 9 — SAMENVATTING (summary_nl)
-Schrijf een professionele samenvatting van 2-3 zinnen.
-Toon: zelfverzekerd, praktisch, enthousiasmerend maar realistisch.
-Benoem de belangrijkste transformatie die mogelijk is.
+STEP 9 — SUMMARY (summary_nl)
+Write a professional 2-3 sentence summary in English. Confident, practical, enthusiastic but realistic. Name the key transformation possible.
 
-KWALITEITSREGELS:
-- Schrijf ALLES in het Nederlands
-- Wees concreet en specifiek voor DEZE badkamer — niet generiek
-- Houd rekening met bestaande leidingaansluitingen en structurele elementen
-- Combineer stijlvoorkeur met wat praktisch haalbaar is
-
-VERMIJD generieke adviezen zoals:
-✗ "Overweeg een inloopdouche" — tenzij je uitlegt WAAR in deze ruimte en WAAROM het past
-✗ "Gebruik lichte kleuren" — specificeer welke kleuren en op welke wanden
-✗ "Moderniseer het sanitair" — specificeer WAT je zou vervangen en WAARMEE
-
-GOED voorbeeld aanbeveling:
-"Vervang het vrijstaande douchegordijn door een inloopdouche (90×120cm) tegen de rechtermuur — de wateraansluiting zit hier al. Met een regendouchekop en thermostaatkraan (indicatief €800-€1.400). Wandpanelen in betonlook passen bij de moderne stijl en zijn onderhoudsvriendelijker dan tegels."
-
-SLECHT voorbeeld aanbeveling:
-"Een inloopdouche zou mooi staan in deze ruimte. Moderne materialen geven een frisse uitstraling."`;
+QUALITY RULES:
+- Write EVERYTHING in English
+- Be concrete and specific for THIS bathroom — not generic
+- Focus on TILE recommendations only
+- Avoid generic advice; specify colors, materials, walls`;
 
   const parts: any[] = [];
 
@@ -229,15 +209,15 @@ SLECHT voorbeeld aanbeveling:
         inlineData: { mimeType: img.mimeType, data: img.base64 }
       });
     }
-    parts.push({ text: "[INSPIRATIEBEELDEN — dit is de stijl die de klant wil bereiken]" });
+    parts.push({ text: "[INSPIRATION IMAGES — this is the style the customer wants to achieve]" });
   }
 
   parts.push({
     inlineData: { mimeType: input.bathroomPhoto.mimeType, data: input.bathroomPhoto.base64 }
   });
-  parts.push({ text: "[FOTO HUIDIGE BADKAMER — dit is de huidige staat die gerenoveerd moet worden]" });
+  parts.push({ text: "[CURRENT BATHROOM PHOTO — this is the current state to be renovated]" });
 
-  parts.push({ text: "Analyseer de huidige badkamer stap voor stap en geef een professioneel renovatie-advies op basis van alle beschikbare informatie." });
+  parts.push({ text: "Analyze the current bathroom step by step and give a professional tile-focused renovation recommendation based on all available information." });
 
   try {
     const response = await ai.models.generateContent({
@@ -251,34 +231,34 @@ SLECHT voorbeeld aanbeveling:
           properties: {
             currentState: {
               type: Type.STRING,
-              description: "Uitgebreide beschrijving van de huidige badkamer op basis van de foto: indeling, materialen, staat van onderhoud, sterke en zwakke punten. Minimaal 4-6 zinnen."
+              description: "Detailed description of the current bathroom based on the photo: layout, materials, condition, strengths and weaknesses. At least 4-6 sentences."
             },
             condition_score: {
               type: Type.INTEGER,
-              description: "Conditiescore 1-10 van de huidige badkamer (1-3 verouderd, 4-5 gedateerd, 6-7 redelijk, 8-10 goed)"
+              description: "Condition score 1-10 (1-3 dated, 4-5 functional but dated, 6-7 fair, 8-10 good)"
             },
             keepElements: {
               type: Type.ARRAY,
               items: { type: Type.STRING },
-              description: "Elementen in de huidige badkamer die het waard zijn om te behouden. Alleen wat daadwerkelijk zichtbaar is in de foto."
+              description: "Elements worth keeping. Only what is actually visible in the photo."
             },
             opportunities: {
               type: Type.ARRAY,
               items: { type: Type.STRING },
-              description: "3-4 concrete renovatiekansen specifiek voor deze ruimte. Formaat per kans: '[Wat je ziet] → [De kans die dit biedt]'. Elke kans minimaal 2 zinnen."
+              description: "3-4 concrete tile opportunities for this space. Format: '[What you see] → [The opportunity]'."
             },
             recommendations: {
               type: Type.ARRAY,
               items: { type: Type.STRING },
-              description: "3-4 concrete aanbevelingen met prijsindicatie. Elke aanbeveling bevat: WAT vervangen/toevoegen, WAAR in de ruimte, WAAROM het past bij de stijl, en een indicatieve prijsrange. Minimaal 3 zinnen per aanbeveling."
+              description: "3-4 concrete TILE recommendations with price indication. Focus on floor/wall tiles only."
             },
             layoutAdvice: {
               type: Type.STRING,
-              description: "Advies over optimale indeling: bestaande aansluitingen, meest praktische opstelling, of leidingwerk verplaatst moet worden. Minimaal 3-4 zinnen."
+              description: "Advice on layout: existing connections, practical arrangement, whether plumbing must move."
             },
             estimated_complexity: {
               type: Type.STRING,
-              description: "Geschatte complexiteit: 'eenvoudig' (2-6 werkdagen), 'gemiddeld' (1-2 weken), of 'complex' (2-3+ weken)"
+              description: "Estimated complexity: 'simple' (2-6 days), 'moderate' (1-2 weeks), or 'complex' (2-3+ weeks)"
             },
             tags: {
               type: Type.ARRAY,
@@ -294,7 +274,7 @@ SLECHT voorbeeld aanbeveling:
             },
             summary_nl: {
               type: Type.STRING,
-              description: "Professionele samenvatting van 2-3 zinnen in het Nederlands. Toon: zelfverzekerd, praktisch, enthousiasmerend maar realistisch."
+              description: "Professional 2-3 sentence summary in English. Confident, practical, enthusiastic but realistic."
             },
           },
           required: ["currentState", "condition_score", "keepElements", "opportunities", "recommendations", "layoutAdvice", "estimated_complexity", "tags", "summary_nl"]
@@ -310,9 +290,13 @@ SLECHT voorbeeld aanbeveling:
         .map((t: any) => ({ tag: t.tag, weight: Math.min(1, Math.max(0, t.weight)) }))
         .sort((a: StyleTag, b: StyleTag) => b.weight - a.weight);
 
-      const validComplexity = ['eenvoudig', 'gemiddeld', 'complex'] as const;
       const rawComplexity = (raw.estimated_complexity || '').toLowerCase().trim();
-      const complexity = validComplexity.includes(rawComplexity as any) ? rawComplexity as typeof validComplexity[number] : 'gemiddeld';
+      const complexityMap: Record<string, 'simple' | 'moderate' | 'complex'> = {
+        simple: 'simple', eenvoudig: 'simple',
+        moderate: 'moderate', gemiddeld: 'moderate',
+        complex: 'complex',
+      };
+      const complexity: 'simple' | 'moderate' | 'complex' = complexityMap[rawComplexity] || 'moderate';
 
       const conditionScore = Math.max(1, Math.min(10, Math.round(Number(raw.condition_score) || 5)));
 
@@ -328,7 +312,7 @@ SLECHT voorbeeld aanbeveling:
 
       return {
         tags,
-        summary: raw.summary_nl || 'Renovatie-advies op basis van uw badkamer en stijlvoorkeur.',
+        summary: raw.summary_nl || 'Renovation recommendation based on your bathroom and style preference.',
         source: hasRefs ? 'combined' : (hasPreset ? 'preset' : 'ai_vision'),
         presetId: undefined,
         presetName: input.stylePreset?.name,

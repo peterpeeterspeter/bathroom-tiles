@@ -4,20 +4,13 @@ import { StyleProfile, DatabaseProduct, ProductAction } from '../types';
 import { ScoredProduct, fetchProductsForProfile, getProductsByCategory } from '../lib/productService';
 import { CategoryProductSelector } from './CategoryProductSelector';
 
-const CATEGORIES: DatabaseProduct['category'][] = ['Bathtub', 'Shower', 'Vanity', 'Toilet', 'Faucet', 'Mirror', 'Lighting', 'Tile'];
+const CATEGORIES: DatabaseProduct['category'][] = ['Tile'];
 
 const CATEGORY_LABELS: Record<string, string> = {
-  Bathtub: 'Bad',
-  Shower: 'Douche',
-  Vanity: 'Wastafelmeubel',
-  Toilet: 'Toilet',
-  Faucet: 'Kraanwerk',
-  Mirror: 'Spiegel',
-  Lighting: 'Verlichting',
-  Tile: 'Tegels & Afwerking',
+  Tile: 'Tiles (floor & wall)',
 };
 
-const SHOWER_BATHTUB_CATEGORIES = new Set(['Shower', 'Bathtub']);
+const SHOWER_BATHTUB_CATEGORIES = new Set<string>([]);
 
 interface ProductConfigurationProps {
   styleProfile: StyleProfile;
@@ -50,7 +43,7 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, product
           <div className="md:sticky md:top-32 space-y-6 md:space-y-8">
             <div className="bg-neutral-900 text-white p-6 md:p-8 rounded-2xl md:rounded-[2rem] shadow-2xl overflow-hidden relative">
               <div className="relative z-10">
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-3 md:mb-4">Expert Advies</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-3 md:mb-4">Expert Advice</p>
                 <h3 className="text-xl md:text-2xl font-black tracking-tighter leading-none mb-3 md:mb-4">{styleName}</h3>
                 <p className="text-white/60 text-[11px] font-bold leading-relaxed mb-4">{styleProfile.summary}</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -69,7 +62,7 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, product
                 <div className="bg-white p-5 md:p-6 rounded-2xl border-2 border-neutral-300/30 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-black uppercase text-[10px] tracking-widest flex items-center gap-2 text-neutral-500">
-                      <Eye size={14} className="text-primary" /> Huidige Staat
+                      <Eye size={14} className="text-primary" /> Current State
                     </h4>
                     <div className="flex items-center gap-1.5">
                       <Gauge size={12} className={expert.conditionScore <= 4 ? 'text-red-500' : expert.conditionScore <= 6 ? 'text-amber-500' : 'text-emerald-500'} />
@@ -84,7 +77,7 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, product
                 {expert.keepElements.length > 0 && (
                   <div className="bg-white p-5 md:p-6 rounded-2xl border-2 border-neutral-300/30 shadow-sm">
                     <h4 className="font-black uppercase text-[10px] tracking-widest mb-3 flex items-center gap-2 text-neutral-500">
-                      <Bookmark size={14} className="text-primary" /> Behouden
+                      <Bookmark size={14} className="text-primary" /> Keep
                     </h4>
                     <ul className="space-y-1.5">
                       {expert.keepElements.map((el, i) => (
@@ -98,8 +91,8 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, product
                 )}
 
                 <div className="bg-white p-5 md:p-6 rounded-2xl border-2 border-neutral-300/30 shadow-sm">
-                  <h4 className="font-black uppercase text-[10px] tracking-widest mb-3 flex items-center gap-2 text-neutral-500">
-                    <Lightbulb size={14} className="text-primary" /> Kansen
+                    <h4 className="font-black uppercase text-[10px] tracking-widest mb-3 flex items-center gap-2 text-neutral-500">
+                    <Lightbulb size={14} className="text-primary" /> Opportunities
                   </h4>
                   <ul className="space-y-2">
                     {expert.opportunities.map((opp, i) => (
@@ -112,8 +105,8 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, product
                 </div>
 
                 <div className="bg-white p-5 md:p-6 rounded-2xl border-2 border-neutral-300/30 shadow-sm">
-                  <h4 className="font-black uppercase text-[10px] tracking-widest mb-3 flex items-center gap-2 text-neutral-500">
-                    <Layout size={14} className="text-primary" /> Aanbevelingen
+                    <h4 className="font-black uppercase text-[10px] tracking-widest mb-3 flex items-center gap-2 text-neutral-500">
+                    <Layout size={14} className="text-primary" /> Recommendations
                   </h4>
                   <ul className="space-y-2">
                     {expert.recommendations.map((rec, i) => (
@@ -128,7 +121,7 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, product
                 {expert.layoutAdvice && (
                   <div className="bg-primary/5 p-5 md:p-6 rounded-2xl border-2 border-primary/20">
                     <h4 className="font-black uppercase text-[10px] tracking-widest mb-3 flex items-center gap-2 text-primary">
-                      <Layout size={14} /> Indeling Advies
+                      <Layout size={14} /> Layout Advice
                     </h4>
                     <p className="text-[11px] font-bold text-neutral-700 leading-relaxed">{expert.layoutAdvice}</p>
                   </div>
@@ -137,11 +130,11 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, product
                 <div className="bg-neutral-900 text-white p-4 rounded-2xl flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Wrench size={14} className="text-primary" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Complexiteit</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">Complexity</span>
                   </div>
                   <span className={`text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full ${
-                    expert.estimatedComplexity === 'eenvoudig' ? 'bg-emerald-500/20 text-emerald-400' :
-                    expert.estimatedComplexity === 'gemiddeld' ? 'bg-amber-500/20 text-amber-400' :
+                    expert.estimatedComplexity === 'simple' ? 'bg-emerald-500/20 text-emerald-400' :
+                    expert.estimatedComplexity === 'moderate' ? 'bg-amber-500/20 text-amber-400' :
                     'bg-red-500/20 text-red-400'
                   }`}>
                     {expert.estimatedComplexity}
@@ -152,9 +145,9 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, product
 
             {!expert && (
               <div className="bg-surface p-5 md:p-6 rounded-2xl border-2 border-neutral-300/50 hidden md:block">
-                <h4 className="font-black uppercase text-[10px] tracking-widest mb-4 flex items-center gap-2"><Info size={14} className="text-primary" /> Waarom deze keuzes?</h4>
+                <h4 className="font-black uppercase text-[10px] tracking-widest mb-4 flex items-center gap-2"><Info size={14} className="text-primary" /> Why these choices?</h4>
                 <p className="text-[11px] font-bold text-neutral-700 leading-relaxed">
-                  Producten worden gerangschikt op basis van uw stijlprofiel. De best passende producten staan bovenaan.
+                  Products are ranked based on your style profile. The best matches appear at the top.
                 </p>
               </div>
             )}
@@ -185,7 +178,7 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, product
                           : 'bg-surface border border-neutral-300/50 text-neutral-500 hover:border-neutral-400'
                       }`}
                     >
-                      Vervangen
+                      Replace
                     </button>
                     <button
                       onClick={() => onActionChange(cat, 'keep')}
@@ -195,32 +188,8 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, product
                           : 'bg-surface border border-neutral-300/50 text-neutral-500 hover:border-neutral-400'
                       }`}
                     >
-                      Behouden
+                      Keep
                     </button>
-                    {isShowerBathtub && (
-                      <>
-                        <button
-                          onClick={() => onActionChange(cat, 'add')}
-                          className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
-                            action === 'add'
-                              ? 'bg-emerald-600 text-white'
-                              : 'bg-surface border border-neutral-300/50 text-neutral-500 hover:border-neutral-400'
-                          }`}
-                        >
-                          Toevoegen
-                        </button>
-                        <button
-                          onClick={() => onActionChange(cat, 'remove')}
-                          className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
-                            action === 'remove'
-                              ? 'bg-red-600 text-white'
-                              : 'bg-surface border border-neutral-300/50 text-neutral-500 hover:border-neutral-400'
-                          }`}
-                        >
-                          Verwijderen
-                        </button>
-                      </>
-                    )}
                   </div>
 
                   {(action === 'replace' || action === 'add') && (
@@ -234,15 +203,7 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, product
                   {action === 'keep' && (
                     <div className="bg-surface border border-neutral-300/30 rounded-xl p-4 text-center">
                       <p className="text-[11px] font-bold text-neutral-500">
-                        Het huidige {(CATEGORY_LABELS[cat] || cat).toLowerCase()} wordt behouden zoals op uw foto.
-                      </p>
-                    </div>
-                  )}
-
-                  {action === 'remove' && (
-                    <div className="bg-red-50 border border-red-200/50 rounded-xl p-4 text-center">
-                      <p className="text-[11px] font-bold text-red-600">
-                        {(CATEGORY_LABELS[cat] || cat)} wordt volledig verwijderd uit de badkamer.
+                        Existing {(CATEGORY_LABELS[cat] || cat).toLowerCase()} will be kept as shown in your photo.
                       </p>
                     </div>
                   )}
@@ -256,15 +217,15 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, product
              <div>
                <p className="text-[10px] font-black uppercase text-neutral-500 tracking-widest mb-1">Disclaimer</p>
                <p className="text-[11px] md:text-xs text-neutral-500 leading-relaxed">
-                 De getoonde productselecties dienen als inspiratierichting en vormen geen definitieve bestelling of garantie op levering van exacte modellen.
-                 Een definitieve technische configuratie volgt steeds na adviesgesprek.
+                 The product selections shown are for inspiration only and do not constitute a definite order or guarantee delivery of exact models.
+                 Final configuration follows after a consultation.
                </p>
              </div>
           </div>
 
           <div className="pt-4 md:pt-8">
             <button onClick={onNext} className="w-full py-5 md:py-6 bg-neutral-900 text-white rounded-2xl md:rounded-[2rem] font-black text-xs md:text-sm uppercase tracking-widest hover:bg-neutral-800 transition-all flex items-center justify-center gap-3 shadow-2xl">
-              Genereer Mijn Resultaat <ArrowRight size={20}/>
+              Generate My Result <ArrowRight size={20}/>
             </button>
           </div>
         </div>

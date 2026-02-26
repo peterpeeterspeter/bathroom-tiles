@@ -761,7 +761,7 @@ const VoorVakmensenPage = () => {
 
           <div className="text-center mt-12">
             <Link
-              to="/badkamer-inspiratie"
+              to="/inspiration"
               className="inline-flex items-center gap-2 text-primary font-bold hover:text-primary-dark transition-colors"
             >
               Bekijk meer AI-resultaten <ArrowRight size={18} />
@@ -984,7 +984,7 @@ const VoorVakmensenPage = () => {
 
               <p className="text-xs text-neutral-400 text-center mt-4">
                 Door u aan te melden gaat u akkoord met onze{' '}
-                <Link to="/voorwaarden" className="underline hover:text-neutral-600">algemene voorwaarden</Link>{' '}
+                <Link to="/terms" className="underline hover:text-neutral-600">algemene voorwaarden</Link>{' '}
                 en{' '}
                 <Link to="/privacy" className="underline hover:text-neutral-600">privacybeleid</Link>.
               </p>

@@ -11,7 +11,7 @@ export async function createProject(): Promise<string | null> {
     const sessionId = getSessionId();
     const { data, error } = await supabase
       .from('projects')
-      .insert({ session_id: sessionId, status: 'in_progress' })
+      .insert({ session_id: sessionId, status: 'in_progress', site: 'bathroom-tiles' })
       .select('id')
       .single();
     if (error) {

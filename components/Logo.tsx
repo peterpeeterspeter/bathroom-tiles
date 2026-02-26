@@ -17,8 +17,8 @@ export const Logo = ({ compact = false }: { compact?: boolean }) => (
     </div>
     {!compact && (
       <div className="flex flex-col leading-none">
-        <span className="text-lg md:text-xl font-black tracking-tight text-primary uppercase">De Badkamer</span>
-        <span className="text-[7px] md:text-[8px] font-semibold tracking-[0.3em] text-neutral-500 uppercase -mt-0.5">Vakmanschap in Renovatie</span>
+        <span className="text-lg md:text-xl font-black tracking-tight text-primary uppercase">Bathroom Tiles</span>
+        <span className="text-[7px] md:text-[8px] font-semibold tracking-[0.3em] text-neutral-500 uppercase -mt-0.5">Visualise Your Space</span>
       </div>
     )}
   </Link>

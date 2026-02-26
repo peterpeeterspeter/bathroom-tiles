@@ -50,7 +50,7 @@ export async function fetchStylePresets(): Promise<StylePreset[]> {
 
   const { data: presets } = await supabase
     .from('style_presets')
-    .select('id, name, label_nl, description_nl, image_url, display_order')
+    .select('id, name, label_nl, description_nl, label_en, description_en, image_url, display_order')
     .eq('is_active', true)
     .order('display_order');
 
@@ -72,6 +72,8 @@ export async function fetchStylePresets(): Promise<StylePreset[]> {
 
   cachedPresets = presets.map(p => ({
     ...p,
+    label_nl: (p as any).label_en || p.label_nl,
+    description_nl: (p as any).description_en || p.description_nl,
     image_url: resolveStyleImage(p.name, p.image_url),
     tags: tagsByPreset[p.id] || [],
   }));
@@ -86,6 +88,7 @@ export async function fetchAllActiveProducts(): Promise<DatabaseProduct[]> {
     .from('products')
     .select('id, brand, name, category, price, currency, image_url, images, origin, is_active, display_order, price_low, price_high, price_tier, catalog_image_path, render_image_path, description')
     .eq('is_active', true)
+    .eq('source', 'bathroom-tiles')
     .order('display_order');
 
   if (!products || products.length === 0) return [];
@@ -199,8 +202,9 @@ export async function fetchRenderImagesForProducts(
 }
 
 export function getProductPriceDisplay(product: DatabaseProduct): string {
+  const symbol = product.currency === 'USD' ? '$' : '€';
   if (product.price_low && product.price_high) {
-    return `€${Math.round(product.price_low)} – €${Math.round(product.price_high)}`;
+    return `${symbol}${Math.round(product.price_low)} – ${symbol}${Math.round(product.price_high)}`;
   }
-  return `€${Math.round(product.price)}`;
+  return `${symbol}${Math.round(product.price)}`;
 }

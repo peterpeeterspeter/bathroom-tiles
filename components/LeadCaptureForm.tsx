@@ -14,25 +14,25 @@ interface LeadCaptureFormProps {
 }
 
 const fields = [
-  { id: 'name' as const, label: 'Naam', icon: User, type: 'text' },
-  { id: 'email' as const, label: 'E-mailadres', icon: Mail, type: 'email' },
-  { id: 'phone' as const, label: 'Telefoonnummer', icon: Smartphone, type: 'tel' },
-  { id: 'postcode' as const, label: 'Postcode', icon: MapPin, type: 'text' },
+  { id: 'name' as const, label: 'Name', icon: User, type: 'text' },
+  { id: 'email' as const, label: 'Email', icon: Mail, type: 'email' },
+  { id: 'phone' as const, label: 'Phone', icon: Smartphone, type: 'tel' },
+  { id: 'postcode' as const, label: 'ZIP code', icon: MapPin, type: 'text' },
 ];
 
 const timelineOptions = [
-  { value: '', label: 'Wanneer wilt u renoveren?' },
-  { value: '1_month', label: 'Binnen 1 maand' },
-  { value: '1_3_months', label: 'Binnen 1-3 maanden' },
-  { value: '3_6_months', label: 'Binnen 3-6 maanden' },
-  { value: 'exploring', label: 'Aan het verkennen' },
+  { value: '', label: 'When do you plan to renovate?' },
+  { value: '1_month', label: 'Within 1 month' },
+  { value: '1_3_months', label: 'Within 1-3 months' },
+  { value: '3_6_months', label: 'Within 3-6 months' },
+  { value: 'exploring', label: 'Just exploring' },
 ];
 
 const deliverables = [
-  { icon: Palette, text: 'Uw AI renovatie-ontwerp in hoge resolutie' },
-  { icon: Calculator, text: 'Gedetailleerde kostenraming met productprijzen' },
-  { icon: Lightbulb, text: 'Persoonlijk advies van onze AI-architect' },
-  { icon: FileText, text: 'Compleet renovatiedossier als PDF' },
+  { icon: Palette, text: 'Your AI renovation design in high resolution' },
+  { icon: Calculator, text: 'Detailed cost estimate with product prices' },
+  { icon: Lightbulb, text: 'Personal advice from our AI architect' },
+  { icon: FileText, text: 'Complete renovation dossier as PDF' },
 ];
 
 export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
@@ -51,9 +51,9 @@ export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.includes('timeout')) {
-        setError('Het versturen duurde te lang. Controleer uw internetverbinding en probeer het opnieuw.');
+        setError('Sending took too long. Check your internet connection and try again.');
       } else {
-        setError('Er ging iets mis bij het versturen. Probeer het opnieuw.');
+        setError('Something went wrong. Please try again.');
       }
     } finally {
       setSubmitting(false);
@@ -68,12 +68,12 @@ export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
           <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-5">
             <CheckCircle size={28} />
           </div>
-          <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-2">Uw renovatiedossier is klaar</h2>
-          <p className="text-white/80 text-sm md:text-base">Ontvang alles direct in uw inbox — gratis en vrijblijvend</p>
+          <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-2">Your renovation dossier is ready</h2>
+          <p className="text-white/80 text-sm md:text-base">Receive everything in your inbox — free and no obligation</p>
         </div>
 
         <div className="px-8 md:px-12 py-6 md:py-8 bg-primary/[0.03] border-b border-neutral-300/30">
-          <p className="text-xs font-bold text-primary uppercase tracking-widest mb-4">Dit ontvangt u per e-mail</p>
+          <p className="text-xs font-bold text-primary uppercase tracking-widest mb-4">What you receive by email</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {deliverables.map((item, i) => (
               <div key={i} className="flex items-start gap-3">
@@ -134,7 +134,7 @@ export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
                 />
               </div>
               <span className="text-[11px] text-neutral-500 leading-relaxed">
-                Ik ga akkoord met de verwerking van mijn persoonsgegevens conform de privacyverklaring van De Badkamer. Mijn gegevens worden gebruikt om mij een gepersonaliseerd voorstel te bezorgen en contact met mij op te nemen.
+                I agree to the processing of my personal data in accordance with Bathroom Tiles' privacy policy. My data will be used to provide me with a personalized proposal and to contact me.
               </span>
             </label>
 
@@ -146,18 +146,18 @@ export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
               }`}
             >
               {submitting ? (
-                <><Loader2 size={20} className="animate-spin" /> Versturen...</>
+                <><Loader2 size={20} className="animate-spin" /> Sending...</>
               ) : error ? (
-                <><RotateCcw size={20} /> Opnieuw proberen</>
+                <><RotateCcw size={20} /> Try again</>
               ) : (
-                <>Ontvang Uw Renovatiedossier <ArrowRight size={20}/></>
+                <>Get Your Renovation Dossier <ArrowRight size={20}/></>
               )}
             </button>
           </form>
 
           <div className="flex items-center justify-center gap-2 mt-5 text-neutral-400">
             <Shield size={14} />
-            <span className="text-xs">Uw gegevens zijn veilig en worden nooit gedeeld</span>
+            <span className="text-xs">Your data is secure and will never be shared</span>
           </div>
         </div>
 

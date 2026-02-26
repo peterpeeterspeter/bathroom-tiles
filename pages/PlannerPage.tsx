@@ -56,7 +56,7 @@ const compressImage = (dataUrl: string, maxDimension: number): Promise<string> =
 };
 
 export default function PlannerPage() {
-  useSEO({ title: 'AI Badkamer Planner - De Badkamer', description: 'Zie uw nieuwe badkamer vóórdat u begint. Upload een foto, kies uw stijl, en ontvang direct een AI-visualisatie met gepersonaliseerde prijsindicatie. Gratis en vrijblijvend.' });
+  useSEO({ title: 'AI Bathroom Planner - Bathroom Tiles', description: 'See your new bathroom before you start. Upload a photo, choose your style, and get an AI visualization with a personalized price estimate. Free and no obligation.' });
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -74,7 +74,7 @@ export default function PlannerPage() {
   const [selectedProductNames, setSelectedProductNames] = useState<Record<string, string>>({});
   const [productActions, setProductActions] = useState<Record<string, ProductAction>>({});
   const [materialConfig, setMaterialConfig] = useState<MaterialConfig>({
-    floorTile: 'AI_MATCH', wallTile: 'AI_MATCH', vanityType: 'AI_MATCH', faucetFinish: 'AI_MATCH', toiletType: 'AI_MATCH', lightingType: 'AI_MATCH', bathtubType: 'AI_MATCH', showerType: 'AI_MATCH'
+    floorTile: 'AI_MATCH', wallTile: 'AI_MATCH'
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [projectSpec, setProjectSpec] = useState<ProjectSpec | null>(null);
@@ -206,7 +206,7 @@ export default function PlannerPage() {
         setStep(3);
         trackEvent('expert_analysis_fallback', { preset: selectedPreset.label_nl });
       } else {
-        setError('De analyse kon niet worden uitgevoerd. Probeer het opnieuw.');
+        setError('The analysis could not be completed. Please try again.');
         trackEvent('expert_analysis_error', { error: String(err) });
       }
     } finally {
@@ -216,20 +216,13 @@ export default function PlannerPage() {
 
   const categoryToMaterialKey: Record<string, keyof MaterialConfig> = {
     Tile: 'floorTile',
-    Faucet: 'faucetFinish',
-    Toilet: 'toiletType',
-    Shower: 'showerType',
-    Vanity: 'vanityType',
-    Lighting: 'lightingType',
-    Bathtub: 'bathtubType',
   };
 
   const handleProductSelect = useCallback((category: string, product: DatabaseProduct) => {
     setSelectedProductIds(prev => ({ ...prev, [category]: product.id }));
     setSelectedProductNames(prev => ({ ...prev, [category]: product.name }));
-    const key = categoryToMaterialKey[category];
-    if (key) {
-      setMaterialConfig(prev => ({ ...prev, [key]: product.name }));
+    if (category === 'Tile') {
+      setMaterialConfig(prev => ({ ...prev, floorTile: product.name, wallTile: product.name }));
     }
     selectedProductDetailsRef.current[category] = {
       id: product.id,
@@ -291,7 +284,7 @@ export default function PlannerPage() {
     try {
       if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) await window.aistudio.openSelectKey();
 
-      setLoadingMessage('Ruimte analyseren...');
+      setLoadingMessage('Analyzing space...');
       console.log('[PlannerPage] Step 1: Compressing image...');
       const compressed = await compressImage(imagePreview, 1500);
       const mimeType = compressed.match(/^data:(.*);base64,/)?.[1] || 'image/jpeg';
@@ -353,7 +346,7 @@ export default function PlannerPage() {
       if (abortRef.current?.signal.aborted) throw new Error('timeout');
 
       console.log('[PlannerPage] Step 3: Fetching products and images...');
-      setLoadingMessage('Producten voorbereiden...');
+      setLoadingMessage('Preparing products...');
       const allProducts = await fetchAllActiveProducts();
       const selectedProducts: DatabaseProduct[] = [];
       for (const [_category, productId] of Object.entries(selectedProductIds)) {
@@ -367,7 +360,7 @@ export default function PlannerPage() {
       if (abortRef.current?.signal.aborted) throw new Error('timeout');
 
       console.log('[PlannerPage] Step 4: Starting Seedream render generation + cost estimation in parallel...');
-      setLoadingMessage('Renovatievoorstel genereren — dit kan 1-2 minuten duren...');
+      setLoadingMessage('Generating renovation proposal — this may take 1-2 minutes...');
 
       const renderTasks: Promise<string | null>[] = [];
 
@@ -402,15 +395,15 @@ export default function PlannerPage() {
       const [baselineRender, lockedRender, twoPassRender, openAiRender, seedreamRender] = renderResults;
 
       const variants = [
-        baselineRender ? { id: 'baseline', label: 'Aanpak A', description: 'Creatieve balans', url: baselineRender } : null,
-        lockedRender ? { id: 'structure_locked', label: 'Aanpak B', description: 'Ruimte-fidelity (1-pass)', url: lockedRender } : null,
-        twoPassRender ? { id: 'two_pass_locked', label: 'Aanpak C', description: '2-pass layout check (hoogste betrouwbaarheid)', url: twoPassRender } : null,
-        openAiRender ? { id: 'openai_gpt_image_1_5', label: 'Aanpak D', description: 'GPT Image 1.5 edit-pipeline', url: openAiRender } : null,
-        seedreamRender ? { id: 'seedream_5_lite_edit', label: 'Aanpak E', description: 'Seedream 5.0 Lite edit (URL-first)', url: seedreamRender } : null,
+        baselineRender ? { id: 'baseline', label: 'Approach A', description: 'Creative balance', url: baselineRender } : null,
+        lockedRender ? { id: 'structure_locked', label: 'Approach B', description: 'Space fidelity (1-pass)', url: lockedRender } : null,
+        twoPassRender ? { id: 'two_pass_locked', label: 'Approach C', description: '2-pass layout check (highest reliability)', url: twoPassRender } : null,
+        openAiRender ? { id: 'openai_gpt_image_1_5', label: 'Approach D', description: 'GPT Image 1.5 edit-pipeline', url: openAiRender } : null,
+        seedreamRender ? { id: 'seedream_5_lite_edit', label: 'Approach E', description: 'Seedream 5.0 Lite edit (URL-first)', url: seedreamRender } : null,
       ].filter((variant): variant is { id: string; label: string; description: string; url: string } => Boolean(variant));
 
       if (variants.length === 0) {
-        throw new Error('Geen render ontvangen');
+        throw new Error('No render received');
       }
 
       console.log(`[PlannerPage] Step 4 complete: variants=${variants.length}, estimate total=${est?.grandTotal}`);
@@ -430,10 +423,10 @@ export default function PlannerPage() {
     } catch (err: any) {
       console.error(err);
       if (err?.message === 'timeout' || err?.message?.includes('timed out') || abortRef.current?.signal.aborted) {
-        setError('De generatie duurde te lang. Probeer het opnieuw met een andere foto of kleinere afbeelding.');
+        setError('Generation took too long. Please try again with a different or smaller image.');
         trackEvent('generation_timeout');
       } else {
-        setError('Er is iets misgegaan bij het genereren van uw voorstel.');
+        setError('Something went wrong while generating your proposal.');
         trackEvent('generation_error', { error: String(err) });
       }
     } finally {
@@ -508,6 +501,7 @@ export default function PlannerPage() {
         }
 
         await sendLeadNotification({
+          site: 'bathroom-tiles',
           name: data.name,
           email: data.email,
           phone: data.phone,
@@ -589,14 +583,14 @@ export default function PlannerPage() {
           <div className="flex items-center gap-4">
             {step > 1 && step < 4 && (
               <button onClick={reset} className="text-[11px] font-bold uppercase tracking-widest text-neutral-500 hover:text-primary transition-all flex items-center gap-2">
-                <RefreshCw size={14} /> <span className="hidden sm:inline">Terug naar start</span>
+                <RefreshCw size={14} /> <span className="hidden sm:inline">Back to start</span>
               </button>
             )}
             <Link
               to="/"
               className="text-[11px] font-bold uppercase tracking-widest text-neutral-500 hover:text-primary transition-all"
             >
-              Terug naar site
+              Back to site
             </Link>
           </div>
         </header>
@@ -608,9 +602,9 @@ export default function PlannerPage() {
             <div className="max-w-2xl mx-auto mb-8 bg-red-50 border-l-4 border-error p-4 md:p-6 rounded-xl animate-fade-in flex items-start gap-3 md:gap-4">
               <AlertCircle className="text-error flex-shrink-0" size={24} />
               <div>
-                <p className="font-bold text-error text-sm mb-1">Er ging iets fout</p>
+                <p className="font-bold text-error text-sm mb-1">Something went wrong</p>
                 <p className="text-red-700 text-xs">{error}</p>
-                <button onClick={reset} className="mt-4 text-xs font-bold text-error underline">Probeer het opnieuw</button>
+                <button onClick={reset} className="mt-4 text-xs font-bold text-error underline">Try again</button>
               </div>
             </div>
           )}
@@ -634,9 +628,9 @@ export default function PlannerPage() {
                 <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
                   <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
                 </div>
-                <h3 className="text-xl font-black tracking-tight mb-3">Expert Analyse</h3>
+                <h3 className="text-xl font-black tracking-tight mb-3">Expert Analysis</h3>
                 <p className="text-sm text-neutral-500 font-bold leading-relaxed">
-                  Onze AI-architect analyseert uw badkamer en stelt een persoonlijk renovatie-advies samen...
+                  Our AI architect is analyzing your bathroom and preparing a personalized renovation recommendation...
                 </p>
               </div>
             </div>
@@ -660,15 +654,15 @@ export default function PlannerPage() {
               {!leadSubmitted ? (
                 <div className="space-y-12 md:space-y-16">
                   <div className="text-center max-w-2xl mx-auto">
-                    <p className="text-primary font-bold uppercase tracking-[0.3em] text-xs mb-3 md:mb-4">Uw resultaat</p>
-                    <h2 className="text-3xl md:text-5xl font-black tracking-tighter leading-none mb-4 md:mb-6">Uw Nieuwe <span className="text-primary">Badkamer</span>.</h2>
-                    <p className="text-neutral-500 text-sm md:text-base leading-relaxed">Op basis van uw stijlprofiel hebben we deze visualisatie samengesteld.</p>
+                    <p className="text-primary font-bold uppercase tracking-[0.3em] text-xs mb-3 md:mb-4">Your result</p>
+                    <h2 className="text-3xl md:text-5xl font-black tracking-tighter leading-none mb-4 md:mb-6">Your New <span className="text-primary">Bathroom</span>.</h2>
+                    <p className="text-neutral-500 text-sm md:text-base leading-relaxed">Based on your style profile we've created this visualization.</p>
                   </div>
 
                   <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
                     <div className="flex items-center gap-3 justify-center">
                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary"><ImageIcon size={18} /></div>
-                      <h3 className="font-bold uppercase tracking-widest text-sm text-neutral-500">Renovatie Visualisaties (4 Aanpakken)</h3>
+                      <h3 className="font-bold uppercase tracking-widest text-sm text-neutral-500">Renovation Visualizations (4 Approaches)</h3>
                     </div>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -693,14 +687,14 @@ export default function PlannerPage() {
                       {renderVariants.map((variant) => (
                         <div key={`${variant.id}-thumb`} className="rounded-xl border border-neutral-300/40 p-2 bg-white">
                           <p className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mb-2">{variant.label}</p>
-                          <img src={variant.url} alt={`Voorstel ${variant.label}`} className="w-full h-40 object-cover rounded-lg" />
+                          <img src={variant.url} alt={`Proposal ${variant.label}`} className="w-full h-40 object-cover rounded-lg" />
                         </div>
                       ))}
                     </div>
 
                     <div className="bg-surface p-6 md:p-8 rounded-2xl border border-neutral-300/30">
-                      <h4 className="font-bold uppercase text-xs tracking-widest mb-3 md:mb-4 flex items-center gap-2 text-neutral-500"><Info size={16} /> Juridische Kadering</h4>
-                      <p className="text-[11px] text-neutral-500 leading-relaxed">Deze visualisaties zijn AI-generaties op basis van de ingevoerde data en dienen puur ter inspiratie. Afmetingen en productdetails kunnen in de realiteit afwijken. Een definitieve opname ter plaatse is noodzakelijk.</p>
+                      <h4 className="font-bold uppercase text-xs tracking-widest mb-3 md:mb-4 flex items-center gap-2 text-neutral-500"><Info size={16} /> Legal Notice</h4>
+                      <p className="text-[11px] text-neutral-500 leading-relaxed">These visualizations are AI-generated based on your input and are for inspiration only. Dimensions and product details may differ in reality. An on-site survey is required for accurate quotes.</p>
                     </div>
                   </div>
 
@@ -729,14 +723,14 @@ export default function PlannerPage() {
               <Logo />
             </div>
             <p className="text-xs text-neutral-500 leading-relaxed max-w-xl mx-auto mb-8 md:mb-12">
-              De Badkamer is uw partner voor hoogwaardige badkamerrenovaties. Onze digitale tool is de eerste stap naar uw droomruimte.
+              Bathroom Tiles is your partner for high-quality bathroom renovations. Our digital tool is the first step toward your dream space.
             </p>
             <div className="flex justify-center gap-6 md:gap-12 text-xs font-semibold text-neutral-300">
-              <button onClick={() => openLegal('privacy', 'Privacyverklaring')} className="hover:text-neutral-900 transition-colors">Privacy</button>
-              <button onClick={() => openLegal('terms', 'Gebruiksvoorwaarden')} className="hover:text-neutral-900 transition-colors">Voorwaarden</button>
-              <button onClick={() => openLegal('cookies', 'Cookiebeleid')} className="hover:text-neutral-900 transition-colors">Cookies</button>
+              <button onClick={() => openLegal('privacy', 'Privacy Policy')} className="hover:text-neutral-900 transition-colors">Privacy</button>
+              <button onClick={() => openLegal('terms', 'Terms of Use')} className="hover:text-neutral-900 transition-colors">Terms</button>
+              <button onClick={() => openLegal('cookies', 'Cookie Policy')} className="hover:text-neutral-900 transition-colors">Cookies</button>
             </div>
-            <p className="mt-10 md:mt-16 text-xs text-neutral-300">&copy; {new Date().getFullYear()} DeBadkamer.com. Alle rechten voorbehouden.</p>
+            <p className="mt-10 md:mt-16 text-xs text-neutral-300">&copy; {new Date().getFullYear()} bathroom-tiles.com. All rights reserved.</p>
           </div>
         </footer>
 

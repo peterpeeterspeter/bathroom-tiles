@@ -6,6 +6,7 @@ interface PdfPayload {
   styleSummary?: string;
   estimateLow: number;
   estimateHigh: number;
+  currency?: string;
   beforeImage: string;
   afterImage: string;
   choices: {
@@ -43,15 +44,16 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
   const margin = 20;
   const contentWidth = pageWidth - margin * 2;
 
+  const isUsd = (payload.currency || 'USD') === 'USD';
   doc.setFillColor(0, 0, 0);
   doc.rect(0, 0, pageWidth, 50, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(28);
   doc.setFont('helvetica', 'bold');
-  doc.text('De Badkamer', margin, 28);
+  doc.text('Bathroom Tiles', margin, 28);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.text('VAKMANSCHAP IN RENOVATIE', margin, 36);
+  doc.text('VISUALIZE YOUR SPACE', margin, 36);
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
@@ -60,25 +62,27 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(200, 200, 200);
-  const dateStr = new Date().toLocaleDateString('nl-BE');
+  const dateStr = new Date().toLocaleDateString(isUsd ? 'en-US' : 'nl-BE');
   doc.text(dateStr, pageWidth - margin, 36, { align: 'right' });
 
+  const symbol = isUsd ? '$' : '€';
+  const locale = isUsd ? 'en-US' : 'nl-BE';
   let y = 62;
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
-  doc.text(`Beste ${payload.name},`, margin, y);
+  doc.text(`Hi ${payload.name},`, margin, y);
   y += 10;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('Hieronder vindt u een samenvatting van uw persoonlijke badkamervoorstel.', margin, y);
+  doc.text(isUsd ? 'Below is a summary of your personal bathroom tile proposal.' : 'Hieronder vindt u een samenvatting van uw persoonlijke badkamervoorstel.', margin, y);
   y += 12;
 
   doc.setFillColor(245, 245, 245);
   doc.roundedRect(margin, y, contentWidth, 28, 3, 3, 'F');
   doc.setFontSize(8);
   doc.setTextColor(100, 100, 100);
-  doc.text('GESELECTEERDE STIJL', margin + 6, y + 8);
+  doc.text(isUsd ? 'SELECTED STYLE' : 'GESELECTEERDE STIJL', margin + 6, y + 8);
   doc.setFontSize(14);
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'bold');
@@ -99,7 +103,7 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
     doc.roundedRect(margin, y, contentWidth, 20, 3, 3, 'F');
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
-    doc.text('RUIMTE', margin + 6, y + 8);
+    doc.text(isUsd ? 'ROOM' : 'RUIMTE', margin + 6, y + 8);
     doc.setFontSize(11);
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'bold');
@@ -112,19 +116,19 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
   doc.roundedRect(margin, y, contentWidth, 32, 3, 3, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(8);
-  doc.text('VERWACHTE INVESTERINGSBANDBREEDTE', margin + 6, y + 10);
+  doc.text(isUsd ? 'EXPECTED INVESTMENT RANGE' : 'VERWACHTE INVESTERINGSBANDBREEDTE', margin + 6, y + 10);
   doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
-  const low = payload.estimateLow.toLocaleString('nl-BE');
-  const high = payload.estimateHigh.toLocaleString('nl-BE');
-  doc.text(`EUR ${low} - EUR ${high}`, margin + 6, y + 24);
+  const low = payload.estimateLow.toLocaleString(locale);
+  const high = payload.estimateHigh.toLocaleString(locale);
+  doc.text(`${symbol}${low} - ${symbol}${high}`, margin + 6, y + 24);
   y += 42;
 
   if (payload.choices.length > 0) {
     doc.setTextColor(100, 100, 100);
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.text('UW PRODUCTKEUZES', margin, y);
+    doc.text(isUsd ? 'YOUR PRODUCT CHOICES' : 'UW PRODUCTKEUZES', margin, y);
     y += 6;
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(9);
@@ -134,7 +138,7 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
       doc.setFont('helvetica', 'normal');
       let productText = c.product;
       if (c.priceTier) {
-        const tierLabel = c.priceTier === 'premium' ? 'Premium' : c.priceTier === 'mid' ? 'Midden' : 'Budget';
+        const tierLabel = c.priceTier === 'premium' ? 'Premium' : c.priceTier === 'mid' ? 'Mid' : 'Budget';
         productText += ` (${tierLabel})`;
       }
       doc.text(productText, margin + 35, y);
@@ -142,7 +146,7 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
         doc.setFontSize(7);
         doc.setTextColor(100, 100, 100);
         doc.text(
-          `EUR ${Math.round(c.priceLow).toLocaleString('nl-BE')} - ${Math.round(c.priceHigh).toLocaleString('nl-BE')}`,
+          `${symbol}${Math.round(c.priceLow).toLocaleString(locale)} - ${Math.round(c.priceHigh).toLocaleString(locale)}`,
           margin + 35, y + 4
         );
         doc.setFontSize(9);
@@ -164,13 +168,13 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
     }
     doc.setTextColor(100, 100, 100);
     doc.setFontSize(8);
-    doc.text('AI VISUALISATIE', margin, y);
+    doc.text(isUsd ? 'AI VISUALIZATION' : 'AI VISUALISATIE', margin, y);
     y += 4;
     doc.addImage(afterData, 'JPEG', margin, y, imgWidth, imgHeight);
 
     doc.setFontSize(6);
     doc.setTextColor(200, 200, 200);
-    doc.text('DE BADKAMER - AI GEGENEREERD - INDICATIEF', margin + imgWidth / 2, y + imgHeight - 4, { align: 'center' });
+    doc.text(isUsd ? 'BATHROOM TILES - AI GENERATED - INDICATIVE' : 'DE BADKAMER - AI GEGENEREERD - INDICATIEF', margin + imgWidth / 2, y + imgHeight - 4, { align: 'center' });
     y += imgHeight + 8;
   } catch {
     // skip image if it fails
@@ -186,7 +190,7 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
     }
     doc.setTextColor(100, 100, 100);
     doc.setFontSize(8);
-    doc.text('HUIDIGE SITUATIE', margin, y);
+    doc.text(isUsd ? 'CURRENT SITUATION' : 'HUIDIGE SITUATIE', margin, y);
     y += 4;
     doc.addImage(beforeData, 'JPEG', margin, y, imgWidth, imgHeight);
     y += imgHeight + 8;
@@ -201,9 +205,11 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
   doc.setTextColor(100, 100, 100);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.text('INBEGREPEN IN DEZE INDICATIE', margin, y);
+  doc.text(isUsd ? 'INCLUDED IN THIS ESTIMATE' : 'INBEGREPEN IN DEZE INDICATIE', margin, y);
   y += 7;
-  const inclusions = ['Materialen & sanitair', 'Professionele installatie', 'Levering & transport', 'Sloopwerken & afvoer'];
+  const inclusions = isUsd
+    ? ['Tiles & materials', 'Professional installation', 'Delivery & transport', 'Demo & disposal']
+    : ['Materialen & sanitair', 'Professionele installatie', 'Levering & transport', 'Sloopwerken & afvoer'];
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(9);
   inclusions.forEach(item => {
@@ -217,12 +223,12 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
   doc.roundedRect(margin, y, contentWidth, 30, 3, 3, 'F');
   doc.setFontSize(8);
   doc.setTextColor(100, 100, 100);
-  doc.text('VOLGENDE STAPPEN', margin + 6, y + 8);
+  doc.text(isUsd ? 'NEXT STEPS' : 'VOLGENDE STAPPEN', margin + 6, y + 8);
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'normal');
-  doc.text('1. Onze experts nemen binnen 24 uur contact met u op.', margin + 6, y + 16);
-  doc.text('2. Gratis opname ter plaatse voor definitieve offerte.', margin + 6, y + 22);
+  doc.text(isUsd ? '1. Our experts will contact you within 24 hours.' : '1. Onze experts nemen binnen 24 uur contact met u op.', margin + 6, y + 16);
+  doc.text(isUsd ? '2. Free on-site survey for a definitive quote.' : '2. Gratis opname ter plaatse voor definitieve offerte.', margin + 6, y + 22);
   y += 38;
 
   if (y > 250) {
@@ -235,17 +241,25 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
   doc.setFontSize(6);
   doc.setTextColor(150, 150, 150);
   doc.setFont('helvetica', 'normal');
-  const disclaimerLines = [
-    'DISCLAIMER: Dit document is een indicatief voorstel en vormt geen bindende offerte.',
-    'Alle visualisaties zijn AI-generaties en dienen puur ter inspiratie. Afmetingen en productdetails kunnen in de realiteit afwijken.',
-    'Prijzen zijn indicatief en gebaseerd op gemiddelde markttarieven (Q1 2026). Een definitieve opname en offerte volgt na persoonlijk adviesgesprek.',
-    'Definitieve productkeuze gebeurt steeds samen met een De Badkamer-adviseur. Exacte merken, types en afmetingen zijn niet gegarandeerd.',
-    `(C) ${new Date().getFullYear()} DeBadkamer.com. Alle rechten voorbehouden.`,
-  ];
+  const disclaimerLines = isUsd
+    ? [
+        'DISCLAIMER: This document is an indicative proposal and does not constitute a binding quote.',
+        'All visualizations are AI-generated and for inspiration only. Dimensions and product details may differ in reality.',
+        'Prices are indicative and based on average US market rates (2026). A definitive survey and quote follow after consultation.',
+        'Final product selection is made with a Bathroom Tiles advisor. Exact brands, types and dimensions are not guaranteed.',
+        `(C) ${new Date().getFullYear()} bathroom-tiles.com. All rights reserved.`,
+      ]
+    : [
+        'DISCLAIMER: Dit document is een indicatief voorstel en vormt geen bindende offerte.',
+        'Alle visualisaties zijn AI-generaties en dienen puur ter inspiratie. Afmetingen en productdetails kunnen in de realiteit afwijken.',
+        'Prijzen zijn indicatief en gebaseerd op gemiddelde markttarieven (Q1 2026). Een definitieve opname en offerte volgt na persoonlijk adviesgesprek.',
+        'Definitieve productkeuze gebeurt steeds samen met een De Badkamer-adviseur. Exacte merken, types en afmetingen zijn niet gegarandeerd.',
+        `(C) ${new Date().getFullYear()} DeBadkamer.com. Alle rechten voorbehouden.`,
+      ];
   disclaimerLines.forEach((line) => {
     doc.text(line, margin, y);
     y += 4;
   });
 
-  doc.save(`DeBadkamer_Dossier_${payload.name.replace(/\s+/g, '_')}.pdf`);
+  doc.save(`${isUsd ? 'BathroomTiles' : 'DeBadkamer'}_Dossier_${payload.name.replace(/\s+/g, '_')}.pdf`);
 }

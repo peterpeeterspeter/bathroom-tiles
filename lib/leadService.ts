@@ -80,9 +80,10 @@ export async function submitLead(payload: LeadPayload): Promise<{ success: boole
     email: payload.email,
     phone: payload.phone,
     postcode: payload.postcode,
-    selected_style: styleName || 'Niet geselecteerd',
+    selected_style: styleName || 'Not selected',
     source: payload.source || 'website',
-    country: payload.country || 'NL',
+    site: 'bathroom-tiles',
+    country: payload.country || 'US',
     lead_score: leadScore,
   };
 
@@ -118,6 +119,7 @@ export async function submitLead(payload: LeadPayload): Promise<{ success: boole
       postcode: row.postcode,
       selected_style: row.selected_style,
       source: row.source,
+      site: row.site,
       country: row.country,
     };
     result = await supabase.from('leads').insert(safeRow);

@@ -484,7 +484,7 @@ export default function InspiratiePage() {
               <ArrowRight size={18} />
             </Link>
             <Link
-              to="/offerte-aanvragen"
+              to="/get-quote"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-neutral-900 font-bold rounded-xl border border-neutral-200 hover:border-neutral-400 transition-colors"
             >
               Ontvang Offertes

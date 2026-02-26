@@ -326,23 +326,14 @@ TASK:
   }
 };
 const LABOR_RATE_TABLE = `
-LABOR RATE TABLE (EUR, Netherlands 2025 market rates):
-- DEMOLITION: €35/m2 (removal of existing fixtures, tiles, screed)
-- PLUMBING_ROUGH: €85/point (per water connection point: sink, toilet, shower, bathtub)
-- PLUMBING_RELOCATION: €150/point (moving existing water/drain connections)
-- ELECTRICAL: €65/point (per electrical point: light, socket, heated mirror)
-- WATERPROOFING: €25/m2 (wet area membrane application)
-- TILING_FLOOR: €55/m2 (floor tile installation including adhesive)
-- TILING_WALL: €60/m2 (wall tile installation including adhesive)
-- SCREED: €30/m2 (floor leveling)
-- FIXTURE_INSTALL_TOILET: €180/piece (wall-hung toilet installation)
-- FIXTURE_INSTALL_SINK: €150/piece (vanity + sink installation)
-- FIXTURE_INSTALL_SHOWER: €250/piece (shower enclosure + tray installation)
-- FIXTURE_INSTALL_BATHTUB: €350/piece (bathtub installation)
-- FIXTURE_INSTALL_FAUCET: €65/piece (faucet installation per unit)
-- FIXTURE_INSTALL_LIGHTING: €45/piece (light fixture installation)
-- PAINTING: €18/m2 (walls and ceiling, 2 coats)
-- WASTE_DISPOSAL: €250/flat (container + disposal of demolition waste)
+LABOR RATE TABLE (USD, US market 2025 — tile work only):
+- DEMOLITION: $40/m2 (removal of existing tiles and adhesive)
+- WATERPROOFING: $35/m2 (wet area membrane application)
+- TILING_FLOOR: $120/m2 (floor tile installation including adhesive)
+- TILING_WALL: $150/m2 (wall tile installation including adhesive)
+- SCREED: $35/m2 (floor leveling before tiling)
+- WASTE_DISPOSAL: $300/flat (hauling and disposal of demolition waste)
+SCOPE: This is a tile-only estimate. Do NOT include fixture installation (toilet, vanity, shower, bathtub, faucet, lighting).
 Use these rates exactly. Do NOT invent labor prices.`;
 export const calculateRenovationCost = async (
   spec: ProjectSpec,
@@ -362,15 +353,16 @@ export const calculateRenovationCost = async (
     description: p.description || ''
   }));
   const tierGuidance = {
-    [BudgetTier.BUDGET]: 'Budget tier: Select the most affordable products from the catalog. Minimize labor where possible (e.g., paint instead of tile on non-wet walls). Target the lowest reasonable total.',
-    [BudgetTier.STANDARD]: 'Standard tier: Select mid-range products with good quality-price balance. Include all standard labor operations for a complete renovation.',
-    [BudgetTier.PREMIUM]: 'Premium tier: Select the highest-quality products from the catalog. Include all labor operations plus finishing details (e.g., niche cuts, heated floor prep, premium grouting).',
+    [BudgetTier.BUDGET]: 'Budget tier: Select the most affordable tile products from the catalog. Target the lowest reasonable total for tile work.',
+    [BudgetTier.STANDARD]: 'Standard tier: Select mid-range tile products with good quality-price balance. Include all tile labor (demo, waterproofing, floor/wall tiling).',
+    [BudgetTier.PREMIUM]: 'Premium tier: Select the highest-quality tile products from the catalog. Include all labor plus finishing details (niche cuts, premium grouting).',
   };
   const fixtureDetails = spec.existingFixtures
     .map(f => `${f.type}${f.condition ? ` (${f.condition})` : ''}${f.wallIndex !== undefined ? ` on wall ${f.wallIndex}` : ''}: ${f.description}`)
     .join(', ') || 'Unknown';
   const systemInstruction = `
-    You are the De Badkamer Pricing Engine for the Netherlands/Belgium market.
+    You are the Bathroom Tiles Pricing Engine for the US market. Output all amounts in USD.
+    SCOPE: Tile work only — floor and wall tiles. Do NOT include fixtures (toilet, vanity, shower, bathtub, faucet, lighting).
     BUDGET TIER: ${tier}
     ${tierGuidance[tier]}
     ROOM DETAILS:
@@ -386,12 +378,9 @@ export const calculateRenovationCost = async (
     ${JSON.stringify(catalogForPrompt)}
     USER MATERIAL PREFERENCES:
     ${JSON.stringify(materials)}
-    ${productActions ? `RENOVATION SCOPE:
-    The customer has chosen the following actions per category.
-    Only include costs for items marked REPLACE or ADD. Items marked KEEP cost nothing (no material, no labor).
-    Items marked REMOVE only incur demolition/removal labor cost.
-    Categories not listed default to REPLACE.
-${['Tile', 'Vanity', 'Toilet', 'Faucet', 'Shower', 'Bathtub', 'Mirror', 'Lighting'].map(cat => `    - ${cat}: ${(productActions[cat] || 'replace').toUpperCase()}`).join('\n')}
+    ${productActions ? `RENOVATION SCOPE (tile-only — only Tile category affects material/labor):
+    - Tile: ${(productActions['Tile'] || 'replace').toUpperCase()} (floor and wall tiles)
+    Other categories (Vanity, Toilet, Faucet, Shower, Bathtub, Mirror, Lighting) are OUT OF SCOPE — exclude from estimate.
     ` : ''}
     ${LABOR_RATE_TABLE}
     TASK:
@@ -479,32 +468,32 @@ ${['Tile', 'Vanity', 'Toilet', 'Faucet', 'Shower', 'Bathtub', 'Mirror', 'Lightin
         lineItems: allItems,
         subtotal: subtotal,
         contingency: subtotal * 0.1,
-        tax: subtotal * 0.21,
-        grandTotal: subtotal * 1.31,
-        currency: "EUR",
-        summary: raw.summary_text || `Kostenraming op basis van ${tier} niveau.`
+        tax: 0,
+        grandTotal: subtotal * 1.1,
+        currency: "USD",
+        summary: raw.summary_text || `Cost estimate based on ${tier} tier.`
       };
     }
     throw new Error("Estimate failed");
   } catch (error) {
     const area = spec.estimatedWidthMeters * spec.estimatedLengthMeters || 6;
-    const base = area * 1500;
+    const base = area * 1800;
     return {
-      lineItems: [{ description: "Compleet Renovatiepakket", category: "Other", amount: 1, unit: "lot", unitPrice: base, totalPrice: base }],
-      subtotal: base, tax: base * 0.21, grandTotal: base * 1.21, currency: "EUR", summary: "Prijsindicatie op basis van gemiddelde markttarieven.", contingency: base * 0.1
+      lineItems: [{ description: "Tile renovation package", category: "Other", amount: 1, unit: "lot", unitPrice: base, totalPrice: base }],
+      subtotal: base, tax: 0, grandTotal: base * 1.1, currency: "USD", summary: "Estimated cost based on average US market rates for tile work.", contingency: base * 0.1
     };
   }
 };
 export { fetchRenderImagesForProducts as fetchProductImagesAsBase64 } from '../lib/productService';
-const CATEGORY_LABELS_NL: Record<string, string> = {
-  Tile: 'Vloer & Wanden',
-  Vanity: 'Wastafelmeubel',
+const CATEGORY_LABELS_EN: Record<string, string> = {
+  Tile: 'Floor & Walls',
+  Vanity: 'Vanity',
   Toilet: 'Toilet',
-  Faucet: 'Kranen',
-  Shower: 'Douche',
-  Bathtub: 'Bad',
-  Mirror: 'Spiegel',
-  Lighting: 'Verlichting',
+  Faucet: 'Faucets',
+  Shower: 'Shower',
+  Bathtub: 'Bathtub',
+  Mirror: 'Mirror',
+  Lighting: 'Lighting',
 };
 export type RenovationApproach = "baseline" | "structure_locked" | "two_pass_locked" | "openai_gpt_image_1_5" | "seedream_5_lite_edit";
 const generateLayoutGuardrails = async (
@@ -631,26 +620,22 @@ export const generateRenovation = async (
     }
   }
   const scopeLines: string[] = [];
-  const categories = ['Tile', 'Vanity', 'Toilet', 'Faucet', 'Shower', 'Bathtub', 'Mirror', 'Lighting'];
-  for (const cat of categories) {
-    const action = productActions[cat] || 'replace';
-    const nlLabel = CATEGORY_LABELS_NL[cat] || cat;
-    const product = selectedProducts.find(p => p.category === cat);
-    const productImg = product ? imageLabels.find(l => l.includes(product.name)) : null;
-    if (action === 'keep') {
-      scopeLines.push(`${nlLabel} — KEEP: Preserve this element EXACTLY as it appears in image 1. Same appearance, same material, same finish. May be repositioned if the layout requires it, but visual appearance stays identical.`);
-    } else if (action === 'remove') {
-      scopeLines.push(`${nlLabel} — REMOVE: Remove this element completely. Fill the space seamlessly with floor and wall material.`);
-    } else if (action === 'add') {
-      scopeLines.push(`${nlLabel} — ADD (${productImg || 'see reference'}): There is currently NO ${nlLabel.toLowerCase()} in this bathroom. Install the product from the reference photo in the most logical position.`);
+  const tileAction = productActions['Tile'] || 'replace';
+  const label = CATEGORY_LABELS_EN['Tile'] || 'Tile';
+  const tileProduct = selectedProducts.find(p => p.category === 'Tile');
+  const productImg = tileProduct ? imageLabels.find(l => l.includes(tileProduct.name)) : null;
+  if (tileAction === 'keep') {
+    scopeLines.push(`${label} — KEEP: Preserve floor and wall tiles EXACTLY as they appear in image 1. Same appearance, same material, same finish.`);
+  } else if (tileAction === 'remove') {
+    scopeLines.push(`${label} — REMOVE: Remove all tiles. Fill the space with a neutral floor and wall material.`);
+  } else {
+    if (productImg) {
+      scopeLines.push(`${label} — REPLACE (${productImg}): Remove existing tiles, install the product from the reference photo. Match color, shape, material, and finish EXACTLY.`);
     } else {
-      if (productImg) {
-        scopeLines.push(`${nlLabel} — REPLACE (${productImg}): Remove existing, install the product from the reference photo. Match color, shape, material, and finish EXACTLY.`);
-      } else {
-        scopeLines.push(`${nlLabel} — REPLACE: Replace with a modern, stylish alternative matching the design style.`);
-      }
+      scopeLines.push(`${label} — REPLACE: Replace floor and wall tiles with a modern, stylish alternative matching the design style.`);
     }
   }
+  scopeLines.push(`Vanity, Toilet, Faucet, Shower, Bathtub, Mirror, Lighting — KEEP: Preserve ALL fixtures EXACTLY as they appear in image 1. Do NOT replace, add, or remove any fixtures.`);
   const wallLabels = ['far', 'right', 'behind camera', 'left'];
   let plumbingHint = '';
   if (spec && spec.plumbingWall != null) {
