@@ -38,7 +38,7 @@ export async function analyzeStyleFromReferences(
   tagVocabulary: string[]
 ): Promise<StyleProfile> {
   const ai = createClient();
-  const model = "gemini-3-flash-preview";
+  const model = process.env.GEMINI_ANALYSIS_MODEL || (import.meta as any).env?.VITE_GEMINI_ANALYSIS_MODEL || "gemini-3.1-pro-preview";
 
   const vocabList = tagVocabulary.map(t => `"${t}"`).join(', ');
 
@@ -123,7 +123,7 @@ export interface ProjectContextInput {
 
 export async function analyzeProjectContext(input: ProjectContextInput): Promise<StyleProfile> {
   const ai = createClient();
-  const model = "gemini-3-flash-preview";
+  const model = process.env.GEMINI_ANALYSIS_MODEL || (import.meta as any).env?.VITE_GEMINI_ANALYSIS_MODEL || "gemini-3.1-pro-preview";
 
   const vocabList = input.tagVocabulary.map(t => `"${t}"`).join(', ');
   const area = (input.dimensions.widthM * input.dimensions.lengthM).toFixed(1);

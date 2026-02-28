@@ -21,26 +21,28 @@ const getBaseUrl = (): string | undefined => {
   return undefined;
 };
 const getDirectApiKey = (): string => {
-  const key = process.env.GOOGLE_AI_API_KEY || '';
+  const key = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || '';
   if (key) return key;
   try {
-    const viteKey = (import.meta as any).env?.VITE_GOOGLE_AI_API_KEY;
+    const viteKey = (import.meta as any).env?.VITE_GOOGLE_AI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
     if (viteKey) return viteKey;
   } catch {}
   return '';
 };
-const createClient = (useDirect = false) => {
-  if (useDirect) {
-    const directKey = getDirectApiKey();
-    if (directKey) {
-      return new GoogleGenAI({ apiKey: directKey });
-    }
-  }
+
+/** For text/JSON tasks (analysis, cost): always use Google Gemini API directly. Model: gemini-3.1-pro-preview */
+const createClientForText = () => {
+  const apiKey = getDirectApiKey();
+  if (!apiKey) throw new Error('Gemini API key not configured. Set VITE_GEMINI_API_KEY in Vercel.');
+  return new GoogleGenAI({ apiKey });
+};
+
+/** For image rendering only: use laozhang proxy (gemini-3-pro-image-preview) */
+const createClientForImage = () => {
   const baseUrl = getBaseUrl();
-  return new GoogleGenAI({
-    apiKey: getApiKey(),
-    ...(baseUrl ? { httpOptions: { baseUrl } } : {}),
-  });
+  const apiKey = getApiKey();
+  if (!apiKey || !baseUrl) throw new Error('Image render requires GEMINI_BASE_URL and GEMINI_API_KEY (laozhang config).');
+  return new GoogleGenAI({ apiKey, httpOptions: { baseUrl } });
 };
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
@@ -50,32 +52,6 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
       setTimeout(() => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`)), ms)
     ),
   ]);
-}
-async function withRetry<T>(
-  fn: (useDirect: boolean) => Promise<T>,
-  maxRetries = 2,
-  baseDelay = 3000,
-  routing: 'proxy-only' | 'direct-first' = 'direct-first',
-  perAttemptTimeoutMs = 120000
-): Promise<T> {
-  let lastError: any;
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const useDirect = routing === 'proxy-only' ? false : (routing === 'direct-first' ? attempt === 0 : attempt > 0);
-    try {
-      return await withTimeout(fn(useDirect), perAttemptTimeoutMs, `API attempt ${attempt + 1}`);
-    } catch (err: any) {
-      lastError = err;
-      const status = err?.status || err?.statusCode || 0;
-      const msg = err?.message || '';
-      const isRetryable = status === 429 || status === 503 || status === 500 || msg.includes('timed out');
-      if (!isRetryable || attempt === maxRetries) throw err;
-      const delay = baseDelay * Math.pow(2, attempt);
-      const switchLabel = routing === 'proxy-only' ? '' : (useDirect ? ', switching to proxy' : ', switching to direct API');
-      console.warn(`API call failed (${status || msg}), retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries}${switchLabel})...`);
-      await sleep(delay);
-    }
-  }
-  throw lastError;
 }
 const cleanJson = (text: string) => {
   if (!text) return "";
@@ -139,12 +115,10 @@ TASK:
    - Wall finishes (tiles, paint, size, color, pattern)
    Be obsessively specific. The more detail you provide, the better the renovation render will match the original room.`;
   try {
-    console.log('[analyzeBathroomInput] Starting bathroom analysis (direct API first)...');
+    console.log('[analyzeBathroomInput] Starting bathroom analysis (Google Gemini API)...');
     console.log('[analyzeBathroomInput] Analysis model:', model);
-    const response = await withRetry(async (useDirect) => {
-      console.log(`[analyzeBathroomInput] Calling ${useDirect ? 'Google direct API' : 'LaoZhang proxy'}...`);
-      const ai = createClient(useDirect);
-      return ai.models.generateContent({
+    const ai = createClientForText();
+    const response = await ai.models.generateContent({
         model,
         contents: {
           parts: [
@@ -152,9 +126,9 @@ TASK:
             { text: "Analyze this bathroom's layout, dimensions, and fixtures." }
           ]
         },
-        config: {
-          systemInstruction,
-          temperature: 0.2,
+      config: {
+        systemInstruction,
+        temperature: 0.2,
           responseMimeType: "application/json",
           responseSchema: {
           type: Type.OBJECT,
@@ -251,7 +225,6 @@ TASK:
           required: ["estimated_dimensions", "fixtures", "walls", "room_description_natural"]
         }
       }
-    });
     });
     if (response.text) {
       const raw = JSON.parse(cleanJson(response.text));
@@ -393,13 +366,11 @@ export const calculateRenovationCost = async (
     4. For each material, specify the correct unit (m2 for tiles, pcs for fixtures/faucets/lighting).
   `;
   try {
-    console.log('[calculateRenovationCost] Starting cost estimation (direct API first)...');
-    const response = await withRetry(async (useDirect) => {
-      console.log(`[calculateRenovationCost] Calling ${useDirect ? 'Google direct API' : 'LaoZhang proxy'}...`);
-      const ai = createClient(useDirect);
-      return ai.models.generateContent({
-        model,
-        contents: { parts: [{ text: "Generate the cost estimate JSON." }] },
+    console.log('[calculateRenovationCost] Starting cost estimation (Google Gemini API)...');
+    const ai = createClientForText();
+    const response = await ai.models.generateContent({
+      model,
+      contents: { parts: [{ text: "Generate the cost estimate JSON." }] },
         config: {
           systemInstruction,
           temperature: 0.1,
@@ -441,7 +412,6 @@ export const calculateRenovationCost = async (
           required: ["materials", "labor_operations"]
         }
       }
-    });
     });
     if (response.text) {
       const raw = JSON.parse(cleanJson(response.text));
@@ -524,26 +494,24 @@ Do not suggest new architecture. Prioritize preserving the original room shell a
 - Anchors:
 ${anchorSummary || 'none'}
 ${roomNotes ? `- Homeowner notes: ${sanitizeUserText(roomNotes)}` : ''}`;
-  const response = await withRetry(async (useDirect) => {
-    const ai = createClient(useDirect);
-    return ai.models.generateContent({
-      model,
-      contents: { parts: [{ text: `${instruction}
+  const ai = createClientForText();
+  const response = await ai.models.generateContent({
+    model,
+    contents: { parts: [{ text: `${instruction}
 ${context}` }] },
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            camera_lock: { type: Type.STRING },
-            structure_locks: { type: Type.ARRAY, items: { type: Type.STRING } },
-            risk_notes: { type: Type.ARRAY, items: { type: Type.STRING } }
-          },
-          required: ["camera_lock", "structure_locks", "risk_notes"]
-        }
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          camera_lock: { type: Type.STRING },
+          structure_locks: { type: Type.ARRAY, items: { type: Type.STRING } },
+          risk_notes: { type: Type.ARRAY, items: { type: Type.STRING } }
+        },
+        required: ["camera_lock", "structure_locks", "risk_notes"]
       }
-    });
-  }, 1, 3000, 'proxy-only', 90000);
+    }
+  });
   if (!response.text) return '';
   const parsed = JSON.parse(cleanJson(response.text));
   const locks = (parsed.structure_locks || []).map((line: string) => `- ${line}`).join('\n');
@@ -776,12 +744,10 @@ Generate the final image.
   }
 
   parts.push({ text: prompt });
-  console.log('[generateRenovation] Prompt length:', prompt.length, 'chars');
+  console.log('[generateRenovation] Starting image generation via laozhang (gemini-3-pro-image-preview)...');
   try {
-    console.log('[generateRenovation] Starting image generation via proxy...');
-    const response = await withRetry(async (useDirect) => {
-      const ai = createClient(useDirect);
-      return ai.models.generateContent({
+    const ai = createClientForImage();
+    const response = await ai.models.generateContent({
         model,
         contents: { parts },
         config: {
@@ -792,7 +758,6 @@ Generate the final image.
           },
         },
       });
-    }, 2, 8000, 'proxy-only', 180000);
     console.log('[generateRenovation] Response received, extracting image...');
     for (const part of response.candidates?.[0]?.content?.parts || []) {
       if (part.inlineData) {
