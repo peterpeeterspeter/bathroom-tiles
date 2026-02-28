@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://debadkamer.com/sitemap.xml
+Sitemap: https://bathroom-tiles.com/sitemap.xml
