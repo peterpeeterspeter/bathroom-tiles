@@ -206,7 +206,9 @@ export default function PlannerPage() {
         setStep(3);
         trackEvent('expert_analysis_fallback', { preset: selectedPreset.label_nl });
       } else {
-        setError('The analysis could not be completed. Please try again.');
+        const msg = err?.message || String(err);
+        const safeMsg = msg.length > 200 ? msg.slice(0, 200) + '…' : msg;
+        setError(safeMsg || 'The analysis could not be completed. Please try again.');
         trackEvent('expert_analysis_error', { error: String(err) });
       }
     } finally {
