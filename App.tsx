@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
+import { Analytics } from '@vercel/analytics/react';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const PlannerPage = lazy(() => import('./pages/PlannerPage'));
@@ -22,27 +23,30 @@ const SuspenseFallback = () => (
 
 export default function App() {
   return (
-    <Routes>
-      <Route 
-        path="/planner" 
-        element={
-          <Suspense fallback={<SuspenseFallback />}>
-            <PlannerPage />
-          </Suspense>
-        } 
-      />
-      <Route element={<Layout />}>
-        <Route index element={<HomePage />} />
-        <Route path="tile-costs" element={<KostenPage />} />
-        <Route path="get-quote" element={<QuotePage />} />
-        <Route path="inspiration" element={<InspiratiePage />} />
-        <Route path="advice" element={<AdviesPage />} />
-        <Route path="advice/:slug" element={<ArticlePage />} />
-        <Route path="privacy" element={<PrivacyPage />} />
-        <Route path="terms" element={<VoorwaardenPage />} />
-        <Route path="for-contractors" element={<VoorVakmensenPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Route>
-    </Routes>
+    <>
+      <Routes>
+        <Route 
+          path="/planner" 
+          element={
+            <Suspense fallback={<SuspenseFallback />}>
+              <PlannerPage />
+            </Suspense>
+          } 
+        />
+        <Route element={<Layout />}>
+          <Route index element={<HomePage />} />
+          <Route path="tile-costs" element={<KostenPage />} />
+          <Route path="get-quote" element={<QuotePage />} />
+          <Route path="inspiration" element={<InspiratiePage />} />
+          <Route path="advice" element={<AdviesPage />} />
+          <Route path="advice/:slug" element={<ArticlePage />} />
+          <Route path="privacy" element={<PrivacyPage />} />
+          <Route path="terms" element={<VoorwaardenPage />} />
+          <Route path="for-contractors" element={<VoorVakmensenPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Routes>
+      <Analytics />
+    </>
   );
 }
