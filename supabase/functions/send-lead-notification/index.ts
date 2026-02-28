@@ -26,10 +26,12 @@ const ACTION_COLORS: Record<string, string> = {
 const CATEGORY_LABELS_NL: Record<string, string> = {
   Bathtub: "Ligbad", Shower: "Douche", Toilet: "Toilet", Vanity: "Wastafelmeubel",
   Mirror: "Spiegel", Faucet: "Kraan", Tile: "Tegels", Lighting: "Verlichting",
+  WallTile: "Wandtegels", FloorTile: "Vloertegels",
 };
 const CATEGORY_LABELS_EN: Record<string, string> = {
   Bathtub: "Bathtub", Shower: "Shower", Toilet: "Toilet", Vanity: "Vanity",
   Mirror: "Mirror", Faucet: "Faucet", Tile: "Tiles", Lighting: "Lighting",
+  WallTile: "Wall tiles", FloorTile: "Floor tiles",
 };
 
 async function sendEmail(resendKey: string, emailData: { from: string; to: string[]; subject: string; html: string }) {

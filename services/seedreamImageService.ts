@@ -7,6 +7,7 @@ export interface SeedreamRenderParams {
   styleProfile: StyleProfile;
   selectedProducts: DatabaseProduct[];
   productActions: Record<string, string>;
+  productIdToSelectionCategory?: Record<string, string>;
   spec?: ProjectSpec;
   roomNotes?: string;
   projectId?: string;
@@ -30,7 +31,7 @@ const DEFAULT_CONFIG: RenderConfig = {
 
 const FAL_ENDPOINT = "https://fal.run/fal-ai/bytedance/seedream/v5/lite/edit";
 
-const PRODUCT_PRIORITY = ['Tile'];
+const TILE_SELECTION_CATEGORIES = ['WallTile', 'FloorTile'];
 
 const getFalApiKey = (): string => {
   const key = process.env.FAL_KEY || process.env.FAL_API_KEY || '';
@@ -87,8 +88,10 @@ const buildSeedreamPrompt = (
   const presetName = styleProfile.presetName || 'Modern';
   const topTags = styleProfile.tags.slice(0, 4).map(t => t.tag);
   const moodDescription = styleProfile.moodDescription || '';
-  const fixtureProducts = imageLayout.productFigures.filter(pf => pf.product.category !== 'Tile');
-  const tileProduct = imageLayout.productFigures.find(pf => pf.product.category === 'Tile');
+  const productIdToCategory = params.productIdToSelectionCategory || {};
+  const fixtureProducts = imageLayout.productFigures.filter(pf => !TILE_SELECTION_CATEGORIES.includes(productIdToCategory[pf.product.id] || ''));
+  const wallTilePf = imageLayout.productFigures.find(pf => productIdToCategory[pf.product.id] === 'WallTile');
+  const floorTilePf = imageLayout.productFigures.find(pf => productIdToCategory[pf.product.id] === 'FloorTile');
 
   const keepLine = '\nKeep ALL existing fixtures (vanity, bathtub, shower, toilet, faucet, mirror, lighting) unchanged. Only update floor and wall tiles.';
 
@@ -106,9 +109,35 @@ const buildSeedreamPrompt = (
     productLines += `\n\u2022 ${cat} = Image ${imgNum}\n  ${placeLine}\n  Scale realistically to room size.\n`;
   }
 
+  const wallAction = productActions['WallTile'] || 'replace';
+  const floorAction = productActions['FloorTile'] || 'replace';
+
   let materialLines = '';
-  if (tileProduct) {
-    materialLines += `- Apply Image ${tileProduct.figureIdx} as floor and wall tile throughout the bathroom.\n`;
+  if (wallAction === 'keep' && floorAction === 'keep') {
+    materialLines += `- KEEP existing wall and floor tiles EXACTLY as they appear in Image 1. Do NOT change them.\n`;
+  } else if (wallAction === 'keep') {
+    materialLines += `- KEEP existing wall tiles EXACTLY as they appear in Image 1. Do NOT change wall tiles.\n`;
+    if (floorTilePf) {
+      materialLines += `- Apply Image ${floorTilePf.figureIdx} as FLOOR tile throughout the bathroom floor. Replace floor tiles with this product.\n`;
+    } else {
+      const tileTags = topTags.filter(t => /tile|marble|stone|ceramic|zellige/i.test(t));
+      materialLines += `- Replace floor tiles with ${tileTags.length > 0 ? tileTags.join(', ') : 'modern tiles matching the style'}.\n`;
+    }
+  } else if (floorAction === 'keep') {
+    materialLines += `- KEEP existing floor tiles EXACTLY as they appear in Image 1. Do NOT change floor tiles.\n`;
+    if (wallTilePf) {
+      materialLines += `- Apply Image ${wallTilePf.figureIdx} as WALL tile throughout the bathroom walls. Replace wall tiles with this product.\n`;
+    } else {
+      const tileTags = topTags.filter(t => /tile|marble|stone|ceramic|zellige/i.test(t));
+      materialLines += `- Replace wall tiles with ${tileTags.length > 0 ? tileTags.join(', ') : 'modern tiles matching the style'}.\n`;
+    }
+  } else if (wallTilePf && floorTilePf && wallTilePf.product.id !== floorTilePf.product.id) {
+    materialLines += `- Apply Image ${wallTilePf.figureIdx} as WALL tile throughout the bathroom walls.\n`;
+    materialLines += `- Apply Image ${floorTilePf.figureIdx} as FLOOR tile throughout the bathroom floor.\n`;
+    materialLines += `- Replace existing tiles with these products. Keep all fixtures in place.\n`;
+  } else if (wallTilePf || floorTilePf) {
+    const tilePf = wallTilePf || floorTilePf;
+    materialLines += `- Apply Image ${tilePf.figureIdx} as floor and wall tile throughout the bathroom.\n`;
     materialLines += `- Replace existing floor and wall tiles with this product. Keep all fixtures in place.\n`;
   } else {
     const tileTags = topTags.filter(t => /tile|marble|stone|ceramic|zellige/i.test(t));
@@ -230,9 +259,11 @@ export const generateSeedreamRenovation = async (params: SeedreamRenderParams): 
 
   const imageUrls: string[] = [params.bathroomImageUrl];
 
+  const productIdToCategory = params.productIdToSelectionCategory || {};
   const eligibleProducts: { product: DatabaseProduct; action: string; url: string }[] = [];
   for (const product of params.selectedProducts) {
-    const action = params.productActions[product.category] || 'replace';
+    const selectionCategory = productIdToCategory[product.id] || product.category;
+    const action = params.productActions[selectionCategory] || 'replace';
     if (action === 'keep' || action === 'remove') continue;
     const url = product.image_url || (product.images && product.images.length > 0 ? product.images[0] : null);
     if (url && /^https?:\/\//.test(url)) {
@@ -240,9 +271,13 @@ export const generateSeedreamRenovation = async (params: SeedreamRenderParams): 
     }
   }
 
-  eligibleProducts.sort((a, b) =>
-    PRODUCT_PRIORITY.indexOf(a.product.category) - PRODUCT_PRIORITY.indexOf(b.product.category)
-  );
+  eligibleProducts.sort((a, b) => {
+    const catA = productIdToCategory[a.product.id] || a.product.category;
+    const catB = productIdToCategory[b.product.id] || b.product.category;
+    const idxA = TILE_SELECTION_CATEGORIES.indexOf(catA);
+    const idxB = TILE_SELECTION_CATEGORIES.indexOf(catB);
+    return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+  });
 
   if (eligibleProducts.length > DEFAULT_CONFIG.maxProductImages) {
     eligibleProducts.splice(DEFAULT_CONFIG.maxProductImages);

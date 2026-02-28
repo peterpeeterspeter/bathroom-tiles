@@ -217,14 +217,16 @@ export default function PlannerPage() {
   };
 
   const categoryToMaterialKey: Record<string, keyof MaterialConfig> = {
-    Tile: 'floorTile',
+    WallTile: 'wallTile',
+    FloorTile: 'floorTile',
   };
 
   const handleProductSelect = useCallback((category: string, product: DatabaseProduct) => {
     setSelectedProductIds(prev => ({ ...prev, [category]: product.id }));
     setSelectedProductNames(prev => ({ ...prev, [category]: product.name }));
-    if (category === 'Tile') {
-      setMaterialConfig(prev => ({ ...prev, floorTile: product.name, wallTile: product.name }));
+    const matKey = categoryToMaterialKey[category];
+    if (matKey) {
+      setMaterialConfig(prev => ({ ...prev, [matKey]: product.name }));
     }
     selectedProductDetailsRef.current[category] = {
       id: product.id,
@@ -351,9 +353,13 @@ export default function PlannerPage() {
       setLoadingMessage('Preparing products...');
       const allProducts = await fetchAllActiveProducts();
       const selectedProducts: DatabaseProduct[] = [];
-      for (const [_category, productId] of Object.entries(selectedProductIds)) {
+      const productIdToSelectionCategory: Record<string, string> = {};
+      for (const [category, productId] of Object.entries(selectedProductIds)) {
         const product = allProducts.find(p => p.id === productId);
-        if (product) selectedProducts.push(product);
+        if (product) {
+          selectedProducts.push(product);
+          productIdToSelectionCategory[product.id] = category;
+        }
       }
 
       const productImageMap = await fetchProductImagesAsBase64(selectedProducts);
@@ -377,7 +383,7 @@ export default function PlannerPage() {
             productImageMap,
             mergedSpec,
             roomNotes || undefined,
-            { approach: 'seedream_5_lite_edit', bathroomImageUrl: originalPhotoSignedUrl, inspirationImageUrls: inspirationSignedUrls.length > 0 ? inspirationSignedUrls : undefined, projectId: projectId || undefined }
+            { approach: 'seedream_5_lite_edit', bathroomImageUrl: originalPhotoSignedUrl, inspirationImageUrls: inspirationSignedUrls.length > 0 ? inspirationSignedUrls : undefined, projectId: projectId || undefined, productIdToSelectionCategory }
           ).catch((err) => {
             console.error('Seedream v5 lite render failed:', err);
             trackEvent('generation_approach_failed', { approach: 'seedream_5_lite_edit', error: String(err) });

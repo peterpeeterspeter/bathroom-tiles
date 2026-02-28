@@ -351,9 +351,10 @@ export const calculateRenovationCost = async (
     ${JSON.stringify(catalogForPrompt)}
     USER MATERIAL PREFERENCES:
     ${JSON.stringify(materials)}
-    ${productActions ? `RENOVATION SCOPE (tile-only — only Tile category affects material/labor):
-    - Tile: ${(productActions['Tile'] || 'replace').toUpperCase()} (floor and wall tiles)
-    Other categories (Vanity, Toilet, Faucet, Shower, Bathtub, Mirror, Lighting) are OUT OF SCOPE — exclude from estimate.
+    ${productActions ? `RENOVATION SCOPE (tile-only — only WallTile and FloorTile affect material/labor):
+    - Wall tiles: ${(productActions['WallTile'] || productActions['Tile'] || 'replace').toUpperCase()}
+    - Floor tiles: ${(productActions['FloorTile'] || productActions['Tile'] || 'replace').toUpperCase()}
+    Other categories are OUT OF SCOPE — exclude from estimate.
     ` : ''}
     ${LABOR_RATE_TABLE}
     TASK:
@@ -533,7 +534,7 @@ export const generateRenovation = async (
   productImages: Map<string, { base64: string; mimeType: string }>,
   spec?: ProjectSpec,
   roomNotes?: string,
-  options?: { approach?: RenovationApproach; bathroomImageUrl?: string; inspirationImageUrls?: string[]; projectId?: string }
+  options?: { approach?: RenovationApproach; bathroomImageUrl?: string; inspirationImageUrls?: string[]; projectId?: string; productIdToSelectionCategory?: Record<string, string> }
 ): Promise<string> => {
   const model = "gemini-3-pro-image-preview";
   const approach: RenovationApproach = options?.approach || "baseline";
@@ -588,19 +589,32 @@ export const generateRenovation = async (
     }
   }
   const scopeLines: string[] = [];
-  const tileAction = productActions['Tile'] || 'replace';
-  const label = CATEGORY_LABELS_EN['Tile'] || 'Tile';
-  const tileProduct = selectedProducts.find(p => p.category === 'Tile');
-  const productImg = tileProduct ? imageLabels.find(l => l.includes(tileProduct.name)) : null;
-  if (tileAction === 'keep') {
-    scopeLines.push(`${label} — KEEP: Preserve floor and wall tiles EXACTLY as they appear in image 1. Same appearance, same material, same finish.`);
-  } else if (tileAction === 'remove') {
-    scopeLines.push(`${label} — REMOVE: Remove all tiles. Fill the space with a neutral floor and wall material.`);
+  const productIdToSelectionCategory = options?.productIdToSelectionCategory || {};
+  const wallAction = productActions['WallTile'] || 'replace';
+  const floorAction = productActions['FloorTile'] || 'replace';
+  const wallProduct = selectedProducts.find(p => productIdToSelectionCategory[p.id] === 'WallTile');
+  const floorProduct = selectedProducts.find(p => productIdToSelectionCategory[p.id] === 'FloorTile');
+  const wallProductImg = wallProduct ? imageLabels.find(l => l.includes(wallProduct.name)) : null;
+  const floorProductImg = floorProduct ? imageLabels.find(l => l.includes(floorProduct.name)) : null;
+
+  if (wallAction === 'keep' && floorAction === 'keep') {
+    scopeLines.push(`Wall & floor tiles — KEEP: Preserve floor and wall tiles EXACTLY as they appear in image 1. Same appearance, same material, same finish.`);
+  } else if (wallAction === 'remove' && floorAction === 'remove') {
+    scopeLines.push(`Wall & floor tiles — REMOVE: Remove all tiles. Fill the space with a neutral floor and wall material.`);
   } else {
-    if (productImg) {
-      scopeLines.push(`${label} — REPLACE (${productImg}): Remove existing tiles, install the product from the reference photo. Match color, shape, material, and finish EXACTLY.`);
+    if (wallAction === 'keep') {
+      scopeLines.push(`Wall tiles — KEEP: Preserve wall tiles EXACTLY as they appear in image 1.`);
+    } else if (wallProductImg) {
+      scopeLines.push(`Wall tiles — REPLACE (${wallProductImg}): Remove existing wall tiles, install the product from the reference photo on walls. Match color, shape, material, and finish EXACTLY.`);
     } else {
-      scopeLines.push(`${label} — REPLACE: Replace floor and wall tiles with a modern, stylish alternative matching the design style.`);
+      scopeLines.push(`Wall tiles — REPLACE: Replace wall tiles with a modern, stylish alternative matching the design style.`);
+    }
+    if (floorAction === 'keep') {
+      scopeLines.push(`Floor tiles — KEEP: Preserve floor tiles EXACTLY as they appear in image 1.`);
+    } else if (floorProductImg) {
+      scopeLines.push(`Floor tiles — REPLACE (${floorProductImg}): Remove existing floor tiles, install the product from the reference photo on floor. Match color, shape, material, and finish EXACTLY.`);
+    } else {
+      scopeLines.push(`Floor tiles — REPLACE: Replace floor tiles with a modern, stylish alternative matching the design style.`);
     }
   }
   scopeLines.push(`Vanity, Toilet, Faucet, Shower, Bathtub, Mirror, Lighting — KEEP: Preserve ALL fixtures EXACTLY as they appear in image 1. Do NOT replace, add, or remove any fixtures.`);
@@ -737,6 +751,7 @@ Generate the final image.
       styleProfile,
       selectedProducts,
       productActions,
+      productIdToSelectionCategory: options.productIdToSelectionCategory,
       spec,
       roomNotes,
       projectId: options.projectId,

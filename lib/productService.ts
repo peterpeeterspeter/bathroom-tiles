@@ -144,6 +144,106 @@ export function getProductsByCategory(products: ScoredProduct[]): Record<string,
   return grouped;
 }
 
+const WALL_MATERIAL_LABELS: Record<string, string> = {
+  Porcelain: 'Porcelain (large format)',
+  Ceramic: 'Ceramic',
+  Mosaic: 'Mosaic',
+  Marble: 'Marble-look',
+  Cement: 'Concrete-look',
+  Slate: 'Slate',
+  Travertine: 'Travertine',
+  Glass: 'Glass',
+  Limestone: 'Limestone',
+};
+const FLOOR_MATERIAL_LABELS: Record<string, string> = {
+  Porcelain: 'Porcelain',
+  Ceramic: 'Ceramic',
+  Cement: 'Cement / encaustic',
+  Marble: 'Natural stone',
+  Slate: 'Natural stone',
+  Travertine: 'Natural stone',
+  Limestone: 'Natural stone',
+};
+
+function hasWall(apps: string[]): boolean {
+  return apps.includes('Wall');
+}
+function hasFloor(apps: string[]): boolean {
+  return apps.includes('Floor');
+}
+function isZelligeStyle(p: DatabaseProduct): boolean {
+  const n = (p.name || '').toLowerCase();
+  const s = (p.shape || '').toLowerCase();
+  return /zellige|herringbone|chevron/.test(n) || ['chevron', 'herringbone', 'subway'].includes(s);
+}
+
+export function getProductsByApplication(products: ScoredProduct[]): { wall: ScoredProduct[]; floor: ScoredProduct[] } {
+  const wall: ScoredProduct[] = [];
+  const floor: ScoredProduct[] = [];
+  for (const p of products) {
+    const apps = (p.applications || []) as string[];
+    if (hasWall(apps)) wall.push(p);
+    if (hasFloor(apps)) floor.push(p);
+  }
+  return { wall, floor };
+}
+
+export type WallMaterialKey = string;
+export type FloorMaterialKey = string;
+
+export function getWallMaterialGroups(products: ScoredProduct[]): { key: string; label: string; count: number }[] {
+  const wallProducts = products.filter((p) => hasWall((p.applications || []) as string[]));
+  const byKey: Record<string, { label: string; count: number }> = {};
+  for (const p of wallProducts) {
+    if (isZelligeStyle(p)) {
+      byKey['Zellige-style'] = { label: 'Zellige-style', count: (byKey['Zellige-style']?.count || 0) + 1 };
+    } else if (p.material) {
+      const label = WALL_MATERIAL_LABELS[p.material] || p.material;
+      byKey[p.material] = { label, count: (byKey[p.material]?.count || 0) + 1 };
+    }
+  }
+  return Object.entries(byKey)
+    .map(([key, { label, count }]) => ({ key, label, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export function getFloorMaterialGroups(products: ScoredProduct[]): { key: string; label: string; count: number }[] {
+  const floorProducts = products.filter((p) => hasFloor((p.applications || []) as string[]));
+  const byKey: Record<string, { label: string; count: number }> = {};
+  const naturalStoneMaterials = ['Marble', 'Slate', 'Travertine', 'Limestone'];
+  for (const p of floorProducts) {
+    if (!p.material) continue;
+    const isNaturalStone = naturalStoneMaterials.includes(p.material);
+    const key = isNaturalStone ? 'Natural stone' : p.material;
+    const label = isNaturalStone ? 'Natural stone' : FLOOR_MATERIAL_LABELS[p.material] || p.material;
+    byKey[key] = { label, count: (byKey[key]?.count || 0) + 1 };
+  }
+  return Object.entries(byKey)
+    .map(([key, { label, count }]) => ({ key, label, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export function filterWallProductsByMaterial(products: ScoredProduct[], materialKey: string): ScoredProduct[] {
+  const wallProducts = products.filter((p) => hasWall((p.applications || []) as string[]));
+  if (!materialKey || materialKey === 'all') return wallProducts;
+  if (materialKey === 'Zellige-style') {
+    return wallProducts.filter(isZelligeStyle);
+  }
+  if (materialKey === 'Natural stone') {
+    return wallProducts.filter((p) => ['Marble', 'Slate', 'Travertine', 'Limestone'].includes(p.material || ''));
+  }
+  return wallProducts.filter((p) => p.material === materialKey);
+}
+
+export function filterFloorProductsByMaterial(products: ScoredProduct[], materialKey: string): ScoredProduct[] {
+  const floorProducts = products.filter((p) => hasFloor((p.applications || []) as string[]));
+  if (!materialKey || materialKey === 'all') return floorProducts;
+  if (materialKey === 'Natural stone') {
+    return floorProducts.filter((p) => ['Marble', 'Slate', 'Travertine', 'Limestone'].includes(p.material || ''));
+  }
+  return floorProducts.filter((p) => p.material === materialKey);
+}
+
 export interface TileFacets {
   application?: 'floor' | 'wall' | 'both' | 'all';
   material?: string;

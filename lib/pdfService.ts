@@ -1,5 +1,11 @@
 import jsPDF from 'jspdf';
 
+const CATEGORY_LABELS: Record<string, string> = {
+  WallTile: 'Wall tiles',
+  FloorTile: 'Floor tiles',
+  Tile: 'Tiles',
+};
+
 interface PdfPayload {
   name: string;
   selectedStyle: string;
@@ -134,7 +140,7 @@ export async function generateResultPdf(payload: PdfPayload): Promise<void> {
     doc.setFontSize(9);
     payload.choices.forEach((c) => {
       doc.setFont('helvetica', 'bold');
-      doc.text(`${c.category}:`, margin, y);
+      doc.text(`${CATEGORY_LABELS[c.category] || c.category}:`, margin, y);
       doc.setFont('helvetica', 'normal');
       let productText = c.product;
       if (c.priceTier) {

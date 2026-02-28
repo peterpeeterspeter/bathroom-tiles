@@ -122,6 +122,9 @@ export interface StyleProfile {
 
 export type PriceTier = 'budget' | 'mid' | 'premium';
 
+/** Logical product category for UI selection (Wall/Floor tiles); DB category may remain 'Tile'. */
+export type ProductCategory = 'WallTile' | 'FloorTile';
+
 export const PRICE_TIER_LABELS: Record<PriceTier, string> = {
   budget: 'Budget', mid: 'Mid', premium: 'Premium'
 };
