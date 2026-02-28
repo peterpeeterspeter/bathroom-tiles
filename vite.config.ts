@@ -5,6 +5,12 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig(({ mode }) => {
     const env = { ...process.env, ...loadEnv(mode, '.', '') };
+    const geminiKey = env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || env.GOOGLE_AI_API_KEY || env.VITE_GOOGLE_AI_API_KEY;
+    if (mode === 'production' && !geminiKey && process.env.VERCEL === '1') {
+      throw new Error(
+        'Style analysis requires an API key. Set VITE_GEMINI_API_KEY or VITE_GOOGLE_AI_API_KEY in Vercel Environment Variables (Production scope), then redeploy with "Clear Build Cache".'
+      );
+    }
     return {
       server: {
         port: 5000,

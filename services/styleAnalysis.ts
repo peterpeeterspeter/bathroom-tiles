@@ -2,13 +2,11 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { StyleProfile, StyleTag, ExpertAnalysis } from "../types";
 
 const getApiKey = (): string => {
-  const key = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || '';
-  if (key) return key;
-  try {
-    const viteKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (import.meta as any).env?.VITE_GOOGLE_AI_API_KEY;
-    if (viteKey) return viteKey;
-  } catch {}
-  return '';
+  // Vite auto-exposes VITE_* from process.env at build time (most reliable on Vercel)
+  const viteKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_AI_API_KEY;
+  if (viteKey) return viteKey;
+  // Fallback: vite.config define injects process.env.* at build time
+  return process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || '';
 };
 
 const createClient = () => {

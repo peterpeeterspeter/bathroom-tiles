@@ -4,18 +4,22 @@
  * Usage:
  *   npx tsx scripts/import-tileshop.ts [path-to-json]
  *
- * Environment:
+ * Environment (from .env or shell):
  *   SUPABASE_URL or VITE_SUPABASE_URL
  *   SUPABASE_SERVICE_ROLE_KEY (required for inserts; never commit)
  *
  * Default JSON path: data/tileshop-all-products-images.json
  */
 
+import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
+import fetch from "node-fetch";
 import { readFile } from "fs/promises";
 import { join } from "path";
 
-const BATCH_SIZE = 50;
+dotenv.config({ path: join(process.cwd(), ".env"), override: true });
+
+const BATCH_SIZE = 25;
 
 interface TileShopProduct {
   name: string;
@@ -49,6 +53,17 @@ function derivePriceTier(pricePerSqft: number): "budget" | "mid" | "premium" {
   return "premium";
 }
 
+/** Prefer render-type image for catalog/display; fallback to first photo. */
+function pickRenderOrPrimaryUrl(
+  images: { url: string; type: string }[] | undefined,
+  fallback: string
+): string {
+  if (!images?.length) return fallback;
+  const render = images.find((i) => i.type === "render" || i.type === "installed");
+  const photo = images.find((i) => i.type === "photo");
+  return (render || photo || images[0])?.url || fallback;
+}
+
 function mapToProduct(
   raw: TileShopProduct,
   id: string,
@@ -59,8 +74,9 @@ function mapToProduct(
   const priceHigh = Math.round(price * 1.08 * 100) / 100;
   const descParts = [raw.material, raw.shape].filter(Boolean);
   const description = descParts.length > 0 ? descParts.join(", ") : undefined;
-  const imageUrls =
-    raw.images?.map((i) => i.url).filter(Boolean) || [];
+  const imageUrls = (raw.images?.map((i) => i.url).filter(Boolean) || []).slice(0, 10);
+  const primaryImage =
+    raw.image_url || pickRenderOrPrimaryUrl(raw.images, imageUrls[0] ?? "");
 
   return {
     id: `TILESHOP-${id}`,
@@ -71,8 +87,10 @@ function mapToProduct(
     price_low: priceLow,
     price_high: priceHigh,
     currency: "USD",
-    image_url: raw.image_url || (imageUrls[0] ?? ""),
+    image_url: primaryImage,
     images: imageUrls.length > 0 ? imageUrls : undefined,
+    dimensions: raw.dimensions || undefined,
+    product_url: raw.product_url || undefined,
     origin: "tileshop.com",
     is_active: true,
     display_order: displayOrder,
@@ -121,7 +139,18 @@ async function main() {
 
   console.log(`Importing ${products.length} tiles...`);
 
-  const supabase = createClient(url, serviceKey);
+  const supabase = createClient(url, serviceKey, {
+    global: { fetch: fetch as typeof globalThis.fetch },
+  });
+
+  // Pre-flight: verify connection
+  const { error: testError } = await supabase.from("products").select("id").limit(1);
+  if (testError) {
+    console.error("Connection test failed:", testError.message);
+    if ((testError as any).cause) console.error("Cause:", (testError as any).cause);
+    process.exit(1);
+  }
+  console.log("Connected to Supabase OK");
 
   let imported = 0;
   let failed = 0;
@@ -132,7 +161,9 @@ async function main() {
       onConflict: "id",
     });
     if (error) {
-      console.error(`Batch ${i / BATCH_SIZE + 1} failed:`, error.message);
+      const errMsg = error?.cause ?? error?.message ?? String(error);
+      console.error(`Batch ${i / BATCH_SIZE + 1} failed:`, errMsg);
+      if (failed === 0 && i === 0) console.error("First error details:", error);
       failed += batch.length;
     } else {
       imported += batch.length;
