@@ -11,16 +11,6 @@ const getApiKey = (): string => {
   return '';
 };
 
-const getBaseUrl = (): string | undefined => {
-  const url = process.env.GEMINI_BASE_URL || '';
-  if (url) return url;
-  try {
-    const viteUrl = (import.meta as any).env?.VITE_GEMINI_BASE_URL;
-    if (viteUrl) return viteUrl;
-  } catch {}
-  return undefined;
-};
-
 const createClient = () => {
   const apiKey = getApiKey();
 
@@ -29,11 +19,8 @@ const createClient = () => {
     throw new Error('Style analysis is not configured.');
   }
 
-  const baseUrl = getBaseUrl();
-  return new GoogleGenAI({
-    apiKey,
-    ...(baseUrl ? { httpOptions: { baseUrl } } : {}),
-  });
+  // Style analysis always uses Google Gemini API directly (not laozhang or other proxies)
+  return new GoogleGenAI({ apiKey });
 };
 
 const cleanJson = (text: string) => {
