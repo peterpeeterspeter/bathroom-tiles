@@ -1,15 +1,39 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { StyleProfile, StyleTag, ExpertAnalysis } from "../types";
 
+const getApiKey = (): string => {
+  const key = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || '';
+  if (key) return key;
+  try {
+    const viteKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (import.meta as any).env?.VITE_GOOGLE_AI_API_KEY;
+    if (viteKey) return viteKey;
+  } catch {}
+  return '';
+};
+
+const getBaseUrl = (): string | undefined => {
+  const url = process.env.GEMINI_BASE_URL || '';
+  if (url) return url;
+  try {
+    const viteUrl = (import.meta as any).env?.VITE_GEMINI_BASE_URL;
+    if (viteUrl) return viteUrl;
+  } catch {}
+  return undefined;
+};
+
 const createClient = () => {
-  const apiKey = process.env.GOOGLE_AI_API_KEY || '';
+  const apiKey = getApiKey();
 
   if (!apiKey) {
-    console.error('[StyleAnalysis] Missing GOOGLE_AI_API_KEY.');
+    console.error('[StyleAnalysis] Missing API key. Set VITE_GEMINI_API_KEY or VITE_GOOGLE_AI_API_KEY in Vercel.');
     throw new Error('Style analysis is not configured.');
   }
 
-  return new GoogleGenAI({ apiKey });
+  const baseUrl = getBaseUrl();
+  return new GoogleGenAI({
+    apiKey,
+    ...(baseUrl ? { httpOptions: { baseUrl } } : {}),
+  });
 };
 
 const cleanJson = (text: string) => {
