@@ -151,6 +151,12 @@ export interface DatabaseProduct {
   catalog_image_path?: string;
   render_image_path?: string;
   description?: string;
+  dimensions?: string;
+  product_url?: string;
+  applications?: string[];
+  material?: string;
+  finish?: string;
+  shape?: string;
 }
 
 export interface StylePreset {

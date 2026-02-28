@@ -86,7 +86,7 @@ export async function fetchAllActiveProducts(): Promise<DatabaseProduct[]> {
 
   const { data: products } = await supabase
     .from('products')
-    .select('id, brand, name, category, price, currency, image_url, images, origin, is_active, display_order, price_low, price_high, price_tier, catalog_image_path, render_image_path, description')
+    .select('id, brand, name, category, price, currency, image_url, images, origin, is_active, display_order, price_low, price_high, price_tier, catalog_image_path, render_image_path, description, dimensions, product_url, applications, material, finish, shape')
     .eq('is_active', true)
     .eq('source', 'bathroom-tiles')
     .order('display_order');
@@ -142,6 +142,33 @@ export function getProductsByCategory(products: ScoredProduct[]): Record<string,
     grouped[product.category].push(product);
   }
   return grouped;
+}
+
+export interface TileFacets {
+  application?: 'floor' | 'wall' | 'both' | 'all';
+  material?: string;
+  finish?: string;
+  priceTier?: string;
+}
+
+export function filterProductsByFacets<T extends DatabaseProduct>(products: T[], facets: TileFacets): T[] {
+  if (!facets || Object.keys(facets).every(k => !(facets as any)[k] || (facets as any)[k] === 'all')) {
+    return products;
+  }
+  return products.filter((p) => {
+    if (facets.application && facets.application !== 'all') {
+      const apps = (p.applications || []) as string[];
+      const hasFloor = apps.includes('Floor');
+      const hasWall = apps.includes('Wall');
+      if (facets.application === 'floor' && !hasFloor) return false;
+      if (facets.application === 'wall' && !hasWall) return false;
+      if (facets.application === 'both' && (!hasFloor || !hasWall)) return false;
+    }
+    if (facets.material && facets.material !== 'all' && p.material !== facets.material) return false;
+    if (facets.finish && facets.finish !== 'all' && p.finish !== facets.finish) return false;
+    if (facets.priceTier && facets.priceTier !== 'all' && p.price_tier !== facets.priceTier) return false;
+    return true;
+  });
 }
 
 export async function fetchProductById(id: string): Promise<DatabaseProduct | null> {

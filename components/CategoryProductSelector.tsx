@@ -40,6 +40,9 @@ export const CategoryProductSelector = ({
           </div>
           <p className="text-[10px] font-bold uppercase text-neutral-500 tracking-tighter mb-1 leading-none w-full text-center">{p.brand}</p>
           <p className="text-[11px] font-semibold text-neutral-900 leading-tight h-8 overflow-hidden text-center w-full">{p.name}</p>
+          {(p.dimensions || p.finish) && (
+            <p className="text-[9px] text-neutral-400 mt-0.5 leading-none w-full text-center">{[p.dimensions, p.finish].filter(Boolean).join(' · ')}</p>
+          )}
           <p className="text-[11px] font-bold text-primary mt-1">{getProductPriceDisplay(p)}</p>
           {selectedId === p.id && (
             <div className="absolute top-2 right-2 bg-primary text-white p-1 rounded-full shadow-lg">

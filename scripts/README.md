@@ -4,7 +4,9 @@
 
 Imports TileShop products from `data/tileshop-all-products-images.json` into Supabase (`products` table with `source='bathroom-tiles'`).
 
-**Before first run:** Apply the migration `supabase/migrations/20260228120000_add_tileshop_product_columns.sql` in Supabase SQL Editor (adds `dimensions`, `product_url`, `images` columns).
+**Before first run:** Apply migrations in Supabase SQL Editor:
+- `20260228120000_add_tileshop_product_columns.sql` (dimensions, product_url, images)
+- `20260228130000_add_tile_facets.sql` (applications, material, finish, shape)
 
 **Requirements:**
 - `SUPABASE_URL` or `VITE_SUPABASE_URL`

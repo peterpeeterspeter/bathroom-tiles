@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, ShoppingBag, Info, Loader2, Eye, Lightbulb, Layout, CheckCircle2, Gauge, Bookmark, Wrench } from 'lucide-react';
 import { StyleProfile, DatabaseProduct, ProductAction } from '../types';
-import { ScoredProduct, fetchProductsForProfile, getProductsByCategory } from '../lib/productService';
+import { ScoredProduct, fetchProductsForProfile, getProductsByCategory, filterProductsByFacets, TileFacets } from '../lib/productService';
 import { CategoryProductSelector } from './CategoryProductSelector';
 
 const CATEGORIES: DatabaseProduct['category'][] = ['Tile'];
@@ -24,6 +24,7 @@ interface ProductConfigurationProps {
 export const ProductConfiguration = ({ styleProfile, selectedProductIds, productActions, onProductSelect, onActionChange, onNext }: ProductConfigurationProps) => {
   const [productsByCategory, setProductsByCategory] = useState<Record<string, ScoredProduct[]>>({});
   const [loading, setLoading] = useState(true);
+  const [tileFacets, setTileFacets] = useState<TileFacets>({});
 
   useEffect(() => {
     fetchProductsForProfile(styleProfile).then(scored => {
@@ -192,7 +193,74 @@ export const ProductConfiguration = ({ styleProfile, selectedProductIds, product
                     </button>
                   </div>
 
-                  {(action === 'replace' || action === 'add') && (
+                  {cat === 'Tile' && (action === 'replace' || action === 'add') && (() => {
+                    const allTiles = productsByCategory['Tile'] || [];
+                    const materials = [...new Set(allTiles.map(p => p.material).filter(Boolean))] as string[];
+                    const finishes = [...new Set(allTiles.map(p => p.finish).filter(Boolean))] as string[];
+                    materials.sort(); finishes.sort();
+                    const filteredTiles = filterProductsByFacets(allTiles, tileFacets);
+                    return (
+                      <>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          <span className="text-[10px] font-black uppercase text-neutral-500 self-center mr-1">Filter:</span>
+                          {(['all', 'floor', 'wall', 'both'] as const).map(app => (
+                            <button
+                              key={app}
+                              onClick={() => setTileFacets(f => ({ ...f, application: app }))}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
+                                (tileFacets.application || 'all') === app ? 'bg-neutral-900 text-white' : 'bg-surface border border-neutral-300/50 text-neutral-500 hover:border-neutral-400'
+                              }`}
+                            >
+                              {app === 'all' ? 'All' : app === 'both' ? 'Floor & Wall' : app}
+                            </button>
+                          ))}
+                          <span className="text-neutral-300 mx-1">|</span>
+                          {['all', ...materials].map(m => (
+                            <button
+                              key={m}
+                              onClick={() => setTileFacets(f => ({ ...f, material: m }))}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
+                                (tileFacets.material || 'all') === m ? 'bg-neutral-900 text-white' : 'bg-surface border border-neutral-300/50 text-neutral-500 hover:border-neutral-400'
+                              }`}
+                            >
+                              {m === 'all' ? 'All materials' : m}
+                            </button>
+                          ))}
+                          <span className="text-neutral-300 mx-1">|</span>
+                          {['all', ...finishes].map(fi => (
+                            <button
+                              key={fi}
+                              onClick={() => setTileFacets(f => ({ ...f, finish: fi }))}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
+                                (tileFacets.finish || 'all') === fi ? 'bg-neutral-900 text-white' : 'bg-surface border border-neutral-300/50 text-neutral-500 hover:border-neutral-400'
+                              }`}
+                            >
+                              {fi === 'all' ? 'All finishes' : fi}
+                            </button>
+                          ))}
+                          <span className="text-neutral-300 mx-1">|</span>
+                          {['all', 'budget', 'mid', 'premium'].map(pt => (
+                            <button
+                              key={pt}
+                              onClick={() => setTileFacets(f => ({ ...f, priceTier: pt }))}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
+                                (tileFacets.priceTier || 'all') === pt ? 'bg-neutral-900 text-white' : 'bg-surface border border-neutral-300/50 text-neutral-500 hover:border-neutral-400'
+                              }`}
+                            >
+                              {pt === 'all' ? 'All prices' : pt}
+                            </button>
+                          ))}
+                        </div>
+                        <CategoryProductSelector
+                          products={filteredTiles}
+                          selectedId={selectedProductIds[cat]}
+                          onSelect={(p) => onProductSelect(cat, p)}
+                        />
+                      </>
+                    );
+                  })()}
+
+                  {cat !== 'Tile' && (action === 'replace' || action === 'add') && (
                     <CategoryProductSelector
                       products={productsByCategory[cat] || []}
                       selectedId={selectedProductIds[cat]}
