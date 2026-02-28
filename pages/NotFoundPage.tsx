@@ -4,7 +4,7 @@ import { Home, ArrowRight } from 'lucide-react';
 import { useSEO } from '../lib/useSEO';
 
 export default function NotFoundPage() {
-  useSEO({ title: 'Pagina niet gevonden - De Badkamer' });
+  useSEO({ title: 'Page not found - Bathroom Tiles' });
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-20 md:py-32 text-center">

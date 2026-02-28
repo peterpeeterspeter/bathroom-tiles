@@ -15,7 +15,7 @@ interface Article {
 }
 
 export default function AdviesPage() {
-  useSEO({ title: 'Advies & Inspiratie voor Badkamer Renovatie - De Badkamer', description: 'Tips, inspiratie en advies voor uw badkamer renovatie. Van kosten tot trends: alles wat u moet weten.' });
+  useSEO({ title: 'Advice & Inspiration for Bathroom Tile Renovation - Bathroom Tiles', description: 'Tips, inspiration, and advice for your bathroom tile renovation. From costs to trends: everything you need to know.' });
 
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,10 +39,10 @@ export default function AdviesPage() {
           <nav className="text-sm text-neutral-500 mb-8">
             <Link to="/" className="hover:text-primary">Home</Link>
             <span className="mx-2">/</span>
-            <span className="text-neutral-900">Advies</span>
+            <span className="text-neutral-900">Advice</span>
           </nav>
-          <h1 className="text-3xl md:text-5xl font-black tracking-tight text-neutral-900 mb-4">Advies & Inspiratie</h1>
-          <p className="text-lg text-neutral-500 max-w-2xl">Tips, trends en praktische informatie voor uw badkamerrenovatie.</p>
+          <h1 className="text-3xl md:text-5xl font-black tracking-tight text-neutral-900 mb-4">Advice & Inspiration</h1>
+          <p className="text-lg text-neutral-500 max-w-2xl">Tips, trends, and practical information for your bathroom tile renovation.</p>
         </div>
       </section>
 
@@ -54,14 +54,14 @@ export default function AdviesPage() {
             </div>
           ) : articles.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-neutral-500 mb-2">We werken aan praktische gidsen en inspiratie voor uw badkamerrenovatie. Binnenkort beschikbaar.</p>
-              <p className="text-neutral-500 mb-6">In de tussentijd kunt u de AI Planner gebruiken om uw droomkamer te visualiseren, of direct een gratis offerte aanvragen.</p>
+              <p className="text-neutral-500 mb-2">We are working on practical guides and inspiration for your bathroom tile renovation. Coming soon.</p>
+              <p className="text-neutral-500 mb-6">In the meantime, try the AI Planner to visualize your dream bathroom, or request a free quote.</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link to="/planner" className="inline-flex items-center gap-2 text-primary font-semibold hover:underline">
-                  <Sparkles size={14} /> Probeer de AI Planner
+                  <Sparkles size={14} /> Try the AI Planner
                 </Link>
                 <Link to="/get-quote" className="inline-flex items-center gap-2 text-primary font-semibold hover:underline">
-                  Gratis offerte aanvragen <ArrowRight size={14} />
+                  Request free quote <ArrowRight size={14} />
                 </Link>
               </div>
             </div>
@@ -83,7 +83,7 @@ export default function AdviesPage() {
                       <span className="text-xs font-semibold text-primary bg-primary-light px-2.5 py-1 rounded-full capitalize">{article.category}</span>
                       {article.published_at && (
                         <span className="text-xs text-neutral-500 flex items-center gap-1">
-                          <Calendar size={12} /> {new Date(article.published_at).toLocaleDateString('nl-NL')}
+                          <Calendar size={12} /> {new Date(article.published_at).toLocaleDateString('en-US')}
                         </span>
                       )}
                     </div>

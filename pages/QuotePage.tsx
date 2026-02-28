@@ -6,22 +6,22 @@ import { trackEvent } from '../lib/analytics';
 import { useSEO } from '../lib/useSEO';
 
 const renovationTypes = [
-  { id: 'full', label: 'Volledige renovatie', desc: 'Alles eruit, alles nieuw', icon: Bath },
-  { id: 'partial', label: 'Gedeeltelijke opfrisbeurt', desc: 'Enkele onderdelen vervangen', icon: Paintbrush },
-  { id: 'new_build', label: 'Nieuwbouw', desc: 'Badkamer in nieuw pand', icon: Home },
+  { id: 'full', label: 'Full tile replacement', desc: 'Floor and wall tiles, new from scratch', icon: Bath },
+  { id: 'partial', label: 'Partial refresh', desc: 'Some areas only (e.g. floor or shower)', icon: Paintbrush },
+  { id: 'new_build', label: 'New construction', desc: 'Bathroom in new build', icon: Home },
 ];
 
 const bathroomSizes = [
-  { id: 'small', label: 'Klein', desc: 'Tot 6 m²', icon: Ruler },
-  { id: 'medium', label: 'Gemiddeld', desc: '6 – 9 m²', icon: Ruler },
-  { id: 'large', label: 'Groot', desc: 'Meer dan 9 m²', icon: Ruler },
+  { id: 'small', label: 'Small', desc: 'Up to 65 sq ft', icon: Ruler },
+  { id: 'medium', label: 'Medium', desc: '65 – 100 sq ft', icon: Ruler },
+  { id: 'large', label: 'Large', desc: '100+ sq ft', icon: Ruler },
 ];
 
 const timelines = [
-  { id: '1_month', label: 'Binnen 1 maand' },
-  { id: '1_3_months', label: '1 – 3 maanden' },
-  { id: '3_6_months', label: '3 – 6 maanden' },
-  { id: 'exploring', label: 'Ik orienteer me nog' },
+  { id: '1_month', label: 'Within 1 month' },
+  { id: '1_3_months', label: '1 – 3 months' },
+  { id: '3_6_months', label: '3 – 6 months' },
+  { id: 'exploring', label: 'Just exploring' },
 ];
 
 export default function QuotePage() {
@@ -29,7 +29,7 @@ export default function QuotePage() {
   const [renovationType, setRenovationType] = useState('');
   const [bathroomSize, setBathroomSize] = useState('');
   const [timeline, setTimeline] = useState('');
-  const [country, setCountry] = useState<'NL' | 'BE'>('NL');
+  const [country, setCountry] = useState<'US'>('US');
   const [form, setForm] = useState({ name: '', email: '', phone: '', postcode: '' });
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -62,7 +62,7 @@ export default function QuotePage() {
       trackEvent('lead_submitted', { source: 'quote_form', renovationType, bathroomSize, timeline, country });
       setSubmitted(true);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Er is iets misgegaan bij het verzenden. Probeer het later opnieuw.';
+      const errorMessage = err instanceof Error ? err.message : 'Something went wrong. Please try again later.';
       setError(errorMessage);
       trackEvent('lead_submit_error', { source: 'quote_form', error: errorMessage });
     } finally {
@@ -73,8 +73,8 @@ export default function QuotePage() {
   // Call useSEO with different values based on submitted state
   // This is safe because `submitted` only changes from false->true once per mount
   useSEO(submitted
-    ? { title: 'Bedankt - De Badkamer' }
-    : { title: 'Gratis Offerte Aanvragen - Badkamer Renovatie | De Badkamer', description: 'Vraag gratis en vrijblijvend offertes aan voor uw badkamer renovatie. Ontvang binnen 24 uur offertes van lokale vakmensen in NL en BE.' }
+    ? { title: 'Thank you - Bathroom Tiles' }
+    : { title: 'Free Quote Request - Bathroom Tile Renovation | Bathroom Tiles', description: 'Request free, no-obligation quotes for your bathroom tile renovation. Get quotes from local contractors within 24 hours.' }
   );
 
   if (submitted) {
@@ -83,35 +83,35 @@ export default function QuotePage() {
         <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-8">
           <CheckCircle size={40} className="text-success" />
         </div>
-        <h1 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900 mb-4">Bedankt &mdash; uw aanvraag is ontvangen!</h1>
-        <p className="text-neutral-500 text-lg mb-3">Binnen 24 uur ontvangt u tot 3 vrijblijvende offertes van geselecteerde vakmensen in uw regio. U beslist zelf of en met wie u verder gaat.</p>
-        <p className="text-neutral-500 mb-10">In de tussentijd: probeer onze AI Planner en visualiseer alvast uw nieuwe badkamer.</p>
+        <h1 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900 mb-4">Thank you &mdash; your request has been received!</h1>
+        <p className="text-neutral-500 text-lg mb-3">Within 24 hours you will receive up to 3 no-obligation quotes from selected contractors in your area. You decide whether and with whom to proceed.</p>
+        <p className="text-neutral-500 mb-10">In the meantime: try our AI Planner and visualize your new bathroom.</p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             to="/planner"
             className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-bold px-8 py-4 rounded-full transition-all"
           >
-            <Sparkles size={18} /> Probeer de AI Planner
+            <Sparkles size={18} /> Try the AI Planner
           </Link>
           <Link
             to="/"
             className="inline-flex items-center justify-center gap-2 bg-white border border-neutral-300/50 text-neutral-700 font-semibold px-8 py-4 rounded-full transition-all hover:border-primary"
           >
-            Terug naar Home
+            Back to Home
           </Link>
         </div>
       </div>
     );
   }
 
-  const stepLabels = ['Type renovatie', 'Grootte', 'Planning', 'Gegevens'];
+  const stepLabels = ['Scope', 'Size', 'Timeline', 'Details'];
 
   return (
     <>
       <div className="max-w-2xl mx-auto px-4 py-12 md:py-20">
         <div className="text-center mb-10">
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900 mb-3">Gratis offerte aanvragen</h1>
-          <p className="text-neutral-500">Vul de stappen in en ontvang vrijblijvende offertes.</p>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-neutral-900 mb-3">Request a free quote</h1>
+          <p className="text-neutral-500">Complete the steps and receive no-obligation quotes.</p>
         </div>
 
         {/* Progress */}
@@ -133,7 +133,7 @@ export default function QuotePage() {
         {/* Step 1: Renovation Type */}
         {step === 1 && (
           <div className="space-y-4 animate-fade-in">
-            <h2 className="text-xl font-bold text-neutral-900 mb-6">Wat voor renovatie wilt u?</h2>
+            <h2 className="text-xl font-bold text-neutral-900 mb-6">What type of tile work do you need?</h2>
             {renovationTypes.map((type) => (
               <button
                 key={type.id}
@@ -157,7 +157,7 @@ export default function QuotePage() {
         {/* Step 2: Size */}
         {step === 2 && (
           <div className="space-y-4 animate-fade-in">
-            <h2 className="text-xl font-bold text-neutral-900 mb-6">Hoe groot is uw badkamer?</h2>
+            <h2 className="text-xl font-bold text-neutral-900 mb-6">How large is your bathroom?</h2>
             {bathroomSizes.map((size) => (
               <button
                 key={size.id}
@@ -175,14 +175,14 @@ export default function QuotePage() {
                 </div>
               </button>
             ))}
-            <button onClick={goBack} className="flex items-center gap-2 text-sm text-neutral-500 hover:text-primary mt-4 font-medium"><ArrowLeft size={14} /> Vorige stap</button>
+            <button onClick={goBack} className="flex items-center gap-2 text-sm text-neutral-500 hover:text-primary mt-4 font-medium"><ArrowLeft size={14} /> Previous step</button>
           </div>
         )}
 
         {/* Step 3: Timeline */}
         {step === 3 && (
           <div className="space-y-4 animate-fade-in">
-            <h2 className="text-xl font-bold text-neutral-900 mb-6">Wanneer wilt u starten?</h2>
+            <h2 className="text-xl font-bold text-neutral-900 mb-6">When do you want to start?</h2>
             <div className="grid grid-cols-2 gap-3">
               {timelines.map((t) => (
                 <button
@@ -199,14 +199,14 @@ export default function QuotePage() {
                 </button>
               ))}
             </div>
-            <button onClick={goBack} className="flex items-center gap-2 text-sm text-neutral-500 hover:text-primary mt-4 font-medium"><ArrowLeft size={14} /> Vorige stap</button>
+            <button onClick={goBack} className="flex items-center gap-2 text-sm text-neutral-500 hover:text-primary mt-4 font-medium"><ArrowLeft size={14} /> Previous step</button>
           </div>
         )}
 
         {/* Step 4: Contact */}
         {step === 4 && (
           <form onSubmit={handleSubmit} className="space-y-4 animate-fade-in">
-            <h2 className="text-xl font-bold text-neutral-900 mb-6">Uw contactgegevens</h2>
+            <h2 className="text-xl font-bold text-neutral-900 mb-6">Your contact details</h2>
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
                 <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={18} />
@@ -215,37 +215,31 @@ export default function QuotePage() {
             )}
             <div className="relative">
               <User className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
-              <input required placeholder="Uw naam" type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full bg-white border border-neutral-300/50 rounded-xl py-3.5 pl-11 pr-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" />
+              <input required placeholder="Your name" type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full bg-white border border-neutral-300/50 rounded-xl py-3.5 pl-11 pr-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" />
             </div>
             <div className="relative">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
-              <input required placeholder="E-mailadres" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full bg-white border border-neutral-300/50 rounded-xl py-3.5 pl-11 pr-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" />
+              <input required placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full bg-white border border-neutral-300/50 rounded-xl py-3.5 pl-11 pr-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" />
             </div>
             <div className="relative">
               <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
-              <input required placeholder="Telefoonnummer" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full bg-white border border-neutral-300/50 rounded-xl py-3.5 pl-11 pr-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" />
+              <input required placeholder="Phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full bg-white border border-neutral-300/50 rounded-xl py-3.5 pl-11 pr-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" />
             </div>
-            <div className="flex gap-3">
-              <div className="relative flex-1">
-                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
-                <input required placeholder={country === 'NL' ? 'Postcode (bijv. 1234 AB)' : 'Postcode (bijv. 2000)'} type="text" value={form.postcode} onChange={(e) => setForm({ ...form, postcode: e.target.value })} className="w-full bg-white border border-neutral-300/50 rounded-xl py-3.5 pl-11 pr-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" />
-              </div>
-              <div className="flex rounded-xl border border-neutral-300/50 overflow-hidden">
-                <button type="button" onClick={() => setCountry('NL')} className={`px-4 py-3.5 text-xs font-bold transition-colors ${country === 'NL' ? 'bg-primary text-white' : 'bg-white text-neutral-500'}`}>NL</button>
-                <button type="button" onClick={() => setCountry('BE')} className={`px-4 py-3.5 text-xs font-bold transition-colors ${country === 'BE' ? 'bg-primary text-white' : 'bg-white text-neutral-500'}`}>BE</button>
-              </div>
+            <div className="relative">
+              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
+              <input required placeholder="ZIP code (e.g. 90210)" type="text" value={form.postcode} onChange={(e) => setForm({ ...form, postcode: e.target.value })} className="w-full bg-white border border-neutral-300/50 rounded-xl py-3.5 pl-11 pr-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" />
             </div>
 
             <label className="flex items-start gap-3 cursor-pointer">
               <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="w-4 h-4 mt-0.5 rounded border-neutral-300 accent-primary cursor-pointer" />
               <span className="text-xs text-neutral-500 leading-relaxed">
-                Ik ga akkoord met de verwerking van mijn persoonsgegevens conform de <a href="/privacy" className="underline text-primary">privacyverklaring</a>.
+                I agree to the processing of my personal data in accordance with the <a href="/privacy" className="underline text-primary">privacy policy</a>.
               </span>
             </label>
 
             <div className="flex gap-3 pt-4">
               <button type="button" onClick={goBack} className="flex items-center justify-center gap-2 px-6 py-4 rounded-xl border border-neutral-300/50 text-neutral-700 font-semibold text-sm hover:bg-surface transition-all">
-                <ArrowLeft size={14} /> Terug
+                <ArrowLeft size={14} /> Back
               </button>
               <button
                 type="submit"
@@ -254,7 +248,7 @@ export default function QuotePage() {
                   !consent ? 'bg-neutral-300/50 text-neutral-500 cursor-not-allowed' : 'bg-accent hover:bg-accent-hover text-white shadow-lg shadow-accent/20'
                 }`}
               >
-                {submitting ? <Loader2 size={18} className="animate-spin" /> : <>Verstuur Aanvraag <ArrowRight size={16} /></>}
+                {submitting ? <Loader2 size={18} className="animate-spin" /> : <>Submit Request <ArrowRight size={16} /></>}
               </button>
             </div>
           </form>

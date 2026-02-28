@@ -38,8 +38,8 @@ export default function ArticlePage() {
 
   // Call useSEO with article data when available, or fallback title when loading/not found
   useSEO(article
-    ? { title: `${article.title} - De Badkamer`, description: article.meta_description || article.title }
-    : { title: 'Artikel - De Badkamer' }
+    ? { title: `${article.title} - Bathroom Tiles`, description: article.meta_description || article.title }
+    : { title: 'Article - Bathroom Tiles' }
   );
 
   if (loading) {
@@ -77,7 +77,7 @@ export default function ArticlePage() {
             <span className="text-xs font-semibold text-primary bg-primary-light px-2.5 py-1 rounded-full capitalize">{article.category}</span>
             {article.published_at && (
               <span className="text-xs text-neutral-500 flex items-center gap-1">
-                <Calendar size={12} /> {new Date(article.published_at).toLocaleDateString('nl-NL')}
+                <Calendar size={12} /> {new Date(article.published_at).toLocaleDateString('en-US')}
               </span>
             )}
           </div>

@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle, XCircle, ChevronDown, Users, TrendingUp, Mail, Phone, FileText, Camera, Palette, Ruler, Euro, Star, Clock, MapPin, Shield, BarChart3, Zap, Target, Award, Building2, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle, XCircle, ChevronDown, Users, TrendingUp, Mail, Phone, FileText, Camera, Palette, Ruler, DollarSign, Star, Clock, MapPin, Shield, BarChart3, Zap, Target, Award, Building2, Loader2, AlertCircle } from 'lucide-react';
 import { useSEO } from '../lib/useSEO';
 import { submitLead, sendLeadNotification } from '../lib/leadService';
 import { trackEvent } from '../lib/analytics';
 
 const VoorVakmensenPage = () => {
   useSEO({
-    title: 'Voor Vakmensen — Word Partner | De Badkamer',
-    description: 'Ontvang AI-gekwalificeerde badkamer leads met compleet projectdossier. Stijlkeuze, productlijst, foto\'s, afmetingen en budget — nog vóór het eerste gesprek.',
+    title: 'For Contractors — Become a Partner | Bathroom Tiles',
+    description: 'Receive AI-qualified bathroom leads with complete project dossier. Style choice, product list, photos, dimensions, and budget — before the first conversation.',
   });
 
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
   const [roiValues, setRoiValues] = useState({
-    orderValue: 12000,
+    orderValue: 13000,
     conversionRate: 25,
     leadsPerMonth: 10,
   });
@@ -34,7 +34,7 @@ const VoorVakmensenPage = () => {
   const roiLeads = roiValues.leadsPerMonth;
   const roiConversions = (roiLeads * roiValues.conversionRate) / 100;
   const roiRevenue = roiConversions * roiValues.orderValue;
-  const roiCost = roiLeads * 45;
+  const roiCost = roiLeads * 49;
   const roiPercent = roiCost > 0 ? Math.round((roiRevenue / roiCost) * 100) : 0;
 
   const handleSpecialisatie = (val: string) => {
@@ -71,14 +71,14 @@ const VoorVakmensenPage = () => {
         phone: formData.telefoon,
         postcode: formData.werkgebied,
         leadScore: result.leadScore,
-        styleName: `VAKMAN AANMELDING — Plan: ${formData.plan.toUpperCase()}`,
-        styleSummary: `Bedrijf: ${formData.bedrijfsnaam} | KvK: ${formData.kvk || 'n.v.t.'} | Specialisatie: ${formData.specialisatie.join(', ') || 'Geen geselecteerd'} | Werkgebied: ${formData.werkgebied}`,
+        styleName: `CONTRACTOR SIGNUP — Plan: ${formData.plan.toUpperCase()}`,
+        styleSummary: `Company: ${formData.bedrijfsnaam} | EIN: ${formData.kvk || 'n/a'} | Specialization: ${formData.specialisatie.join(', ') || 'None selected'} | Service area: ${formData.werkgebied}`,
         preferredTimeline: 'direct',
       });
 
       setFormSubmitted(true);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Er is iets misgegaan. Probeer het later opnieuw.');
+      setFormError(err instanceof Error ? err.message : 'Something went wrong. Please try again later.');
     } finally {
       setFormSubmitting(false);
     }
@@ -86,28 +86,28 @@ const VoorVakmensenPage = () => {
 
   const faqs = [
     {
-      q: 'Hoe exclusief zijn de leads?',
-      a: 'Dat hangt af van uw plan. Bij Standaard worden leads gedeeld met maximaal 5 vakmensen. Bij Premium maximaal 3. Bij Exclusief ontvangt alleen u de lead — 100% exclusief.',
+      q: 'How exclusive are the leads?',
+      a: 'It depends on your plan. Standard shares leads with up to 5 contractors. Premium with up to 3. Exclusive sends the lead only to you — 100% exclusive.',
     },
     {
-      q: 'Kan ik leads filteren op regio?',
-      a: 'Ja, u stelt uw postcode-regio\'s in bij aanmelding. U ontvangt alleen leads in uw werkgebied.',
+      q: 'Can I filter leads by region?',
+      a: 'Yes, you set your ZIP code regions when signing up. You only receive leads in your service area.',
     },
     {
-      q: 'Wat als de klant niet opneemt?',
-      a: 'U krijgt de lead terug als credit als er binnen 72 uur geen contact gemaakt kan worden.',
+      q: 'What if the customer doesn\'t respond?',
+      a: 'You get the lead back as credit if no contact can be made within 72 hours.',
     },
     {
-      q: 'Hoe nauwkeurig is de AI-prijsindicatie?',
-      a: 'Binnen 20% van de werkelijke kosten op basis van Q1 2026 markttarieven. Het is indicatief — u maakt altijd uw eigen offerte.',
+      q: 'How accurate is the AI price estimate?',
+      a: 'Within 20% of actual costs based on Q1 2026 market rates. It\'s indicative — you always create your own quote.',
     },
     {
-      q: 'Moet ik een contract tekenen?',
-      a: 'Nee, maandelijks opzegbaar. Geen minimale afname.',
+      q: 'Do I need to sign a contract?',
+      a: 'No, cancel anytime. No minimum commitment.',
     },
     {
-      q: 'Hoe snel ontvang ik leads na aanmelding?',
-      a: 'Direct na goedkeuring (meestal binnen 24 uur). U ontvangt leads via email en optioneel via SMS.',
+      q: 'How quickly do I receive leads after signup?',
+      a: 'Right after approval (usually within 24 hours). You receive leads by email and optionally by SMS.',
     },
   ];
 
@@ -125,26 +125,26 @@ const VoorVakmensenPage = () => {
             <div>
               <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm text-white/90 text-sm font-medium px-4 py-2 rounded-full mb-6">
                 <Building2 size={16} />
-                Voor installateurs & aannemers
+                For installers & contractors
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight mb-6">
-                Ontvang leads die al een compleet plan hebben
+                Receive leads that already have a complete plan
               </h1>
               <p className="text-lg md:text-xl text-white/80 leading-relaxed mb-8 max-w-lg">
-                Onze AI-planner levert u klanten met stijlkeuze, productlijst, foto's, afmetingen en budget — nog vóór het eerste gesprek.
+                Our AI planner delivers customers with style choice, product list, photos, dimensions, and budget — before the first conversation.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 mb-10">
                 <a
                   href="#aanmelden"
                   className="inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-white font-bold text-base px-8 py-4 rounded-full transition-all hover:shadow-lg hover:shadow-accent/30"
                 >
-                  Word Partner — Gratis Aanmelden <ArrowRight size={18} />
+                  Become Partner — Free Sign Up <ArrowRight size={18} />
                 </a>
                 <a
                   href="#wat-in-lead"
                   className="inline-flex items-center justify-center gap-2 border-2 border-white/30 hover:border-white/60 text-white font-bold text-base px-8 py-4 rounded-full transition-all hover:bg-white/10"
                 >
-                  Bekijk een Voorbeeld Lead
+                  View Sample Lead
                 </a>
               </div>
             </div>
@@ -156,35 +156,35 @@ const VoorVakmensenPage = () => {
                     <Mail size={20} className="text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-neutral-900">Nieuwe Lead Ontvangen</p>
-                    <p className="text-xs text-neutral-500">Zojuist — via De Badkamer AI Planner</p>
+                    <p className="text-sm font-bold text-neutral-900">New Lead Received</p>
+                    <p className="text-xs text-neutral-500">Just now — via Bathroom Tiles AI Planner</p>
                   </div>
                   <span className="ml-auto bg-success/10 text-success text-xs font-bold px-2.5 py-1 rounded-full">Score 85</span>
                 </div>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between py-2 border-b border-neutral-100">
-                    <span className="text-neutral-500">Naam</span>
-                    <span className="font-semibold text-neutral-900">Sophie de Vries</span>
+                    <span className="text-neutral-500">Name</span>
+                    <span className="font-semibold text-neutral-900">Sarah Johnson</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-neutral-100">
-                    <span className="text-neutral-500">Postcode</span>
-                    <span className="font-semibold text-neutral-900">3011 Rotterdam</span>
+                    <span className="text-neutral-500">ZIP</span>
+                    <span className="font-semibold text-neutral-900">90210 Los Angeles</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-neutral-100">
-                    <span className="text-neutral-500">Stijl</span>
-                    <span className="font-semibold text-neutral-900">Modern Industrieel</span>
+                    <span className="text-neutral-500">Style</span>
+                    <span className="font-semibold text-neutral-900">Modern Industrial</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-neutral-100">
                     <span className="text-neutral-500">Budget</span>
-                    <span className="font-semibold text-primary">€12.000 – €16.000</span>
+                    <span className="font-semibold text-primary">$13,000 – $17,000</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-neutral-100">
                     <span className="text-neutral-500">Timeline</span>
-                    <span className="font-semibold text-neutral-900">Binnen 3 maanden</span>
+                    <span className="font-semibold text-neutral-900">Within 3 months</span>
                   </div>
                   <div className="flex justify-between py-2">
-                    <span className="text-neutral-500">Producten</span>
-                    <span className="font-semibold text-neutral-900">8 geselecteerd</span>
+                    <span className="text-neutral-500">Products</span>
+                    <span className="font-semibold text-neutral-900">8 selected</span>
                   </div>
                 </div>
                 <div className="mt-4 flex gap-2">
@@ -202,7 +202,7 @@ const VoorVakmensenPage = () => {
                   </div>
                   <div className="flex-1 bg-primary/5 rounded-lg p-2 text-center">
                     <Ruler size={16} className="mx-auto text-primary mb-1" />
-                    <span className="text-xs text-primary font-medium">3.2 × 2.8m</span>
+                    <span className="text-xs text-primary font-medium">10.5 × 9.2 ft</span>
                   </div>
                 </div>
               </div>
@@ -211,10 +211,10 @@ const VoorVakmensenPage = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16">
             {[
-              { icon: Users, text: '150+ aangesloten vakmensen' },
-              { icon: Star, text: 'Gemiddeld 4.8/5 klanttevredenheid' },
-              { icon: MapPin, text: 'Alleen leads in uw regio' },
-              { icon: Euro, text: 'Geen vaste abonnementskosten' },
+              { icon: Users, text: '150+ partner contractors' },
+              { icon: Star, text: 'Avg 4.8/5 customer satisfaction' },
+              { icon: MapPin, text: 'Leads only in your region' },
+              { icon: DollarSign, text: 'No fixed subscription fees' },
             ].map((badge, i) => (
               <div key={i} className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
                 <badge.icon size={18} className="text-accent shrink-0" />
@@ -230,10 +230,10 @@ const VoorVakmensenPage = () => {
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4">
-              Het probleem met traditionele leads
+              The problem with traditional leads
             </h2>
             <p className="text-lg text-neutral-500 max-w-2xl mx-auto">
-              Een gewone lead kost u 30 minuten om te kwalificeren. Onze leads zijn al gekwalificeerd door AI.
+              A typical lead takes 30 minutes to qualify. Our leads are pre-qualified by AI.
             </p>
           </div>
 
@@ -243,16 +243,16 @@ const VoorVakmensenPage = () => {
                 <div className="w-10 h-10 bg-error/10 rounded-full flex items-center justify-center">
                   <XCircle size={20} className="text-error" />
                 </div>
-                <h3 className="text-xl font-bold text-neutral-900">Traditionele Lead</h3>
+                <h3 className="text-xl font-bold text-neutral-900">Traditional Lead</h3>
               </div>
               <div className="space-y-4">
                 {[
-                  '"Ik wil mijn badkamer renoveren"',
-                  'Geen foto\'s, geen afmetingen',
-                  'Geen idee over budget',
-                  '"Ik kijk nog rond"',
-                  'U belt, ze nemen niet op',
-                  '10 offertes bij concurrenten aangevraagd',
+                  '"I want to renovate my bathroom"',
+                  'No photos, no dimensions',
+                  'No budget clarity',
+                  '"I\'m just looking"',
+                  'You call, they don\'t pick up',
+                  '10 quotes requested from competitors',
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-3 text-neutral-600">
                     <XCircle size={18} className="text-error/50 shrink-0 mt-0.5" />
@@ -264,22 +264,22 @@ const VoorVakmensenPage = () => {
 
             <div className="bg-white rounded-2xl p-8 border-2 border-primary/20 shadow-lg shadow-primary/5 relative">
               <div className="absolute -top-3 right-6 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">
-                De Badkamer
+                Bathroom Tiles
               </div>
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                   <CheckCircle size={20} className="text-primary" />
                 </div>
-                <h3 className="text-xl font-bold text-neutral-900">De Badkamer Lead</h3>
+                <h3 className="text-xl font-bold text-neutral-900">Bathroom Tiles Lead</h3>
               </div>
               <div className="space-y-4">
                 {[
-                  'Compleet AI Project Dossier',
-                  'Foto + AI-render van het resultaat',
-                  'Prijsindicatie €8.000 – €15.000',
-                  'Lead score 85/100 — klaar om te starten',
-                  'Telefoonnummer + gewenste timeline',
-                  'Exclusief in uw regio',
+                  'Complete AI Project Dossier',
+                  'Photo + AI render of the result',
+                  'Price estimate $9,000 – $16,000',
+                  'Lead score 85/100 — ready to start',
+                  'Phone + preferred timeline',
+                  'Exclusive in your region',
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-3 text-neutral-700">
                     <CheckCircle size={18} className="text-primary shrink-0 mt-0.5" />
@@ -296,8 +296,8 @@ const VoorVakmensenPage = () => {
       <section className="py-20 md:py-28">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4">Hoe werkt het?</h2>
-            <p className="text-lg text-neutral-500">Van consument naar opdracht in 4 stappen</p>
+            <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4">How does it work?</h2>
+            <p className="text-lg text-neutral-500">From consumer to project in 4 steps</p>
           </div>
 
           <div className="grid md:grid-cols-4 gap-8">
@@ -305,26 +305,26 @@ const VoorVakmensenPage = () => {
               {
                 step: '1',
                 icon: Palette,
-                title: 'Klant ontwerpt',
-                desc: 'De klant gebruikt onze AI-planner om hun droombadkamer te ontwerpen met stijlkeuze en productenselectie.',
+                title: 'Customer designs',
+                desc: 'The customer uses our AI planner to design their dream bathroom with style choice and product selection.',
               },
               {
                 step: '2',
                 icon: Zap,
-                title: 'AI analyseert',
-                desc: 'Onze AI analyseert foto\'s, stijl, producten en berekent een nauwkeurige prijsindicatie.',
+                title: 'AI analyzes',
+                desc: 'Our AI analyzes photos, style, products, and calculates an accurate price estimate.',
               },
               {
                 step: '3',
                 icon: Mail,
-                title: 'Lead in uw inbox',
-                desc: 'U ontvangt een compleet dossier: contactgegevens, stijlprofiel, producten, render en budget.',
+                title: 'Lead in your inbox',
+                desc: 'You receive a complete dossier: contact info, style profile, products, render, and budget.',
               },
               {
                 step: '4',
                 icon: Award,
-                title: 'U sluit de deal',
-                desc: 'Het eerste gesprek is meteen inhoudelijk. U maakt een accurate offerte en wint de opdracht.',
+                title: 'You close the deal',
+                desc: 'The first conversation gets straight to the point. You create an accurate quote and win the project.',
               },
             ].map((item, i) => (
               <div key={i} className="relative">
@@ -351,18 +351,18 @@ const VoorVakmensenPage = () => {
       <section id="wat-in-lead" className="py-20 md:py-28 bg-surface">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4">Wat zit er in een lead?</h2>
+            <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4">What&apos;s in a lead?</h2>
             <p className="text-lg text-neutral-500 max-w-2xl mx-auto">
-              Elk lead bevat een compleet AI Project Dossier — dit is uw unieke voordeel.
+              Every lead includes a complete AI Project Dossier — your unique advantage.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             {[
-              { icon: Phone, title: 'Contactgegevens', items: ['Naam & email', 'Telefoonnummer', 'Postcode & woonplaats', 'Gewenste timeline'] },
-              { icon: Palette, title: 'Stijlprofiel', items: ['Geselecteerde stijl', 'AI-samenvatting', 'Inspiratiefoto\'s', 'Kleurvoorkeuren'] },
-              { icon: FileText, title: 'Productkeuzes', items: ['Merk & model per categorie', 'Prijsklasse per product', 'Behouden/vervangen keuzes', 'Tot 8 productcategorieën'] },
-              { icon: Ruler, title: 'Ruimteanalyse', items: ['Exacte afmetingen', 'Oppervlakte in m²', 'Originele badkamerfoto', 'AI visualisatie render'] },
+              { icon: Phone, title: 'Contact info', items: ['Name & email', 'Phone number', 'ZIP & city', 'Preferred timeline'] },
+              { icon: Palette, title: 'Style profile', items: ['Selected style', 'AI summary', 'Inspiration photos', 'Color preferences'] },
+              { icon: FileText, title: 'Product choices', items: ['Brand & model per category', 'Price tier per product', 'Keep/replace choices', 'Up to 8 product categories'] },
+              { icon: Ruler, title: 'Room analysis', items: ['Exact dimensions', 'Area in sq ft', 'Original bathroom photo', 'AI visualization render'] },
             ].map((card, i) => (
               <div key={i} className="bg-white rounded-2xl p-6 border border-neutral-300/30 hover:shadow-lg transition-shadow">
                 <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
@@ -383,8 +383,8 @@ const VoorVakmensenPage = () => {
 
           <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6 md:p-8 text-center max-w-3xl mx-auto">
             <p className="text-lg text-neutral-700">
-              <span className="font-bold">Gemiddeld besteden onze klanten 8 minuten</span> aan het plannen van hun badkamer.
-              Dat is 8 minuten onderzoek dat u niet meer hoeft te doen.
+              <span className="font-bold">Our customers spend an average of 8 minutes</span> planning their bathroom.
+              That&apos;s 8 minutes of research you no longer need to do.
             </p>
           </div>
         </div>
@@ -395,10 +395,10 @@ const VoorVakmensenPage = () => {
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4">
-              Lead Score: weet direct waar u aan toe bent
+              Lead Score: know exactly what you&apos;re getting
             </h2>
             <p className="text-lg text-neutral-500 max-w-2xl mx-auto">
-              Elke lead krijgt een score van 0-100. Zo weet u meteen de kwaliteit en intentie.
+              Every lead gets a score of 0–100. Instantly know the quality and intent.
             </p>
           </div>
 
@@ -406,15 +406,15 @@ const VoorVakmensenPage = () => {
             <div>
               <div className="bg-white rounded-2xl p-8 border border-neutral-300/30 shadow-lg">
                 <div className="flex items-center justify-between mb-8">
-                  <span className="text-sm font-bold text-neutral-500 uppercase tracking-wider">Voorbeeld Lead</span>
+                  <span className="text-sm font-bold text-neutral-500 uppercase tracking-wider">Sample Lead</span>
                   <span className="text-3xl font-black text-primary">82/100</span>
                 </div>
                 <div className="space-y-5">
                   {[
-                    { label: 'Contact compleet', score: 20, max: 25, color: 'bg-primary' },
-                    { label: 'Project volledigheid', score: 35, max: 35, color: 'bg-primary' },
+                    { label: 'Contact complete', score: 20, max: 25, color: 'bg-primary' },
+                    { label: 'Project completeness', score: 35, max: 35, color: 'bg-primary' },
                     { label: 'AI outputs', score: 20, max: 20, color: 'bg-primary' },
-                    { label: 'Budgetsignaal', score: 7, max: 20, color: 'bg-accent' },
+                    { label: 'Budget signal', score: 7, max: 20, color: 'bg-accent' },
                   ].map((bar, i) => (
                     <div key={i}>
                       <div className="flex justify-between text-sm mb-1.5">
@@ -438,20 +438,20 @@ const VoorVakmensenPage = () => {
                 {
                   range: '70–100',
                   color: 'bg-success',
-                  title: 'Hoge intentie',
-                  desc: 'Deze klant is klaar om te starten. Direct contact opnemen voor maximale conversie.',
+                  title: 'High intent',
+                  desc: 'This customer is ready to start. Reach out immediately for maximum conversion.',
                 },
                 {
                   range: '40–69',
                   color: 'bg-warning',
-                  title: 'Oriëntatiefase',
-                  desc: 'Goed voor opvolging binnen een week. Klant heeft interesse maar vergelijkt nog.',
+                  title: 'Browsing phase',
+                  desc: 'Good for follow-up within a week. Customer is interested but still comparing.',
                 },
                 {
                   range: '0–39',
                   color: 'bg-neutral-300',
-                  title: 'Vroeg stadium',
-                  desc: 'Deze sturen we niet door. Wij filteren op kwaliteit zodat u geen tijd verspilt.',
+                  title: 'Early stage',
+                  desc: 'We don\'t forward these. We filter for quality so you don\'t waste time.',
                 },
               ].map((tier, i) => (
                 <div key={i} className="flex items-start gap-4">
@@ -466,7 +466,7 @@ const VoorVakmensenPage = () => {
               ))}
               <div className="bg-primary/5 border border-primary/10 rounded-xl p-4 mt-4">
                 <p className="text-sm text-neutral-700 font-medium">
-                  Wij sturen u alleen leads met een score van 40+. Lagere scores worden niet doorgestuurd.
+                  We only send you leads with a score of 40+. Lower scores are not forwarded.
                 </p>
               </div>
             </div>
@@ -479,49 +479,49 @@ const VoorVakmensenPage = () => {
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4">
-              Transparante prijzen, geen verrassingen
+              Transparent pricing, no surprises
             </h2>
-            <p className="text-lg text-neutral-500">Geen opzegkosten. Maandelijks opzegbaar. Start vandaag.</p>
+            <p className="text-lg text-neutral-500">No cancellation fees. Cancel anytime. Start today.</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {[
               {
-                name: 'Standaard',
-                price: '25',
+                name: 'Standard',
+                price: '27',
                 unit: 'per lead',
                 features: [
-                  'Gedeeld (max 5 offertes)',
-                  'Alle regio\'s',
+                  'Shared (max 5 quotes)',
+                  'All regions',
                   'Score 40+',
-                  'Email notificatie',
+                  'Email notification',
                   'Online dossier',
                 ],
                 highlight: false,
               },
               {
                 name: 'Premium',
-                price: '45',
+                price: '49',
                 unit: 'per lead',
                 features: [
-                  'Max 3 offertes per lead',
-                  'Uw regio\'s',
+                  'Max 3 quotes per lead',
+                  'Your regions',
                   'Score 50+',
-                  'Email + SMS notificatie',
+                  'Email + SMS notification',
                   'PDF dossier',
                 ],
                 highlight: true,
               },
               {
-                name: 'Exclusief',
-                price: '75',
+                name: 'Exclusive',
+                price: '81',
                 unit: 'per lead',
                 features: [
-                  '100% exclusief — alleen voor u',
-                  'Uw regio\'s',
+                  '100% exclusive — only you',
+                  'Your regions',
                   'Score 60+',
-                  'Prioriteitsnotificatie',
-                  'Direct bellen mogelijk',
+                  'Priority notification',
+                  'Direct call option',
                 ],
                 highlight: false,
               },
@@ -536,12 +536,12 @@ const VoorVakmensenPage = () => {
               >
                 {plan.highlight && (
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold px-4 py-1 rounded-full">
-                    Meest gekozen
+                    Most popular
                   </div>
                 )}
                 <h3 className="text-xl font-bold text-neutral-900 mb-2">{plan.name}</h3>
                 <div className="mb-6">
-                  <span className="text-4xl font-black text-primary">€{plan.price}</span>
+                  <span className="text-4xl font-black text-primary">${plan.price}</span>
                   <span className="text-neutral-500 text-sm ml-1">/{plan.unit}</span>
                 </div>
                 <ul className="space-y-3 mb-8">
@@ -560,14 +560,14 @@ const VoorVakmensenPage = () => {
                       : 'bg-primary/10 hover:bg-primary/20 text-primary'
                   }`}
                 >
-                  Kies {plan.name}
+                  Choose {plan.name}
                 </a>
               </div>
             ))}
           </div>
 
           <p className="text-center text-sm text-neutral-500 mt-8">
-            Geen opzegkosten. Maandelijks opzegbaar. Start vandaag, ontvang morgen uw eerste lead.
+            No cancellation fees. Cancel anytime. Start today, receive your first lead tomorrow.
           </p>
         </div>
       </section>
@@ -576,16 +576,16 @@ const VoorVakmensenPage = () => {
       <section className="py-20 md:py-28">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4">Bereken uw rendement</h2>
-            <p className="text-lg text-neutral-500">Zie direct wat De Badkamer leads u opleveren</p>
+            <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4">Calculate your return</h2>
+            <p className="text-lg text-neutral-500">See what Bathroom Tiles leads can deliver</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto items-center">
             <div className="space-y-8">
               <div>
                 <div className="flex justify-between mb-2">
-                  <label className="text-sm font-semibold text-neutral-700">Gemiddelde opdrachtwaarde</label>
-                  <span className="text-sm font-bold text-primary">€{roiValues.orderValue.toLocaleString('nl-NL')}</span>
+                  <label className="text-sm font-semibold text-neutral-700">Average job value</label>
+                  <span className="text-sm font-bold text-primary">${roiValues.orderValue.toLocaleString('en-US')}</span>
                 </div>
                 <input
                   type="range"
@@ -597,14 +597,14 @@ const VoorVakmensenPage = () => {
                   className="w-full h-2 bg-neutral-200 rounded-full appearance-none cursor-pointer accent-primary"
                 />
                 <div className="flex justify-between text-xs text-neutral-400 mt-1">
-                  <span>€5.000</span>
-                  <span>€30.000</span>
+                  <span>$5,000</span>
+                  <span>$30,000</span>
                 </div>
               </div>
 
               <div>
                 <div className="flex justify-between mb-2">
-                  <label className="text-sm font-semibold text-neutral-700">Conversiepercentage</label>
+                  <label className="text-sm font-semibold text-neutral-700">Conversion rate</label>
                   <span className="text-sm font-bold text-primary">{roiValues.conversionRate}%</span>
                 </div>
                 <input
@@ -624,7 +624,7 @@ const VoorVakmensenPage = () => {
 
               <div>
                 <div className="flex justify-between mb-2">
-                  <label className="text-sm font-semibold text-neutral-700">Aantal leads per maand</label>
+                  <label className="text-sm font-semibold text-neutral-700">Leads per month</label>
                   <span className="text-sm font-bold text-primary">{roiValues.leadsPerMonth}</span>
                 </div>
                 <input
@@ -644,28 +644,28 @@ const VoorVakmensenPage = () => {
             </div>
 
             <div className="bg-gradient-to-br from-primary to-primary-dark rounded-2xl p-8 text-white">
-              <h3 className="text-lg font-bold text-white/80 mb-6">Uw maandelijks rendement</h3>
+              <h3 className="text-lg font-bold text-white/80 mb-6">Your monthly return</h3>
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between items-center py-2 border-b border-white/10">
-                  <span className="text-white/70">Leads per maand</span>
+                  <span className="text-white/70">Leads per month</span>
                   <span className="font-bold text-xl">{roiLeads}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-white/10">
-                  <span className="text-white/70">Opdrachten ({roiValues.conversionRate}% conversie)</span>
+                  <span className="text-white/70">Jobs ({roiValues.conversionRate}% conversion)</span>
                   <span className="font-bold text-xl">{roiConversions.toFixed(1)}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-white/10">
-                  <span className="text-white/70">Omzet per maand</span>
-                  <span className="font-bold text-xl">€{roiRevenue.toLocaleString('nl-NL')}</span>
+                  <span className="text-white/70">Revenue per month</span>
+                  <span className="font-bold text-xl">${roiRevenue.toLocaleString('en-US')}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-white/10">
-                  <span className="text-white/70">Leadkosten (€45/lead)</span>
-                  <span className="font-bold">€{roiCost.toLocaleString('nl-NL')}</span>
+                  <span className="text-white/70">Lead cost ($49/lead)</span>
+                  <span className="font-bold">${roiCost.toLocaleString('en-US')}</span>
                 </div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center">
                 <p className="text-white/70 text-sm mb-1">Return on Investment</p>
-                <p className="text-5xl font-black text-accent">{roiPercent.toLocaleString('nl-NL')}%</p>
+                <p className="text-5xl font-black text-accent">{roiPercent.toLocaleString('en-US')}%</p>
               </div>
             </div>
           </div>
@@ -676,28 +676,28 @@ const VoorVakmensenPage = () => {
       <section className="py-20 md:py-28 bg-surface">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4">Wat vakmensen zeggen</h2>
+            <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4">What contractors say</h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {[
               {
-                quote: 'De leads van De Badkamer zijn anders. De klant heeft al nagedacht over stijl, producten en budget. Het eerste gesprek is meteen inhoudelijk.',
-                name: 'Jan V.',
-                role: 'Sanitairtechniek Rotterdam',
-                since: 'Partner sinds 2025',
+                quote: 'Bathroom Tiles leads are different. The customer has already thought about style, products, and budget. The first conversation gets straight to the point.',
+                name: 'Mike R.',
+                role: 'Plumbing & Tile, Los Angeles',
+                since: 'Partner since 2025',
               },
               {
-                quote: 'Ik was sceptisch over AI-leads, maar het AI-render helpt enorm. De klant weet precies wat hij wil en ik kan direct een accurate offerte maken.',
-                name: 'Marco D.',
-                role: 'Badkamer Specialist Antwerpen',
-                since: 'Partner sinds 2025',
+                quote: 'I was skeptical about AI leads, but the AI render helps a lot. The customer knows exactly what they want and I can create an accurate quote right away.',
+                name: 'James D.',
+                role: 'Bathroom Specialist, Chicago',
+                since: 'Partner since 2025',
               },
               {
-                quote: 'Vroeger reed ik 5x per week naar mensen die nog aan het vergelijken waren. Nu heb ik 3 vaste opdrachten per maand via De Badkamer.',
-                name: 'Pieter K.',
-                role: 'Installatietechniek Eindhoven',
-                since: 'Partner sinds 2026',
+                quote: 'I used to drive 5x a week to people who were still comparing. Now I have 3 steady projects per month through Bathroom Tiles.',
+                name: 'Chris K.',
+                role: 'Installation Tech, Austin',
+                since: 'Partner since 2026',
               },
             ].map((t, i) => (
               <div key={i} className="bg-white rounded-2xl p-8 border border-neutral-300/30 hover:shadow-lg transition-shadow">
@@ -722,17 +722,17 @@ const VoorVakmensenPage = () => {
       <section className="py-20 md:py-28">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4">Resultaten van onze AI-planner</h2>
+            <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4">Results from our AI planner</h2>
             <p className="text-lg text-neutral-500 max-w-2xl mx-auto">
-              Uw klanten zien vooraf hoe hun renovatie eruitziet. Dat maakt het verkoopgesprek eenvoudiger.
+              Your customers see in advance how their renovation will look. That makes the sales conversation easier.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { style: 'Modern Industrieel', budget: '€12.000 – €16.000', area: '6 m²' },
-              { style: 'Scandinavisch Warm', budget: '€9.000 – €13.000', area: '4.5 m²' },
-              { style: 'Luxe Klassiek', budget: '€18.000 – €24.000', area: '8 m²' },
+              { style: 'Modern Industrial', budget: '$13,000 – $17,000', area: '65 sq ft' },
+              { style: 'Scandinavian Warm', budget: '$10,000 – $14,000', area: '48 sq ft' },
+              { style: 'Luxury Classic', budget: '$19,000 – $26,000', area: '86 sq ft' },
             ].map((item, i) => (
               <div key={i} className="group">
                 <div className="relative aspect-[4/3] bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl overflow-hidden mb-4 flex items-center justify-center">
@@ -740,19 +740,19 @@ const VoorVakmensenPage = () => {
                     <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
                       <Camera size={28} className="text-primary" />
                     </div>
-                    <p className="text-sm text-neutral-500">AI-render voorbeeld</p>
+                    <p className="text-sm text-neutral-500">AI render sample</p>
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-white text-xs font-bold bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded">Voor</span>
+                      <span className="text-white text-xs font-bold bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded">Before</span>
                       <div className="flex-1 h-px bg-white/30" />
-                      <span className="text-white text-xs font-bold bg-accent/80 backdrop-blur-sm px-2 py-0.5 rounded">Na</span>
+                      <span className="text-white text-xs font-bold bg-accent/80 backdrop-blur-sm px-2 py-0.5 rounded">After</span>
                     </div>
                   </div>
                 </div>
                 <h3 className="font-bold text-neutral-900 mb-1">{item.style}</h3>
                 <div className="flex items-center gap-4 text-sm text-neutral-500">
-                  <span className="flex items-center gap-1"><Euro size={14} /> {item.budget}</span>
+                  <span className="flex items-center gap-1"><DollarSign size={14} /> {item.budget}</span>
                   <span className="flex items-center gap-1"><Ruler size={14} /> {item.area}</span>
                 </div>
               </div>
@@ -764,7 +764,7 @@ const VoorVakmensenPage = () => {
               to="/inspiration"
               className="inline-flex items-center gap-2 text-primary font-bold hover:text-primary-dark transition-colors"
             >
-              Bekijk meer AI-resultaten <ArrowRight size={18} />
+              View more AI results <ArrowRight size={18} />
             </Link>
           </div>
         </div>
@@ -774,7 +774,7 @@ const VoorVakmensenPage = () => {
       <section className="py-20 md:py-28 bg-surface">
         <div className="max-w-3xl mx-auto px-4 md:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4">Veelgestelde vragen</h2>
+            <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4">Frequently asked questions</h2>
           </div>
 
           <div className="space-y-3">
@@ -807,18 +807,18 @@ const VoorVakmensenPage = () => {
       {/* SECTION 11: Final CTA */}
       <section className="bg-gradient-to-r from-accent to-accent-hover py-16 md:py-20">
         <div className="max-w-4xl mx-auto px-4 md:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-black text-white mb-4">Klaar om te groeien?</h2>
+          <h2 className="text-3xl md:text-4xl font-black text-white mb-4">Ready to grow?</h2>
           <p className="text-lg text-white/80 mb-8">
-            Meld u vandaag aan en ontvang uw eerste lead binnen 24 uur.
+            Sign up today and receive your first lead within 24 hours.
           </p>
           <a
             href="#aanmelden"
             className="inline-flex items-center gap-2 bg-white hover:bg-neutral-100 text-accent font-bold text-lg px-10 py-4 rounded-full transition-all hover:shadow-xl"
           >
-            Word Partner <ArrowRight size={20} />
+            Become Partner <ArrowRight size={20} />
           </a>
           <p className="text-white/60 text-sm mt-4">
-            Gratis aanmelden — geen vaste kosten — direct opzegbaar
+            Free sign up — no fixed costs — cancel anytime
           </p>
         </div>
       </section>
@@ -827,9 +827,9 @@ const VoorVakmensenPage = () => {
       <section id="aanmelden" className="py-20 md:py-28">
         <div className="max-w-3xl mx-auto px-4 md:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4">Word Partner</h2>
+            <h2 className="text-3xl md:text-4xl font-black text-neutral-900 mb-4">Become a Partner</h2>
             <p className="text-lg text-neutral-500">
-              Vul het formulier in en ontvang uw eerste leads binnen 24 uur na goedkeuring.
+              Fill out the form and receive your first leads within 24 hours after approval.
             </p>
           </div>
 
@@ -838,9 +838,9 @@ const VoorVakmensenPage = () => {
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle size={32} className="text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-neutral-900 mb-2">Bedankt voor uw aanmelding!</h3>
+              <h3 className="text-2xl font-bold text-neutral-900 mb-2">Thank you for signing up!</h3>
               <p className="text-neutral-500">
-                Wij nemen binnen 24 uur contact met u op om uw account te activeren.
+                We will contact you within 24 hours to activate your account.
               </p>
             </div>
           ) : (
@@ -853,25 +853,25 @@ const VoorVakmensenPage = () => {
               )}
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-semibold text-neutral-700 mb-1.5">Bedrijfsnaam *</label>
+                  <label className="block text-sm font-semibold text-neutral-700 mb-1.5">Company name *</label>
                   <input
                     type="text"
                     required
                     value={formData.bedrijfsnaam}
                     onChange={e => setFormData(f => ({ ...f, bedrijfsnaam: e.target.value }))}
                     className="w-full px-4 py-3 border border-neutral-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    placeholder="Uw bedrijfsnaam"
+                    placeholder="Your company name"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-neutral-700 mb-1.5">Contactpersoon *</label>
+                  <label className="block text-sm font-semibold text-neutral-700 mb-1.5">Contact person *</label>
                   <input
                     type="text"
                     required
                     value={formData.contactpersoon}
                     onChange={e => setFormData(f => ({ ...f, contactpersoon: e.target.value }))}
                     className="w-full px-4 py-3 border border-neutral-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    placeholder="Uw naam"
+                    placeholder="Your name"
                   />
                 </div>
                 <div>
@@ -882,47 +882,47 @@ const VoorVakmensenPage = () => {
                     value={formData.email}
                     onChange={e => setFormData(f => ({ ...f, email: e.target.value }))}
                     className="w-full px-4 py-3 border border-neutral-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    placeholder="info@uwbedrijf.nl"
+                    placeholder="info@yourcompany.com"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-neutral-700 mb-1.5">Telefoon *</label>
+                  <label className="block text-sm font-semibold text-neutral-700 mb-1.5">Phone *</label>
                   <input
                     type="tel"
                     required
                     value={formData.telefoon}
                     onChange={e => setFormData(f => ({ ...f, telefoon: e.target.value }))}
                     className="w-full px-4 py-3 border border-neutral-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    placeholder="06-12345678"
+                    placeholder="(555) 123-4567"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-neutral-700 mb-1.5">KvK-nummer</label>
+                  <label className="block text-sm font-semibold text-neutral-700 mb-1.5">EIN / Business ID</label>
                   <input
                     type="text"
                     value={formData.kvk}
                     onChange={e => setFormData(f => ({ ...f, kvk: e.target.value }))}
                     className="w-full px-4 py-3 border border-neutral-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    placeholder="12345678"
+                    placeholder="12-3456789"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-neutral-700 mb-1.5">Werkgebied (postcodes) *</label>
+                  <label className="block text-sm font-semibold text-neutral-700 mb-1.5">Service area (ZIP codes) *</label>
                   <input
                     type="text"
                     required
                     value={formData.werkgebied}
                     onChange={e => setFormData(f => ({ ...f, werkgebied: e.target.value }))}
                     className="w-full px-4 py-3 border border-neutral-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    placeholder="bijv. 3000-3099, 1000-1099"
+                    placeholder="e.g. 90210, 10001-10099"
                   />
                 </div>
               </div>
 
               <div className="mt-6">
-                <label className="block text-sm font-semibold text-neutral-700 mb-3">Specialisatie</label>
+                <label className="block text-sm font-semibold text-neutral-700 mb-3">Specialization</label>
                 <div className="flex flex-wrap gap-2">
-                  {['Complete badkamer', 'Sanitair', 'Tegels', 'Loodgieter', 'Elektra'].map(spec => (
+                  {['Full bathroom', 'Plumbing', 'Tiling', 'HVAC', 'Electrical'].map(spec => (
                     <button
                       type="button"
                       key={spec}
@@ -940,12 +940,12 @@ const VoorVakmensenPage = () => {
               </div>
 
               <div className="mt-6">
-                <label className="block text-sm font-semibold text-neutral-700 mb-3">Gewenst plan</label>
+                <label className="block text-sm font-semibold text-neutral-700 mb-3">Preferred plan</label>
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { value: 'standaard', label: 'Standaard', price: '€25/lead' },
-                    { value: 'premium', label: 'Premium', price: '€45/lead' },
-                    { value: 'exclusief', label: 'Exclusief', price: '€75/lead' },
+                    { value: 'standaard', label: 'Standard', price: '$27/lead' },
+                    { value: 'premium', label: 'Premium', price: '$49/lead' },
+                    { value: 'exclusief', label: 'Exclusive', price: '$81/lead' },
                   ].map(plan => (
                     <button
                       type="button"
@@ -973,20 +973,20 @@ const VoorVakmensenPage = () => {
               >
                 {formSubmitting ? (
                   <>
-                    <Loader2 size={18} className="animate-spin" /> Bezig met verzenden...
+                    <Loader2 size={18} className="animate-spin" /> Submitting...
                   </>
                 ) : (
                   <>
-                    Aanmelding versturen <ArrowRight size={18} />
+                    Submit signup <ArrowRight size={18} />
                   </>
                 )}
               </button>
 
               <p className="text-xs text-neutral-400 text-center mt-4">
-                Door u aan te melden gaat u akkoord met onze{' '}
-                <Link to="/terms" className="underline hover:text-neutral-600">algemene voorwaarden</Link>{' '}
-                en{' '}
-                <Link to="/privacy" className="underline hover:text-neutral-600">privacybeleid</Link>.
+                By signing up you agree to our{' '}
+                <Link to="/terms" className="underline hover:text-neutral-600">terms of service</Link>{' '}
+                and{' '}
+                <Link to="/privacy" className="underline hover:text-neutral-600">privacy policy</Link>.
               </p>
             </form>
           )}
