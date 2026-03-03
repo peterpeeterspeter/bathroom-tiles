@@ -169,7 +169,6 @@ function buildInternalEmail(payload: any): string {
           <tr><td style="padding:5px 0;font-weight:bold;color:#555;font-size:13px">${phoneL}</td><td style="font-size:13px"><a href="tel:${s(payload.phone)}" style="color:#0d9488">${s(payload.phone)}</a></td></tr>
           <tr><td style="padding:5px 0;font-weight:bold;color:#555;font-size:13px">${postcodeL}</td><td style="font-size:13px">${s(payload.postcode)}</td></tr>
           ${payload.preferredTimeline ? `<tr><td style="padding:5px 0;font-weight:bold;color:#555;font-size:13px">${timelineL}</td><td style="font-size:13px">${timelineLabels[payload.preferredTimeline] || payload.preferredTimeline}</td></tr>` : ""}
-          ${payload.capakey ? `<tr><td style="padding:5px 0;font-weight:bold;color:#555;font-size:13px">Capakey</td><td style="font-size:13px">${s(payload.capakey)}</td></tr>` : ""}
         </table>
       </div>
 

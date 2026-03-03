@@ -32,7 +32,6 @@ interface LeadPayload {
   moodDescription?: string;
   roomNotes?: string;
   productActions?: Record<string, string>;
-  capakey?: string;
 }
 
 function calculateLeadScore(payload: LeadPayload): number {
@@ -42,7 +41,6 @@ function calculateLeadScore(payload: LeadPayload): number {
   if (payload.email?.trim()) score += 5;
   if (payload.phone?.trim()) score += 10;
   if (payload.postcode?.trim()) score += 5;
-  if (payload.capakey?.trim()) score += 3;
 
   if (payload.hasOriginalPhoto) score += 15;
   if (payload.styleProfile) score += 5;
@@ -109,7 +107,6 @@ export async function submitLead(payload: LeadPayload): Promise<{ success: boole
   if (payload.moodDescription) row.mood_description = payload.moodDescription;
   if (payload.roomNotes) row.room_notes = payload.roomNotes;
   if (payload.productActions) row.product_actions = payload.productActions;
-  if (payload.capakey) row.capakey = payload.capakey;
 
   let result = await supabase.from('leads').insert(row);
 
@@ -124,7 +121,6 @@ export async function submitLead(payload: LeadPayload): Promise<{ success: boole
       source: row.source,
       site: row.site,
       country: row.country,
-      ...(row.capakey ? { capakey: row.capakey } : {}),
     };
     result = await supabase.from('leads').insert(safeRow);
   }
