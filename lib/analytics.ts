@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-const SESSION_STORAGE_KEY = 'debadkamer_session_id';
+const SESSION_STORAGE_KEY = 'bathroom_tiles_session_id';
 let currentSessionId: string | null = null;
 
 function generateSessionId(): string {

@@ -443,7 +443,9 @@ export default function PlannerPage() {
     }
   };
 
-  const handleLeadSubmit = async (data: { name: string; email: string; phone: string; postcode: string; preferredTimeline: string }) => {
+  const showCapakey = (import.meta as any).env?.VITE_ENABLE_CAPAKEY === 'true' || (import.meta as any).env?.VITE_SITE === 'debadkamer';
+
+  const handleLeadSubmit = async (data: { name: string; email: string; phone: string; postcode: string; preferredTimeline: string; capakey?: string }) => {
     setLeadName(data.name);
 
     const spec = projectSpec;
@@ -462,6 +464,7 @@ export default function PlannerPage() {
       email: data.email,
       phone: data.phone,
       postcode: data.postcode,
+      capakey: data.capakey,
       projectId: projectId || undefined,
       styleProfile: styleProfile!,
       materialConfig,
@@ -515,6 +518,7 @@ export default function PlannerPage() {
           phone: data.phone,
           postcode: data.postcode,
           preferredTimeline: data.preferredTimeline,
+          capakey: data.capakey,
           styleName: styleProfile?.presetName || styleProfile?.summary?.slice(0, 50) || '',
           styleSummary: styleProfile?.summary || '',
           styleTags: styleProfile?.tags?.map(t => typeof t === 'string' ? t : t.tag) || [],
@@ -706,7 +710,7 @@ export default function PlannerPage() {
                     </div>
                   </div>
 
-                  <LeadCaptureForm onSubmit={handleLeadSubmit} />
+                  <LeadCaptureForm onSubmit={handleLeadSubmit} showCapakey={showCapakey} />
                 </div>
               ) : (
                 <ResultDisplay

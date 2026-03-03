@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ArrowRight, CheckCircle, User, Mail, Smartphone, MapPin, Calendar, Loader2, AlertCircle, RotateCcw, FileText, Palette, Calculator, Lightbulb, Shield } from 'lucide-react';
+import { ArrowRight, CheckCircle, User, Mail, Smartphone, MapPin, Calendar, Loader2, AlertCircle, RotateCcw, FileText, Palette, Calculator, Lightbulb, Shield, Search } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface LeadData {
   name: string;
@@ -7,10 +8,12 @@ interface LeadData {
   phone: string;
   postcode: string;
   preferredTimeline: string;
+  capakey?: string;
 }
 
 interface LeadCaptureFormProps {
   onSubmit: (data: LeadData, gdprConsent: boolean) => Promise<void>;
+  showCapakey?: boolean;
 }
 
 const fields = [
@@ -35,11 +38,44 @@ const deliverables = [
   { icon: FileText, text: 'Complete renovation dossier as PDF' },
 ];
 
-export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
+const defaultShowCapakey =
+  (import.meta as any).env?.VITE_ENABLE_CAPAKEY === 'true' ||
+  (import.meta as any).env?.VITE_SITE === 'debadkamer';
+
+export const LeadCaptureForm = ({ onSubmit, showCapakey = defaultShowCapakey }: LeadCaptureFormProps) => {
   const [leadData, setLeadData] = useState<LeadData>({ name: '', email: '', phone: '', postcode: '', preferredTimeline: '' });
+  const [addressForLookup, setAddressForLookup] = useState('');
+  const [capakeyLookupLoading, setCapakeyLookupLoading] = useState(false);
+  const [capakeyLookupError, setCapakeyLookupError] = useState<string | null>(null);
   const [gdprConsent, setGdprConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleCapakeyLookup = async () => {
+    const addr = (addressForLookup || `${leadData.postcode}`).trim();
+    if (!addr || addr.length < 2) {
+      setCapakeyLookupError('Vul een adres of postcode in om Capakey op te zoeken.');
+      return;
+    }
+    setCapakeyLookupLoading(true);
+    setCapakeyLookupError(null);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('capakey-lookup', {
+        body: { address: addr },
+      });
+      if (fnError) throw fnError;
+      if (data?.success && data?.capakey) {
+        setLeadData((prev) => ({ ...prev, capakey: data.capakey }));
+        setCapakeyLookupError(null);
+      } else {
+        setCapakeyLookupError(data?.error || 'Capakey niet gevonden. Vul handmatig in.');
+      }
+    } catch {
+      setCapakeyLookupError('Opzoeken mislukt. Probeer opnieuw of vul Capakey handmatig in.');
+    } finally {
+      setCapakeyLookupLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,6 +159,41 @@ export const LeadCaptureForm = ({ onSubmit }: LeadCaptureFormProps) => {
                 ))}
               </select>
             </div>
+
+            {showCapakey && (
+              <div className="space-y-2 pt-1">
+                <p className="text-xs font-semibold text-neutral-600">Capakey / perceelnummer (optioneel)</p>
+                <p className="text-[11px] text-neutral-500">Te vinden op kadasteruittreksel of via Cadgis. Of vul adres in en klik op Zoek op adres.</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Adres (bv. Trambergstraat 1, 3520 Zonhoven)"
+                    value={addressForLookup}
+                    onChange={(e) => setAddressForLookup(e.target.value)}
+                    className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl p-3 pl-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCapakeyLookup}
+                    disabled={capakeyLookupLoading}
+                    className="flex items-center gap-2 px-4 py-3 rounded-xl bg-primary/10 text-primary text-sm font-semibold hover:bg-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    {capakeyLookupLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                    Zoek op adres
+                  </button>
+                </div>
+                {capakeyLookupError && (
+                  <p className="text-xs text-amber-600">{capakeyLookupError}</p>
+                )}
+                <input
+                  type="text"
+                  placeholder="Capakey (bv. 44021A0012/00S000)"
+                  value={leadData.capakey || ''}
+                  onChange={(e) => setLeadData({ ...leadData, capakey: e.target.value })}
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl p-3.5 pl-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                />
+              </div>
+            )}
 
             <label className="flex items-start gap-3 cursor-pointer group pt-1">
               <div className="mt-0.5 flex-shrink-0">
